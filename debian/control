@@ -1,0 +1,17 @@
+Source: steamos-update
+Section: admin
+Priority: optional
+Maintainer: Arnaud Rebillout <arnaud.rebillout@collabora.com>
+Build-Depends:
+ debhelper (>= 11~),
+ meson,
+Standards-Version: 4.2.1
+Homepage: https://store.steampowered.com/steamos/
+
+Package: steamos-update-client
+Architecture: any
+Depends:
+ ${misc:Depends},
+ python3,
+Description: SteamOS Update Client
+ The update client for SteamOS
