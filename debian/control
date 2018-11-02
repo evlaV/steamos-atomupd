@@ -13,5 +13,16 @@ Architecture: any
 Depends:
  ${misc:Depends},
  python3,
+ python3-distro,
 Description: SteamOS Update Client
  The update client for SteamOS
+
+Package: steamos-update-server
+Architecture: any
+Depends:
+ ${misc:Depends},
+ python3,
+ python3-flask,
+ python3-semantic-version,
+Description: SteamOS Update Server
+ The update server for SteamOS

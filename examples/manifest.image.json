@@ -1,0 +1,7 @@
+{
+  "product": "steamos",
+  "release": "clockwerk",
+  "arch": "amd64",
+  "version": "20181101.1",
+  "variant": "rauc"
+}
