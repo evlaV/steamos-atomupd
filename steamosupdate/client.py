@@ -305,6 +305,7 @@ class UpdateClient:
         path = upd['candidates'][0]['path']
         do_update(server_url, path)
 
+        # TODO Should we return meaningful exit codes?
 
 
 def main():

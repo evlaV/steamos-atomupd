@@ -36,6 +36,8 @@ if __name__ == "__main__":
         ]), file=sys.stderr)
         sys.exit(1)
 
+    # TODO Support an argument to mark this image as 'checkpoint'?
+
     manif = manifest.make_from_running_os()
     str = manifest.write_to_string(manif, indent=2)
     print("{}".format(str))

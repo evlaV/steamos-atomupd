@@ -336,8 +336,3 @@ class ImagePool:
 
         return self._get_updates(image, next_release, want_unstable)
 
-
-
-    # TODO: Update the README regarding:
-    # - update strategy
-    # - variants

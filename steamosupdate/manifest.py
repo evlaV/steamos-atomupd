@@ -73,25 +73,28 @@ def make_from_running_os():
 
     product = distro.id()
     release = distro.codename()
-    arch    = platform.machine()
-    variant = distro.os_release_info()['variant_id']
-    version = distro.version()
-    checkpoint = False
 
-    # Tweak architecture a bit
+    arch = platform.machine()
     if arch == 'x86_64':
         arch = 'amd64'
 
-#    # TODO This needs to be set !!
-#    try:
-#        variant = distro.os_release_info()['variant_id']
-#    except KeyError:
-#        variant = ''
+    variant = distro.os_release_attr('variant_id')
 
-    # Check if we understand the version
-    v = version.parse_string(version, 'guess')
+    # To handle the version, we give precedence to the file
+    # /etc/$PRODUCT_version if it exists, otherwise we use
+    # the function distro.version().
+    version_file = '/etc/' + product + '_version'
+    try:
+        with open(version_file, 'r') as f:
+            version = f.read()
+    except OSError:
+        version = distro.version()
 
-    # TODO run that a bit, test
+    # Ensure we understand the version
+    version.parse_string(version, 'guess')
+
+    # We have no idea whether we're a checkpoint release
+    checkpoint = False
 
     manifest = Manifest(product, release, arch, variant, version, checkpoint)
 
