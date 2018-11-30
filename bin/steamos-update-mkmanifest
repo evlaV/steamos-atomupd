@@ -37,7 +37,12 @@ if __name__ == "__main__":
         ]), file=sys.stderr)
         sys.exit(1)
 
-    parser = argparse.ArgumentParser(description="SteamOS Update Make Manifest")
+    parser = argparse.ArgumentParser(
+        description='\n'.join([
+            "Create a manifest of the current system, using the os-release file.",
+            "Feel free to use the optional arguments to override the values from",
+            "the os-release file, in case you know better."
+        ]))
     parser.add_argument('--release')
     parser.add_argument('--variant')
     parser.add_argument('--version')
