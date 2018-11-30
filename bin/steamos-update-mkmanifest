@@ -18,6 +18,7 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+import argparse
 import os
 import sys
 
@@ -36,8 +37,15 @@ if __name__ == "__main__":
         ]), file=sys.stderr)
         sys.exit(1)
 
-    # TODO Support an argument to mark this image as 'checkpoint'?
+    parser = argparse.ArgumentParser(description="SteamOS Update Make Manifest")
+    parser.add_argument('--release')
+    parser.add_argument('--variant')
+    parser.add_argument('--version')
+    parser.add_argument('--checkpoint', action='store_true')
 
-    manif = manifest.make_from_running_os()
-    str = manifest.write_to_string(manif, indent=2)
-    print("{}".format(str))
+    args = parser.parse_args()
+
+    manif = manifest.make_from_running_os(args.release, args.variant,
+                                          args.version, args.checkpoint)
+    strng = manifest.write_to_string(manif, indent=2)
+    print("{}".format(strng))
