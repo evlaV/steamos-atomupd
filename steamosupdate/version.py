@@ -32,6 +32,9 @@ import semantic_version
 
 class SemanticVersion(semantic_version.Version):
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, partial=True, **kwargs)
+
     def is_unstable(self):
         return not self.prerelease is None
 
