@@ -254,8 +254,11 @@ class ImagePool:
                     log.error("Failed to make image {}: {}".format(f, e))
                     continue
 
-                # Walk the internal image hierarchy, all the way down to
-                # the image list. Create missing elements along the way.
+                # And now, time to add the image to our internal list.
+                # At first, we walk the image hierarchy, all the way down
+                # to the list of images for that particular combination of
+                # (product, release, arch, variant). While doing that, we
+                # must create the missing elements along the way.
                 dic = self.images
 
                 for elem in [ img.product, img.release, img.arch ]:
@@ -265,6 +268,7 @@ class ImagePool:
 
                 if img.variant not in dic:
                     dic[img.variant] = []
+
                 lst = dic[img.variant]
 
                 # Add image to list
