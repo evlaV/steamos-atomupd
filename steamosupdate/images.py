@@ -29,6 +29,8 @@ import steamosupdate.version as version
 log = logging.getLogger(__name__)
 
 IMAGE_MANIFEST_EXT = '.manifest.json'
+RAUC_BUNDLE_EXT    = '.raucb'
+CASYNC_STORE_EXT   = '.castr'
 
 #
 # Image
@@ -53,7 +55,9 @@ class Image:
 
         self.rauc_bundle_path = None
 
-    def set_rauc_bundle_path(self, path):
+    def set_rauc_bundle_relative_path(self, path):
+        if os.path.isabs(path):
+            raise ValueError("path '{}' should be relative".format(path))
         self.rauc_bundle_path = path
 
     def is_unstable(self):
@@ -94,33 +98,6 @@ class Image:
         #return "{}-{}-{}-{}-{}".format(self.product, self.release,
         #    self.version, self.arch, self.variant)
         return "{}".format(self.version)
-
-def _make_image(manifest, images_rootdir, image_dir, versioning_scheme):
-
-    """An image is made of a valid manifest, plus the expected
-    associated files.
-    """
-
-    # Create the image
-    image = Image(manifest, versioning_scheme)
-
-    # Check that all the files that should be associated with the
-    # manifest exist.
-    # TODO Use an artifact file instead of hard-coding?
-    # TODO If using path from an artifact file, assert it's relative.
-    rauc_bundle = 'rauc/casync-bundle.raucb'
-    rauc_bundle_abspath = os.path.join(image_dir, rauc_bundle)
-    if not os.path.exists(rauc_bundle_abspath):
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT),
-                                rauc_bundle_abspath)
-
-    # Add rauc bundle path
-    image_reldir = os.path.relpath(image_dir, images_rootdir)
-    rauc_bundle_relpath = os.path.join(image_reldir, rauc_bundle)
-    assert not os.path.isabs(rauc_bundle_relpath)
-    image.set_rauc_bundle_path(rauc_bundle_relpath)
-
-    return image
 
 #
 # Image Pool
@@ -229,7 +206,7 @@ class ImagePool:
         log.debug("Walking the image tree: {}".format(dirname))
         for root, dirs, files in os.walk(dirname):
             for f in files:
-                # We're looking for image manifest files
+                # We're looking for manifest files
                 if not f.endswith(IMAGE_MANIFEST_EXT):
                     continue
 
@@ -243,15 +220,31 @@ class ImagePool:
 
                 # Validate the manifest
                 if not self.support_manifest(manifest):
-                    log.debug("Discarding manifest {}".format(f))
+                    log.debug("Discarding unsupported manifest {}".format(f))
                     continue
+
+                # We expect to find the rauc bundle and the casync store alongside
+                rauc_bundle = manifest_file[:-len(IMAGE_MANIFEST_EXT)] + RAUC_BUNDLE_EXT
+                if not os.path.isfile(rauc_bundle):
+                    log.error("No rauc bundle for manifest {}".format(f))
+                    continue
+
+                casync_store = manifest_file[:-len(IMAGE_MANIFEST_EXT)] + CASYNC_STORE_EXT
+                if not os.path.isdir(casync_store):
+                    log.error("No casync store for manifest {}".format(f))
+                    continue
+
+                # What we actually want to keep is the relative
+                # path of the rauc bundle, that's enough.
+                rauc_bundle_relpath = os.path.relpath(rauc_bundle, dirname)
 
                 # Create the image
                 log.debug("Found supported manifest: {}".format(f))
                 try:
-                    img = _make_image(manifest, dirname, root, versioning_scheme)
+                    img = Image(manifest, versioning_scheme)
+                    img.set_rauc_bundle_relative_path(rauc_bundle_relpath)
                 except Exception as e:
-                    log.error("Failed to make image {}: {}".format(f, e))
+                    log.error("Failed to make image for manifest {}: {}".format(f, e))
                     continue
 
                 # And now, time to add the image to our internal list.
@@ -339,4 +332,3 @@ class ImagePool:
             return None, []
 
         return self._get_updates(image, next_release, want_unstable)
-
