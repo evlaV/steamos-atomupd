@@ -22,7 +22,7 @@ Run
 
 Install runtimes depends:
 
-    apt install python3-distro python3-flask python3-semantic-version
+    apt install python3-flask python3-semantic-version
 
 Run locally:
 
