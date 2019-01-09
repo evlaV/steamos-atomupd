@@ -47,7 +47,7 @@ class Image:
         try:
             self.version = version.parse_string(manifest.version, versioning_scheme)
         except ValueError:
-            raise ValueError("unsupported version '%s'".format(manifest.version))
+            raise ValueError("unsupported version '{}'".format(manifest.version))
 
         self.checkpoint = manifest.checkpoint
 
