@@ -24,7 +24,7 @@
 # Released images are expected to come with semantic versioning:
 #   3.0, 3.1-rc2        ie. MAJOR[.MINOR][.MICRO][-WHATEVER][+BUILD]
 #
-# Daily images are expected to come with date-based versioning:
+# Snapshot images are expected to come with date-based versioning:
 #   20181105.1          ie. DATE.INCREMENT
 
 from datetime import datetime

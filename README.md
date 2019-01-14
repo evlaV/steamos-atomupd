@@ -33,7 +33,7 @@ Run locally:
     export IN_SOURCE_TREE=1
 
     # Shell #1
-    ./bin/steamos-update-server -d -c examples/server-daily.conf
+    ./bin/steamos-update-server -d -c examples/server-snapshots.conf
 
     # Shell #2
     ./bin/steamos-update-client -d -c examples/client.conf

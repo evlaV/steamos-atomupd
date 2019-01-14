@@ -55,10 +55,10 @@ fake_image() {
     fi
 }
 
-mkdir -p daily
+mkdir -p snapshots
 
 (
-  cd daily
+  cd snapshots
 
   INCLUDE_RELEASE=yep
 
