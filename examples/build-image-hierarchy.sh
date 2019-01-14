@@ -36,22 +36,22 @@ fake_image() {
     local arch=$4
     local variant=$5
 
-    local imgdir manifname
+    local imgdir imgname
 
     if [ "$INCLUDE_RELEASE" ]; then
         imgdir=$product/$release/$version/$arch
-        manifname=$product-$release-$version-$arch-$variant.manifest.json
+	imgname=$product-$release-$version-$arch-$variant
     else
         imgdir=$product/$version/$arch
-        manifname=$product-$version-$arch-$variant.manifest.json
+        imgname=$product-$version-$arch-$variant
     fi
 
     mkdir -p $imgdir
-    make_manifest $product $release $version $arch $variant > $imgdir/$manifname
+    make_manifest $product $release $version $arch $variant > $imgdir/$imgname.manifest.json
 
     if [ "$variant" == "rauc" ]; then
-        mkdir $imgdir/rauc
-        touch $imgdir/rauc/casync-bundle.raucb
+        touch $imgdir/$imgname.raucb
+	mkdir $imgdir/$imgname.castr
     fi
 }
 
