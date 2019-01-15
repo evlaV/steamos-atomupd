@@ -134,21 +134,12 @@ def parse_update_file(filename, manifest):
 
     return curr_update, next_update
 
-def do_update(server_url, image_path):
+def do_update(images_url, image_path):
 
     import subprocess
     import urllib.parse
 
-    # TODO Right now we just append the image relative path to the
-    #      url of the update server. This is very sloppy.
-    # Possible improvements:
-    # - The update server gives an absolute image path. It means that
-    #   if ever we want to support multiple mirrors to server updates,
-    #   the mirror selection need to be done server-side.
-    # - Clearly say that we want to support mirrors, and then design
-    #   how it's supposed to work.
-
-    url = urllib.parse.urljoin(server_url, image_path)
+    url = urllib.parse.urljoin(images_url, image_path)
     completed_process = subprocess.run(['rauc', 'status'])
 
 
@@ -201,6 +192,7 @@ class UpdateClient:
             config.read_file(f)
 
         assert config['Server']['QueryUrl']
+        assert config['Server']['ImagesUrl']
 
         # Create runtime dir
 
@@ -301,9 +293,12 @@ class UpdateClient:
         assert upd
 
         log.debug("Applying update NOW")
-        server_url = config['Server']['QueryUrl']
-        path = upd['candidates'][0]['path']
-        do_update(server_url, path)
+
+        images_url = config['Server']['ImagesUrl']
+        image_path = upd['candidates'][0]['path']
+        if not images_url.endswith('/'):
+            images_url += '/'
+        do_update(images_url, image_path)
 
         # TODO Should we return meaningful exit codes?
 
