@@ -43,7 +43,7 @@ UPDATE_FILENAME = 'update.json'
 DEFAULT_CONFIG_FILE = '/etc/steamos-update/client.conf'
 
 # Default config
-DEFAULT_MANIFEST      = '/usr/manifest.image.json'
+DEFAULT_MANIFEST      = '/usr/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-update'
 DEFAULT_WANT_UNSTABLE = 'false'
 
