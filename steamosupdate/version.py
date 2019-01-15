@@ -25,6 +25,7 @@
 #   3.0, 3.1-rc2        ie. MAJOR[.MINOR][.MICRO][-WHATEVER][+BUILD]
 #
 # Snapshot images are expected to come with date-based versioning:
+#   20181105            ie. DATE
 #   20181105.1          ie. DATE.INCREMENT
 
 from datetime import datetime
@@ -46,10 +47,13 @@ class DateBasedVersion:
         self.inc = 0
 
         fields = text.split('.')
-        if len(fields) == 2 and len(fields[0]) == 8:
+        if len(fields) <= 2 and len(fields[0]) == 8:
             # This will raise ValueError if need be
             date = datetime.strptime(fields[0], '%Y%m%d')
-            inc = int(fields[1])
+            if len(fields) == 2:
+                inc = int(fields[1])
+            else:
+                inc = 0
         else:
             raise ValueError("the version string should be something like YYYYMMDD.N")
 
