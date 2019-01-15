@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import sys
+import time
 
 import steamosupdate.images as images
 import steamosupdate.manifest as mnf
@@ -165,9 +166,13 @@ class UpdateServer:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
+        start = time.time()
         image_pool = images.ImagePool(images_dir, versioning_scheme, products, releases,
                                       archs, variants)
+        end = time.time()
+        elapsed = end - start
 
+        print("Image pool created in {0:.3f} seconds".format(elapsed))
         print("--- Image Pool ---")
         print("{}".format(image_pool))
 
