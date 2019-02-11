@@ -93,7 +93,7 @@ def foo():
         want_unstable = False
 
     # Get update candidates
-    data ={}
+    data = {}
 
     release, candidates = IMAGE_POOL.get_updates_current(image, want_unstable)
     if candidates:

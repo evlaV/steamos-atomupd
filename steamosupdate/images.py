@@ -169,8 +169,8 @@ class ImagePool:
       product1: {
         release1: {
           arch1: {
-            variant1: [ '3.0', 3.1' ... ],
-            variant2: [ '3.0', 3.1' ... ],
+            variant1: [ '3.0', '3.1' ... ],
+            variant2: [ '3.0', '3.1' ... ],
           },
           arch2: { ...
           }, ...

@@ -80,7 +80,7 @@ def download_update_file(url, manifest, want_unstable):
 
 def _process_release_node(node, expected_release=None):
 
-    """Process a releasae node, which at the moment means:
+    """Process a release node, which at the moment means:
     - raise errors if keys are not found
     - sort the list of releases candidates
     """
