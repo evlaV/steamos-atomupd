@@ -1,7 +1,8 @@
 {
   "product": "steamos",
   "release": "clockwerk",
+  "variant": "rauc",
   "arch": "amd64",
-  "version": "20181101.1",
-  "variant": "rauc"
+  "version": "snapshot",
+  "buildid": "20181101.1"
 }

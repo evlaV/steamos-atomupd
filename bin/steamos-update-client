@@ -29,8 +29,11 @@ if __name__ == "__main__":
     try:
         from steamosupdate import client
     except ModuleNotFoundError:
-        print("Module not found. If you're running from the source tree,")
-        print("set the environment variable IN_SOURCE_TREE and try again.")
+        print('\n'.join([
+          "Module not found: {}.".format(e),
+          "If you're running from the source tree, set the",
+          "environment variable IN_SOURCE_TREE and try again.",
+        ]), file=sys.stderr)
         sys.exit(1)
 
     client.main()

@@ -28,7 +28,8 @@ if os.environ.get('IN_SOURCE_TREE'):
 
 if __name__ == "__main__":
     try:
-        from steamosupdate import manifest
+        from steamosupdate.image import Image
+        from steamosupdate.manifest import Manifest
     except ModuleNotFoundError as e:
         print('\n'.join([
           "Module not found: {}.".format(e),
@@ -43,14 +44,23 @@ if __name__ == "__main__":
             "Feel free to use the optional arguments to override the values from",
             "the os-release file, in case you know better."
         ]))
+    parser.add_argument('--product')
     parser.add_argument('--release')
     parser.add_argument('--variant')
+    parser.add_argument('--arch')
     parser.add_argument('--version')
+    parser.add_argument('--buildid')
     parser.add_argument('--checkpoint', action='store_true')
 
     args = parser.parse_args()
 
-    manif = manifest.make_from_running_os(args.release, args.variant,
-                                          args.version, args.checkpoint)
-    strng = manifest.write_to_string(manif, indent=2)
-    print("{}".format(strng))
+    try:
+        image = Image.from_os(args.product, args.release, args.variant, args.arch,
+                              args.version, args.buildid, args.checkpoint)
+    except Exception as e:
+        print("Failed to create manifest: {}".format(e), file=sys.stderr)
+        sys.exit(1)
+
+    manifest = Manifest(image)
+    manifest_string = manifest.to_string()
+    print("{}".format(manifest_string))

@@ -21,7 +21,6 @@
 #   where it makes sense
 
 import argparse
-from collections import namedtuple
 import configparser
 import json
 import logging
@@ -29,9 +28,9 @@ import os
 import shutil
 import sys
 
-import steamosupdate.manifest as mnf
-import steamosupdate.version as version
-import steamosupdate.updatefile as updatefile
+from steamosupdate.image import Image
+from steamosupdate.manifest import Manifest
+from steamosupdate.update import Update
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -47,7 +46,7 @@ DEFAULT_MANIFEST      = '/usr/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-update'
 DEFAULT_WANT_UNSTABLE = 'false'
 
-def download_update_file(url, manifest, want_unstable):
+def download_update_file(url, image, want_unstable):
 
     import tempfile
     import urllib.parse
@@ -58,87 +57,26 @@ def download_update_file(url, manifest, want_unstable):
     # TODO Should we also say if running unattended or not? Is it of
     #      any interest for the server?
 
-    params = {
-        'product': manifest.product,
-        'release': manifest.release,
-        'arch':    manifest.arch,
-        'version': manifest.version,
-        'variant': manifest.variant,
-        'want-unstable': want_unstable,
-    }
+    data = image.to_dict()
+    data['want-unstable'] = want_unstable
 
-    query_string = urllib.parse.urlencode(params)
-    url = url + '?' + query_string
+    params = urllib.parse.urlencode(data)
+    url = url + '?' + params
 
     with urllib.request.urlopen(url) as response:
-        print("Code: {}".format(response.getcode()))
         with tempfile.NamedTemporaryFile(delete=False) as f:
             data = response.read()
             f.write(data)
 
     return f.name
 
-def _process_release_node(node, expected_release=None):
-
-    """Process a release node, which at the moment means:
-    - raise errors if keys are not found
-    - sort the list of releases candidates
-    """
-
-    # Ensure the release is as expected
-    release = node['release']
-    if expected_release and expected_release != release:
-        raise ValueError("unexpected release: {}".format(release))
-
-    # Sort release candidates (modify input!)
-    candidates = node['candidates']
-
-    def _get_candidate_version_parsed(candidate):
-        return version.parse_string(candidate['version'], 'guess')
-
-    node['candidates'] = sorted(candidates, key=_get_candidate_version_parsed)
-
-    return node
-
-def parse_update_file(filename, manifest):
-
-    """Parse an update file
-
-    We might raise key error, or json error
-    """
-
-    with open(filename, 'r') as f:
-        data = json.load(f)
-
-    # TODO We're supposed to run unattended, should we validate that?
-    #      (like, there should be no X/Wayland or something)
-    # TODO Should we check that the versions proposed by the server are
-    #      above our own version, or should we trust the server blindly?
-    # TODO Should we have a better validation of the data send by the
-    #      server?
-
-    curr_update = None
-    if 'current' in data:
-        try:
-            curr_update = _process_release_node(data['current'],
-                                                expected_release=manifest.release)
-        except Exception as e:
-            log.debug("Failed to process the 'current' release node: {}".format(e))
-
-
-    next_update = None
-    if 'next' in data:
-        try:
-            next_update = _process_release_node(data['next'])
-        except Exception as e:
-            log.debug("Failed to process 'next' update node: {}".format(e))
-
-    return curr_update, next_update
-
-def do_update(images_url, image_path):
+def do_update(images_url, update_path):
 
     import subprocess
     import urllib.parse
+
+    if not images_url.endswith('/'):
+        images_url += '/'
 
     # Set TMPDIR to /tmp
     #
@@ -159,20 +97,20 @@ def do_update(images_url, image_path):
     # It needs enough memory to store the chunks it downloads, and it
     # also needs A LOT of inodes.
 
-    completed = subprocess.run(['mount',
-                                '-o', 'remount,size=100%,nr_inodes=1g',
-                                '/tmp', '/tmp'],
-                               stderr=subprocess.STDOUT,
-                               stdout=subprocess.PIPE,
-                               universal_newlines=True)
+    c = subprocess.run(['mount',
+                        '-o', 'remount,size=100%,nr_inodes=1g',
+                        '/tmp', '/tmp'],
+                       stderr=subprocess.STDOUT,
+                       stdout=subprocess.PIPE,
+                       universal_newlines=True)
 
-    if completed.returncode != 0:
-        log.warning("Failed to remount /tmp: {}".format(completed.stdout))
+    if c.returncode != 0:
+        log.warning("Failed to remount /tmp: {}: {}".format(c.returncode, c.stdout))
         # Let's keep going and hope that /tmp can handle the load
 
     # Let's update now
 
-    url = urllib.parse.urljoin(images_url, image_path)
+    url = urllib.parse.urljoin(images_url, update_path)
 
     log.info("Installing update from {}".format(url))
 
@@ -185,7 +123,7 @@ def do_update(images_url, image_path):
             print(line, end='')
 
     if p.returncode != 0:
-        log.warning("Failed to install bundle: {}".format(p.returncode))
+        log.warning("Failed to install bundle: {}: {}".format(p.returncode, p.stdout))
 
 
 
@@ -200,11 +138,11 @@ class UpdateClient:
 
         parser = argparse.ArgumentParser(
             description = "SteamOS Update Client")
-        parser.add_argument('-d', '--debug', action='store_true',
-            help="show debug messages")
         parser.add_argument('-c', '--config',
             metavar='FILE', default=DEFAULT_CONFIG_FILE,
             help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
+        parser.add_argument('-d', '--debug', action='store_true',
+            help="show debug messages")
         parser.add_argument('--query-only', action='store_true',
             help="only query if an update is available")
         parser.add_argument('--mk-manifest-file', action='store_true',
@@ -246,15 +184,16 @@ class UpdateClient:
             log.debug("Creating runtime dir {}".format(runtime_dir))
             os.makedirs(runtime_dir)
 
-        # Get the current manifest file
+        # Get the current image details
 
         if args.mk_manifest_file:
-            log.debug("Making manifest from current system")
-            manifest = mnf.make_from_running_os()
+            log.debug("Getting image from current OS")
+            image = Image.from_os()
         else:
             manifest_file = config['Host']['Manifest']
-            log.debug("Using manifest: {}".format(manifest_file))
-            manifest = mnf.make_from_file(manifest_file)
+            log.debug("Getting image from manifest: {}".format(manifest_file))
+            manifest = Manifest.from_file(manifest_file)
+            image = manifest.image
 
         # Download update file, unless one is given in args
 
@@ -265,7 +204,7 @@ class UpdateClient:
             want_unstable = bool(config['Host']['WantUnstable'])
             try:
                 log.debug("Downloading update file (want-unstable={}): {}".format(want_unstable, url))
-                tmpfile = download_update_file(url, manifest, want_unstable)
+                tmpfile = download_update_file(url, image, want_unstable)
             except Exception as e:
                 log.error("Failed to download update file: {}".format(e))
                 return 1
@@ -289,38 +228,38 @@ class UpdateClient:
 
         log.debug("Parsing update file: {}".format(update_file))
 
-        try:
-            minor_update, major_update = parse_update_file(update_file, manifest)
-        except Exception as e:
-            log.error("Failed to parse update file: {}".format(e))
-            return 1
+        with open(update_file, 'r') as f:
+            update_data = json.load(f)
+
+        update = Update.from_dict(update_data)
+
+        if not update:
+            # TODO Should we remove the update file then?
+            log.debug("No update candidate, even though the server returned something");
+            log.debug("Kind of unexpected TBH")
+            return 0
+
+        # Log a bit
 
         def log_update(upd):
-            log.debug("An update is available for release '{}'".format(upd['release']))
-            if len(upd['candidates']) > 0:
-                c = upd['candidates'][0]
-                v = c['version']
-                p = c['path']
-                log.debug("> going to version: {}".format(v))
-                log.debug("> update path: {}".format(p))
-            if len(upd['candidates']) > 1:
-                n = len(upd['candidates'])
-                c = upd['candidates'][-1]
-                v = c['version']
-                log.debug("> final destination: {}".format(n))
-                log.debug("> total number of updates: {}".format(n))
+            log.debug("An update is available for release '{}'".format(upd.release))
+            n_imgs = len(upd.candidates)
+            if n_imgs > 0:
+                cand = upd.candidates[0]
+                img = cand.image
+                log.debug("> going to version: {} ({})".format(img.version, img.buildid))
+                log.debug("> update path: {}".format(cand.update_path))
+            if n_imgs > 1:
+                cand = upd.candidates[-1]
+                img = cand.image
+                log.debug("> final destination: {} ({})".format(img.version, img.buildid))
+                log.debug("> total number of updates: {}".format(n_imgs))
 
-        if minor_update:
-            log_update(minor_update)
+        if update.minor:
+            log_update(update.minor)
 
-        if major_update:
-            log_update(major_update)
-
-        if not minor_update and not major_update:
-            log.debug("No update candidate found, even though the server returned something");
-            log.debug("Kind of unexpected TBH")
-            # Should we remove the update file then?
-            return 0
+        if update.major:
+            log_update(update.major)
 
         # Bail out if needed
 
@@ -330,22 +269,28 @@ class UpdateClient:
 
         # Apply update
 
-        if major_update:
-            upd = major_update
-        elif minor_update:
-            upd = minor_update
+        # TODO We probably want to check that the current release matches
+        #      our current release, just as a safety check
+        # TODO If we're supposed to run unattended, should we validate that?
+        #      (like, there should be no X/Wayland or something)
+        # TODO Should we check that the versions proposed by the server are
+        #      above our own version, or should we trust the server blindly?
+
+        if update.major:
+            upd = update.major
+        elif update.minor:
+            upd = update.minor
 
         assert upd
 
         log.debug("Applying update NOW")
 
         images_url = config['Server']['ImagesUrl']
-        image_path = upd['candidates'][0]['path']
-        if not images_url.endswith('/'):
-            images_url += '/'
-        do_update(images_url, image_path)
+        update_path = upd.candidates[0].update_path
+        do_update(images_url, update_path)
 
         # TODO Should we return meaningful exit codes?
+
 
 
 def main():

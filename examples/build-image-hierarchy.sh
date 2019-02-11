@@ -1,29 +1,24 @@
 #!/bin/bash
+# vim: sts=4 sw=4 et
 
 set -e
 set -u
 
-[ -d examples ] || exit 1
+OUTDIR=examples-data
 
-rm -fr examples/images
-mkdir examples/images
-cd examples/images
+rm -fr $OUTDIR
+mkdir -p $OUTDIR/images
+cd $OUTDIR/images
 
 make_manifest() {
-
-    local product=$1
-    local release=$2
-    local version=$3
-    local arch=$4
-    local variant=$5
-
     cat << EOF
 {
-  "product": "$product",
-  "release": "$release",
-  "arch": "$arch",
-  "version": "$version",
-  "variant": "$variant"
+  "product": "$1",
+  "release": "$2",
+  "variant": "$3",
+  "arch": "$4",
+  "version": "$5",
+  "buildid": "$6"
 }
 EOF
 }
@@ -32,22 +27,19 @@ fake_image() {
 
     local product=$1
     local release=$2
-    local version=$3
+    local variant=$3
     local arch=$4
-    local variant=$5
+    local version=$5
+    local buildid=$6
 
     local imgdir imgname
 
-    if [ "$INCLUDE_RELEASE" ]; then
-        imgdir=$product/$release/$version/$arch
-	imgname=$product-$release-$version-$arch-$variant
-    else
-        imgdir=$product/$version/$arch
-        imgname=$product-$version-$arch-$variant
-    fi
+    imgdir=$product/$release/$version/$arch
+    imgname=$product-$release-$buildid-$version-$arch-$variant
 
     mkdir -p $imgdir
-    make_manifest $product $release $version $arch $variant > $imgdir/$imgname.manifest.json
+    make_manifest $product $release $variant $arch $version $buildid > \
+        $imgdir/$imgname.manifest.json
 
     if [ "$variant" == "rauc" ]; then
         touch $imgdir/$imgname.raucb
@@ -60,15 +52,13 @@ mkdir -p snapshots
 (
   cd snapshots
 
-  INCLUDE_RELEASE=yep
+  fake_image steamos clockwerk devel amd64 snapshot 20181102.1
+  fake_image steamos clockwerk rauc  amd64 snapshot 20181102.1
 
-  fake_image steamos clockwerk 20181102.1 amd64 devel
-  fake_image steamos clockwerk 20181102.1 amd64 rauc
+  fake_image steamos clockwerk devel amd64 snapshot 20181102.2
 
-  fake_image steamos clockwerk 20181102.2 amd64 devel
-
-  fake_image steamos clockwerk 20181108.1 amd64 devel
-  fake_image steamos clockwerk 20181108.1 amd64 rauc
+  fake_image steamos clockwerk devel amd64 snapshot 20181108.1
+  fake_image steamos clockwerk rauc  amd64 snapshot 20181108.1
 )
 
 mkdir -p releases
@@ -76,13 +66,11 @@ mkdir -p releases
 (
   cd releases
 
-  INCLUDE_RELEASE=
+  fake_image steamos clockwerk devel amd64 3.0 20190211
+  fake_image steamos clockwerk rauc  amd64 3.0 20190211
 
-  fake_image steamos clockwerk 3.0 amd64 devel
-  fake_image steamos clockwerk 3.0 amd64 rauc
-
-  fake_image steamos clockwerk 3.1 amd64 devel
-  fake_image steamos clockwerk 3.1 amd64 rauc
+  fake_image steamos clockwerk devel amd64 3.1 20190101
+  fake_image steamos clockwerk rauc  amd64 3.1 20190101
 )
 
-echo "Hierarchy created under 'examples/images'"
+echo "Hierarchy created under '$OUTDIR/images'"

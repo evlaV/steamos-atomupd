@@ -24,9 +24,8 @@ import os
 import sys
 import time
 
-import steamosupdate.images as images
-import steamosupdate.manifest as mnf
-import steamosupdate.updatefile as updatefile
+from steamosupdate.image import Image
+from steamosupdate.imagepool import ImagePool
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -40,7 +39,6 @@ DEFAULT_FLASK_PORT = 5000
 
 # Global
 IMAGE_POOL = None
-VERSIONING_SCHEME = None
 
 #
 # Flask server
@@ -52,62 +50,33 @@ app = Flask(__name__)
 @app.route('/')
 def foo():
 
-    """Handle requests from client wondering if an update is available.
+    """Handle requests from client"""
 
-    The answer might have up to two "release nodes":
-    - 'current' list updates available in the current release
-    - 'next' list updates available in the next release
+    log.debug("Request: {}".format(request.args))
 
-    The answer looks like this:
-
-        {
-          'current': {
-             'release': 'clockwerk',
-             'candidates': [ '3.8' ]
-          },
-          'next': {
-             'release': 'doom',
-             'candidates': [ '4.0', '4.3' ]
-          }
-        }
-    """
-
-    log.info("Req: {}".format(request.args))
-
-    # Make a manifest out of the request arguments. An exception might
-    # be raised, which results in returning 400 to the client.
-    manifest = mnf.make_from_data(request.args)
-
-    # Check if this manifest describes a supported image.
-    if not IMAGE_POOL.support_manifest(manifest):
-        return ''
-
-    # Create image. In case some values are not valid, a ValueError
-    # exception is raised, which results in 400 for the client.
-    image = images.Image(manifest, VERSIONING_SCHEME)
+    # TODO Add a test case for want_unstable
 
     # Is the client interested in unstable versions?
-    try:
-        want_unstable = bool(request.args['want-unstable'])
-    except KeyError:
-        want_unstable = False
+    want_unstable = request.args.get('want-unstable', False)
+
+    # Make an image out of the request arguments. An exception might
+    # be raised, which results in returning 400 to the client.
+    image = Image.from_dict(request.args)
 
     # Get update candidates
-    data = {}
+    update = IMAGE_POOL.get_updates(image, want_unstable)
+    if not update:
+        return ''
 
-    release, candidates = IMAGE_POOL.get_updates_current(image, want_unstable)
-    if candidates:
-        data['current'] = updatefile.make_release_node(release, candidates)
+    # Return to client
+    data = update.to_dict()
+    log.debug("Reply: {}".format(data))
 
-    release, candidates = IMAGE_POOL.get_updates_next(image, want_unstable)
-    if candidates:
-        data['next'] = updatefile.make_release_node(release, candidates)
-
-    # Return that to the client
-    log.debug("Data: {}".format(data))
     return json.dumps(data)
 
-
+#
+# Update server
+#
 
 class UpdateServer:
 
@@ -148,40 +117,39 @@ class UpdateServer:
 
         try:
             images_dir = config['Images']['PoolDir']
-            versioning_scheme  = config['Images']['VersioningScheme']
+            snapshots = config['Images'].getboolean('Snapshots')
             products = config['Images']['Products'].split()
             releases = config['Images']['Releases'].split()
-            archs    = config['Images']['Archs'].split()
             variants = config['Images']['Variants'].split()
+            archs    = config['Images']['Archs'].split()
         except KeyError:
             log.error("Please provide a valid configuration file")
             sys.exit(1)
 
-        # We strongly expect releases to be an ordered list. We could
-        # sort it ourselves, but it's even better to refuse. That's the
-        # best opportunity we have to let user know about our particular
-        # expectations on release.
+        # We strongly expect releases to be an ordered list. We could sort
+        # it ourselves, but it's even better to refuse an un-ordered list.
+        # That's the best opportunity we have to let the user know about our
+        # particular expectations on releases.
 
         if sorted(releases) != releases:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
         start = time.time()
-        image_pool = images.ImagePool(images_dir, versioning_scheme, products, releases,
-                                      archs, variants)
+        image_pool = ImagePool(images_dir, snapshots, products, releases,
+                               variants, archs)
         end = time.time()
         elapsed = end - start
 
         print("Image pool created in {0:.3f} seconds".format(elapsed))
         print("--- Image Pool ---")
         print("{}".format(image_pool))
+        print("------------------")
 
         # Save some stuff for later
 
         global IMAGE_POOL
         IMAGE_POOL = image_pool
-        global VERSIONING_SCHEME
-        VERSIONING_SCHEME = versioning_scheme
         self.config = config
 
     def run(self):
