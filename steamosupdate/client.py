@@ -71,6 +71,7 @@ def download_update_file(url, manifest, want_unstable):
     url = url + '?' + query_string
 
     with urllib.request.urlopen(url) as response:
+        print("Code: {}".format(response.getcode()))
         with tempfile.NamedTemporaryFile(delete=False) as f:
             data = response.read()
             f.write(data)
@@ -139,8 +140,52 @@ def do_update(images_url, image_path):
     import subprocess
     import urllib.parse
 
+    # Set TMPDIR to /tmp
+    #
+    # This is a precaution, as casync makes a very heavy use of TMPDIR,
+    # and uses /var/tmp by default. One issue is that we could run out
+    # of inodes on /var, depending on the size and usage of the partition
+    # backing /var. Another issue is that, if some unexpected failure
+    # happens and casync leaves thousands of tmp files behind, we might
+    # end up filling the /var partition. Using /tmp solves these two issues.
+
+    rauc_env = os.environ.copy()
+    rauc_env['TMPDIR'] = '/tmp'
+
+    # Remount /tmp with max memory and inodes number
+    #
+    # This is possible as long as /tmp is backed by a tmpfs.
+    # We need this precaution as casync makes a heavy use of its tmpdir.
+    # It needs enough memory to store the chunks it downloads, and it
+    # also needs A LOT of inodes.
+
+    completed = subprocess.run(['mount',
+                                '-o', 'remount,size=100%,nr_inodes=1g',
+                                '/tmp', '/tmp'],
+                               stderr=subprocess.STDOUT,
+                               stdout=subprocess.PIPE,
+                               universal_newlines=True)
+
+    if completed.returncode != 0:
+        log.warning("Failed to remount /tmp: {}".format(completed.stdout))
+        # Let's keep going and hope that /tmp can handle the load
+
+    # Let's update now
+
     url = urllib.parse.urljoin(images_url, image_path)
-    completed_process = subprocess.run(['rauc', 'status'])
+
+    log.info("Installing update from {}".format(url))
+
+    with subprocess.Popen(['rauc', 'install', url],
+                          env=rauc_env,
+                          stderr=subprocess.STDOUT,
+                          stdout=subprocess.PIPE,
+                          universal_newlines=True) as p:
+        for line in p.stdout:
+            print(line, end='')
+
+    if p.returncode != 0:
+        log.warning("Failed to install bundle: {}".format(p.returncode))
 
 
 
