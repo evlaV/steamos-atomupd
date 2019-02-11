@@ -12,7 +12,7 @@ Package: steamos-update-common
 Architecture: any
 Depends:
  ${misc:Depends},
- python3,
+ python3 (>= 3.7),
  python3-semantic-version,
 Description: SteamOS Update (common files)
  Common files for Steamos Update
@@ -21,7 +21,7 @@ Package: steamos-update-client
 Architecture: any
 Depends:
  ${misc:Depends},
- python3,
+ python3 (>= 3.7),
  steamos-update-common,
 Description: SteamOS Update (client)
  Update client for SteamOS
@@ -30,7 +30,7 @@ Package: steamos-update-server
 Architecture: any
 Depends:
  ${misc:Depends},
- python3,
+ python3 (>= 3.7),
  python3-flask,
  steamos-update-common,
 Description: SteamOS Update (server)
