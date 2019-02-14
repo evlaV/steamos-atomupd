@@ -16,10 +16,6 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-# TODO implementation
-# - go over TUF things, bring in the easiest bits to improve security,
-#   where it makes sense
-
 import argparse
 import configparser
 import json
@@ -47,15 +43,16 @@ DEFAULT_RUNTIME_DIR   = '/run/steamos-update'
 DEFAULT_WANT_UNSTABLE = 'false'
 
 def download_update_file(url, image, want_unstable):
+    """Download an update file from the server
+
+    The parameters for the request are the details of the image that
+    the caller is running, and a flag to say if we want unstable images
+    or not.
+    """
 
     import tempfile
     import urllib.parse
     import urllib.request
-
-    # TODO Security, either enforce https, either the file is signed
-    # TODO Add hardware details to the query string?
-    # TODO Should we also say if running unattended or not? Is it of
-    #      any interest for the server?
 
     data = image.to_dict()
     data['want-unstable'] = want_unstable
@@ -71,6 +68,7 @@ def download_update_file(url, image, want_unstable):
     return f.name
 
 def do_update(images_url, update_path):
+    """Update the system"""
 
     import subprocess
     import urllib.parse

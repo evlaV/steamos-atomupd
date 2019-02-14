@@ -29,8 +29,6 @@ log = logging.getLogger(__name__)
 
 IMAGE_MANIFEST_EXT = '.manifest.json'
 
-# TODO rename in pool.py
-
 # RAUC things
 
 RAUC_BUNDLE_EXT  = '.raucb'
@@ -134,10 +132,6 @@ class ImagePool:
     }
 
     """
-
-    # TODO Should have a watch on the images pool dir, for when
-    #      images are added or removed. Another possibility is just
-    #      to restart the server when images are added or removed.
 
     def __init__(self, images_dir, snapshots, supported_products, supported_releases,
                  supported_variants, supported_archs):

@@ -56,7 +56,7 @@ Create a configuration file at `/etc/steamos-update/client.conf`:
     [Server]
     QueryUrl = http://localhost:5000
     ImagesUrl = http://localhost:8000
-   
+
 Test the communication with the server:
 
     steamos-update-client --query-only
@@ -84,8 +84,31 @@ If it all works, don't forget to enable the service:
 
 
 
-Server Overview
----------------
+Overview
+--------
+
+#### Manifest
+
+An *image manifest* describes an image. It's a JSON file.
+
+**Mandatory fields:**
+- product: `steamos`
+- release: `brewmaster`, `clockwerk`
+- variant: `devel`, `rauc`
+- arch: `amd64`
+- version: `3.0`, `snapshot`
+- buildid: `20190214.1`
+
+The version must be a [semantic version](https://semver.org/), or must be the
+special keyword `snapshot` for a snapshot.
+
+The buildid must be an *ISO-8601 date* in the basic format, followed by an
+optional `.` and a number called the *build increment*.
+
+**Optional fields:**
+- checkpoint: `true` or `false`
+
+#### Server
 
 The server requires a configuration file with a bunch of mandatory params:
 - the directory where images live
@@ -124,27 +147,58 @@ implemented.
 
 
 
-Manifest Overview
------------------
+Improvements and todos
+----------------------
 
-An *image manifest* describes an image. It's a JSON file.
+Grep for TODO in the code.
 
-**Mandatory fields**
+**Server**
 
-- product: `steamos`
-- release: `brewmaster`, `clockwerk`
-- variant: `devel`, `rauc`
-- arch: `amd64`
-- version: `3.0`, `snapshot`
-- buildid: `20190214.1`
+The server doesn't watch the images directory, so when a new image is added, the
+server has to be restarted manually. We could improve that by adding a watch of
+some sort, to be notified when some new files are added. Beware though that a
+casync store can have up to 100k files and directories, it makes things tricky.
 
-The version must be a [semantic version](https://semver.org/), or must be the
-special keyword `snapshot` for a snapshot.
+On startup, the server walks the images directory. If it contains a casync
+store, then we have to walk all the 100k files and directories. Multiply that
+by the number of casync stores, and you understand now why the server can be a
+bit slow to start.
 
-The buildid must be an *ISO-8601 date* in the basic format, followed by an
-optional `.` and a number called the *build increment*.
+**Client**
 
-**Optional fields**
+In the client request, we should add a bit more details. What comes to mind at
+the moment:
+- basic information about the client hardware. So that if we're notified that
+  some update breaks hardware X, we can turn a switch server-side, and stop
+  serving this update to hardware X. Another application is to be able to
+  deploy a major update for only supported steamos devices, letting the old
+  generation live with old version. I'm not sure exactly what details would
+  be useful, and if there's some privacy concerns, so we want to discuss that.
+- maybe say if we're running attended or unattended, somehow? I'm not certain
+  it would be useful though.
 
-- checkpoint: `true` or `false`
+**Hardening**
 
+We should go over the TUF things, and implements some security improvements
+that make sense. I think it's mostly client-side things. See
+<https://theupdateframework.github.io/>.
+
+In the client, we could enforce https and refuse http, maybe with an explicit
+configuration setting to allow http if need be. The idea is mostly to prevent
+configuration mistakes, because in production you probably don't want to start
+your update from an untrusted source.
+
+**Testing**
+
+We have a few unit tests, now the next would be to have more advanced tests in
+different scenarios, to ensure that both server and client behave as expected.
+Am I talking about acceptance tests? Here come a few ideas of things to test:
+- test that the 'want-unstable' flag is honored by the server, and works as
+  expected on the client-side as well (getting a boolean from a config object
+  is error-prone).
+- ensure that both client and server behave when there's no update available.
+- ensure that if no update is available, there's no update file in the runtime
+  dir (ie. even if there was a file before the client runs, the file should be
+  deleted).
+- ensure that the client returns 0 when no update is performed, and 1 if an
+  update is performed.
