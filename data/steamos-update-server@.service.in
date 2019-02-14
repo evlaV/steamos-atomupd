@@ -1,0 +1,12 @@
+[Unit]
+Description=SteamOS update server for %I
+After=network-online.target
+Wants=network-online.target
+Documentation=https://gitlab.collabora.com/steam/steamos-update
+
+[Service]
+WorkingDirectory=/etc/steamos-update/server
+ExecStart=@bindir@/steamos-update-server --config %i.conf
+
+[Install]
+WantedBy=multi-user.target
