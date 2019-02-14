@@ -16,21 +16,22 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from dataclasses import dataclass
-from typing import List
-
 from steamosupdate.image import Image
 
-@dataclass
 class UpdateCandidate:
 
     """An update candidate
 
     An update candidate is simply an image with an update path.
-    """
 
+    -- This is the dataclass definition (requires python >= 3.7) --
     image: Image
     update_path: str
+    """
+
+    def __init__(self, image, update_path):
+        self.image = image
+        self.update_path = update_path
 
     @classmethod
     def from_dict(cls, data):
@@ -55,7 +56,6 @@ class UpdateCandidate:
 
 
 
-@dataclass
 class UpdatePath:
 
     """An update path
@@ -71,10 +71,10 @@ class UpdatePath:
         'candidates': [ CANDIDATE1, CANDIDATE2, ... ]
       }
 
-    """
-
+    -- This is the dataclass definition (requires python >= 3.7) --
     release: str
     candidates: List[UpdateCandidate]
+    """
 
     def __init__(self, release, candidates):
         self.release = release
@@ -116,7 +116,6 @@ class UpdatePath:
 
         return data
 
-@dataclass
 class Update:
 
     """An update
@@ -133,10 +132,14 @@ class Update:
         'major': { UPDATE_PATH },
       }
 
-    """
-
+    -- This is the dataclass definition (requires python >= 3.7) --
     minor: UpdatePath
     major: UpdatePath
+    """
+
+    def __init__(self, minor, major):
+        self.minor = minor
+        self.major = major
 
     @classmethod
     def from_dict(cls, data):

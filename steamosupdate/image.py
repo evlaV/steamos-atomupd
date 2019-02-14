@@ -16,7 +16,6 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-from dataclasses import dataclass, asdict
 import datetime
 import platform
 import re
@@ -100,11 +99,11 @@ class BuildId:
     def __repr__(self):
         return "{}.{}".format(self.date.strftime('%Y%m%d'), self.incr)
 
-@dataclass
 class Image:
 
-    """An OS image"""
+    """An OS image
 
+    -- This is the dataclass definition (requires python >= 3.7) --
     product: str
     release: str
     variant: str
@@ -112,6 +111,16 @@ class Image:
     version: SemanticVersion
     buildid: BuildId
     checkpoint: bool
+    """
+
+    def __init__(self, product, release, variant, arch, version, buildid, checkpoint):
+        self.product = product
+        self.release = release
+        self.variant = variant
+        self.arch = arch
+        self.version = version
+        self.buildid = buildid
+        self.checkpoint = checkpoint
 
     @classmethod
     def from_values(cls, product, release, variant, arch,
@@ -211,13 +220,18 @@ class Image:
     def to_dict(self):
         """Export an Image to a dictionary"""
 
-        data = asdict(self)
+        data = {}
 
+        data['product'] = self.product
+        data['release'] = self.release
+        data['variant'] = self.variant
+        data['arch'] = self.arch
         if self.version:
             data['version'] = str(self.version)
         else:
             data['version'] = 'snapshot'
         data['buildid'] = str(self.buildid)
+        data['checkpoint'] = self.checkpoint
 
         return data
 
@@ -255,7 +269,6 @@ class Image:
     # letting this situation happen.
 
     # TODO define tests for that
-    # TODO should I define __ne__ and be done, or should I go through total ordering
 
     def __eq__(self, other):
         if self.version and other.version:
