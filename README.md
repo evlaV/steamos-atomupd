@@ -39,6 +39,51 @@ Run locally:
 
 
 
+Integration
+-----------
+
+#### Client-side
+
+Install the client:
+
+    apt install steamos-update-client
+
+Create a configuration file at `/etc/steamos-update/client.conf`:
+
+    mkdir -p /etc/steamos-update
+    vi /etc/steamos-update/client.conf
+    ----
+    [Server]
+    QueryUrl = http://localhost:5000
+    ImagesUrl = http://localhost:8000
+   
+Test the communication with the server:
+
+    steamos-update-client --query-only
+
+#### Server-side
+
+Install the server:
+
+    apt install steamos-update-server
+
+Create a configuration file in `/etc/steamos-update/server`:
+
+    mkdir -p /etc/steamos-update/server
+    vi /etc/steamos-update/server/snapshots.conf
+    ----
+    # see `examples/server-snapshots.conf`
+
+Start the server:
+
+    systemctl start steamos-update-server@snapshots.service
+
+If it all works, don't forget to enable the service:
+
+    systemctl enable steamos-update-server@snapshots.service
+
+
+
 Server Overview
 ---------------
 
