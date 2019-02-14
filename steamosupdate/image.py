@@ -35,16 +35,6 @@ def _load_os_release():
 
     return data
 
-class SemanticVersion(semantic_version.Version):
-
-    """A semantic version"""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, partial=True, **kwargs)
-
-    def is_unstable(self):
-        return not self.prerelease is None
-
 class BuildId:
 
     """A build ID"""
@@ -61,9 +51,8 @@ class BuildId:
         from the date by a dot, and is optional. It's set to zero if missing.
 
         Examples: 20181105, 20190211.1
-
-        TODO: tests
         """
+
         date = None
         incr = 0
 
@@ -73,6 +62,8 @@ class BuildId:
             raise ValueError("the version string should match YYYYMMDD[.N]")
         if len(fields) > 1:
             incr = int(fields[1])
+            if incr < 0:
+                raise ValueError("the increment should be positive")
         # Parse date, raise ValueError if need be
         date = datetime.datetime.strptime(fields[0], '%Y%m%d').date()
 
@@ -136,7 +127,8 @@ class Image:
         if version_str == 'snapshot':
             version = None
         else:
-            version = SemanticVersion(version_str)
+            # https://github.com/rbarrois/python-semanticversion/issues/29
+            version = semantic_version.Version.coerce(version_str)
 
         # Parse buildid, raise ValueError if need be
         buildid = BuildId.from_string(buildid_str)
@@ -239,7 +231,7 @@ class Image:
         """Whether an Image is unstable"""
 
         if self.version:
-            return version.is_unstable()
+            return self.version.prerelease is not None
         else:
             # TODO rework that a bit ???
             # 'unstable' doesn't really mean anything here, so everything
@@ -267,8 +259,6 @@ class Image:
     # without, we raise an exception. These two can't be compared. Not that
     # such comparison shouldn't happen, the code should take care of never
     # letting this situation happen.
-
-    # TODO define tests for that
 
     def __eq__(self, other):
         if self.version and other.version:
