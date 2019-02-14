@@ -30,9 +30,6 @@ from steamosupdate.imagepool import ImagePool
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
 
-# Default args
-DEFAULT_CONFIG_FILE = '/etc/steamos-update/server.conf'
-
 # Default config
 DEFAULT_FLASK_HOSTNAME = 'localhost'
 DEFAULT_FLASK_PORT = 5000
@@ -86,12 +83,10 @@ class UpdateServer:
 
         parser = argparse.ArgumentParser(
             description = "SteamOS Update Server")
-        parser.add_argument('-d', '--debug',
-            action='store_true',
+        parser.add_argument('-c', '--config', metavar='FILE', required=True,
+            help="configuration file")
+        parser.add_argument('-d', '--debug', action='store_true',
             help="show debug messages")
-        parser.add_argument('-c', '--config',
-            metavar='FILE', default=DEFAULT_CONFIG_FILE,
-            help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
 
         args = parser.parse_args()
 
