@@ -80,6 +80,9 @@ def _get_update_candidates(candidates, image, want_unstable):
     - images that are more recent than image
     - images that are either a checkpoint, either the latest image
     - images that are stable, unless 'want_unstable' is true
+
+    For snapshot images, we ignore want_unstable, because all snapshot
+    images are unstable anyway.
     """
 
     latest = None
@@ -89,8 +92,9 @@ def _get_update_candidates(candidates, image, want_unstable):
         if c.image <= image:
             continue
 
-        if c.image.is_unstable() and not want_unstable:
-            continue
+        if not image.is_snapshot():
+            if not c.image.is_stable() and not want_unstable:
+                continue
 
         if c.image.checkpoint:
             checkpoints.append(c)

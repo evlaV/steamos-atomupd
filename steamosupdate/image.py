@@ -227,21 +227,18 @@ class Image:
 
         return data
 
-    def is_unstable(self):
-        """Whether an Image is unstable"""
-
-        if self.version:
-            return self.version.prerelease is not None
-        else:
-            # TODO rework that a bit ???
-            # 'unstable' doesn't really mean anything here, so everything
-            # is said 'stable'.
-            return False
-
     def is_snapshot(self):
         """Whether an Image is a snapshot"""
 
         return self.version is None
+
+    def is_stable(self):
+        """Whether an Image is stable (ie. it has a stable version)"""
+
+        if self.version:
+            return self.version.prerelease is None
+        else:
+            return False
 
     # A note regarding comparison operators.
     #
