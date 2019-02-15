@@ -230,13 +230,13 @@ class Image:
     def is_snapshot(self):
         """Whether an Image is a snapshot"""
 
-        return self.version is None
+        return not self.version
 
     def is_stable(self):
         """Whether an Image is stable (ie. it has a stable version)"""
 
         if self.version:
-            return self.version.prerelease is None
+            return not self.version.prerelease
         else:
             return False
 
