@@ -137,8 +137,8 @@ class ImagePool:
 
     """
 
-    def __init__(self, images_dir, snapshots, supported_products, supported_releases,
-                 supported_variants, supported_archs):
+    def __init__(self, images_dir, work_with_snapshots, supported_products,
+                 supported_releases, supported_variants, supported_archs):
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -151,7 +151,7 @@ class ImagePool:
 
         # Our variables
         self.images_dir = images_dir
-        self.snapshots = snapshots
+        self.work_with_snapshots = work_with_snapshots
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
@@ -210,7 +210,7 @@ class ImagePool:
     def __str__(self):
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),
-            'Snapshots : {}'.format(self.snapshots),
+            'Snapshots : {}'.format(self.work_with_snapshots),
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
@@ -229,9 +229,9 @@ class ImagePool:
         """
 
         # Mixing snapshot and non-snapshot images is not allowed
-        if image.version and self.snapshots:
+        if image.version and self.work_with_snapshots:
             raise ValueError("Image has a version, however we support only snapshots")
-        if not image.version and not self.snapshots:
+        if not image.version and not self.work_with_snapshots:
             raise ValueError("Image is a snapshot, however we support only versions")
 
         # Get the image list according to image details
