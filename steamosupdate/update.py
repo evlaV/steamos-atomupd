@@ -16,6 +16,8 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+import json
+
 from steamosupdate.image import Image
 
 class UpdateCandidate:
@@ -54,6 +56,8 @@ class UpdateCandidate:
 
         return data
 
+    def __repr__(self):
+        return "{}, {}".format(self.image, self.update_path)
 
 
 class UpdatePath:
@@ -169,3 +173,9 @@ class Update:
             data['major'] = self.major.to_dict()
 
         return data
+
+    def to_string(self):
+        """Export an Update to string"""
+
+        data = self.to_dict()
+        return json.dumps(data, indent=2)

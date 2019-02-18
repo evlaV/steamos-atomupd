@@ -52,6 +52,14 @@ def download_update_file(url, image, want_unstable):
     The parameters for the request are the details of the image that
     the caller is running, and a flag to say if we want unstable images
     or not.
+
+    The server is expected to return a JSON string, which is then parsed
+    by the client, in order to validate it. Then it's printed out to a
+    temporary file, and the filename is returned.
+
+    If the server returns an empty string, then we return None.
+
+    Exceptions might be raised here and there...
     """
 
     data = image.to_dict()
@@ -61,9 +69,16 @@ def download_update_file(url, image, want_unstable):
     url = url + '?' + params
 
     with urllib.request.urlopen(url) as response:
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            data = response.read()
-            f.write(data)
+        jsonstr = response.read()
+
+    if not jsonstr:
+        return None
+
+    update_data = json.loads(jsonstr)
+    update = Update.from_dict(update_data)
+
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        f.write(update.to_string())
 
     return f.name
 
@@ -184,6 +199,7 @@ class UpdateClient:
         if args.update_file:
             update_file = args.update_file
         else:
+            update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
 
             # Get details about the current image
             if args.mk_manifest_file:
@@ -205,17 +221,12 @@ class UpdateClient:
                 log.error("Failed to download update file: {}".format(e))
                 return 1
 
-            log.debug("Downloaded to tmpfile: {}".format(tmpfile))
-
-            # Rename the tmpfile to its definitive name, or bail out if empty
-            update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
-            if os.stat(tmpfile).st_size != 0:
+            # Handle the result
+            if tmpfile:
                 log.info("Server returned something, guess an update is available")
-                log.debug("Renaming tmpfile to: {}".format(update_file))
                 shutil.move(tmpfile, update_file)
             else:
                 log.info("Server returned nothing, guess we're up to date")
-                os.remove(tmpfile)
                 if os.path.exists(update_file):
                     os.remove(update_file)
                 return 0
