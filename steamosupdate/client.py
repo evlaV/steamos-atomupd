@@ -22,7 +22,11 @@ import json
 import logging
 import os
 import shutil
+import subprocess
 import sys
+import tempfile
+import urllib.parse
+import urllib.request
 
 from steamosupdate.image import Image
 from steamosupdate.manifest import Manifest
@@ -50,10 +54,6 @@ def download_update_file(url, image, want_unstable):
     or not.
     """
 
-    import tempfile
-    import urllib.parse
-    import urllib.request
-
     data = image.to_dict()
     data['want-unstable'] = want_unstable
 
@@ -69,9 +69,6 @@ def download_update_file(url, image, want_unstable):
 
 def do_update(images_url, update_path):
     """Update the system"""
-
-    import subprocess
-    import urllib.parse
 
     if not images_url.endswith('/'):
         images_url += '/'
@@ -182,24 +179,25 @@ class UpdateClient:
             log.debug("Creating runtime dir {}".format(runtime_dir))
             os.makedirs(runtime_dir)
 
-        # Get the current image details
-
-        if args.mk_manifest_file:
-            log.debug("Getting image from current OS")
-            image = Image.from_os()
-        else:
-            manifest_file = config['Host']['Manifest']
-            log.debug("Getting image from manifest: {}".format(manifest_file))
-            manifest = Manifest.from_file(manifest_file)
-            image = manifest.image
-
         # Download update file, unless one is given in args
 
         if args.update_file:
             update_file = args.update_file
         else:
+
+            # Get details about the current image
+            if args.mk_manifest_file:
+                log.debug("Getting image from current OS")
+                image = Image.from_os()
+            else:
+                manifest_file = config['Host']['Manifest']
+                log.debug("Getting image from manifest: {}".format(manifest_file))
+                manifest = Manifest.from_file(manifest_file)
+                image = manifest.image
+
+            # Download the update file to a tmp file
             url = config['Server']['QueryUrl']
-            want_unstable = bool(config['Host']['WantUnstable'])
+            want_unstable = config['Host'].getboolean('WantUnstable')
             try:
                 log.debug("Downloading update file (want-unstable={}): {}".format(want_unstable, url))
                 tmpfile = download_update_file(url, image, want_unstable)
@@ -209,8 +207,8 @@ class UpdateClient:
 
             log.debug("Downloaded to tmpfile: {}".format(tmpfile))
 
+            # Rename the tmpfile to its definitive name, or bail out if empty
             update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
-
             if os.stat(tmpfile).st_size != 0:
                 log.info("Server returned something, guess an update is available")
                 log.debug("Renaming tmpfile to: {}".format(update_file))
