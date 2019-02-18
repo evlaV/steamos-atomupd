@@ -13,5 +13,11 @@ systemdunitdir = join_paths(prefix, 'lib', 'systemd', 'system')
 
 install_subdir('steamosupdate', install_dir: moduledir)
 
+python = find_program('python3', required: false)
+test('Unit tests', python,
+  args: ['-m', 'unittest', '-v'],
+  workdir: meson.current_source_dir(),
+)
+
 subdir('bin')
 subdir('data')
