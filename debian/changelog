@@ -1,5 +1,5 @@
-steamos-update (0.1-0+steamosc1)  UNRELEASED; urgency=medium
+steamos-update (0.20190218.0-0co1) clockwerk; urgency=medium
 
-  * New upstream release
+  * Initial release
 
- -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Thu, 01 Nov 2018 11:37:35 +0700
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 18 Feb 2019 18:00:47 +0700
