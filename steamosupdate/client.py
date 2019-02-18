@@ -133,7 +133,7 @@ def do_update(images_url, update_path):
             print(line, end='')
 
     if p.returncode != 0:
-        log.warning("Failed to install bundle: {}: {}".format(p.returncode, p.stdout))
+        raise RuntimeError("Failed to install bundle: {}: {}".format(p.returncode, p.stdout))
 
 
 
@@ -219,7 +219,7 @@ class UpdateClient:
                 tmpfile = download_update_file(url, image, want_unstable)
             except Exception as e:
                 log.error("Failed to download update file: {}".format(e))
-                return 1
+                return -1
 
             # Handle the result
             if tmpfile:
@@ -293,9 +293,14 @@ class UpdateClient:
 
         images_url = config['Server']['ImagesUrl']
         update_path = upd.candidates[0].update_path
-        do_update(images_url, update_path)
+        try:
+            do_update(images_url, update_path)
+        except Exception as e:
+            log.error("Failed to install update file: {}".format(e))
+            return -1
 
-        # TODO Should we return meaningful exit codes?
+        # Return 1 as we performed an update
+        return 1
 
 
 
