@@ -6,6 +6,7 @@ Build-Depends:
  debhelper-compat (= 12),
  meson,
  python3 <!nocheck>,
+ python3-semantic-version <!nocheck>,
 Standards-Version: 4.2.1
 Homepage: https://store.steampowered.com/steamos/
 
