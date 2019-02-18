@@ -241,10 +241,9 @@ class UpdateClient:
         update = Update.from_dict(update_data)
 
         if not update:
-            # TODO Should we remove the update file then?
-            log.debug("No update candidate, even though the server returned something");
-            log.debug("Kind of unexpected TBH")
-            return 0
+            log.debug("No update candidate, even though the server returned something")
+            log.debug("This is very unexpected, please inspect '{}'".format(update_file))
+            return -1
 
         # Log a bit
 
