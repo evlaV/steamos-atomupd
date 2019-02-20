@@ -24,8 +24,8 @@ import os
 import sys
 import time
 
-from steamosupdate.image import Image
-from steamosupdate.imagepool import ImagePool
+from steamosatomupd.image import Image
+from steamosatomupd.imagepool import ImagePool
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)

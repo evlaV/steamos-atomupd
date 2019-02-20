@@ -19,8 +19,8 @@
 import semantic_version
 import unittest
 
-from steamosupdate.image import Image
-from steamosupdate.update import Update
+from steamosatomupd.image import Image
+from steamosatomupd.update import Update
 
 oldimgdata = {
     'product': 'steamos',

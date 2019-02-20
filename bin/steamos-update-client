@@ -27,7 +27,7 @@ if os.environ.get('IN_SOURCE_TREE'):
 
 if __name__ == "__main__":
     try:
-        from steamosupdate import client
+        from steamosatomupd import client
     except ModuleNotFoundError:
         print('\n'.join([
           "Module not found: {}.".format(e),

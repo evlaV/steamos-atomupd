@@ -18,9 +18,9 @@
 
 import unittest
 
-from steamosupdate.image import Image
-from steamosupdate.imagepool import _get_update_candidates
-from steamosupdate.update import UpdateCandidate
+from steamosatomupd.image import Image
+from steamosatomupd.imagepool import _get_update_candidates
+from steamosatomupd.update import UpdateCandidate
 
 imgdata = {
     'product': 'steamos',

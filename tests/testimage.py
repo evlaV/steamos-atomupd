@@ -18,7 +18,7 @@
 
 import unittest
 
-from steamosupdate.image import Image
+from steamosatomupd.image import Image
 
 imgdata = {
     'product': 'steamos',

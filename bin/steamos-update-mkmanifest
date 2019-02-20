@@ -28,8 +28,8 @@ if os.environ.get('IN_SOURCE_TREE'):
 
 if __name__ == "__main__":
     try:
-        from steamosupdate.image import Image
-        from steamosupdate.manifest import Manifest
+        from steamosatomupd.image import Image
+        from steamosatomupd.manifest import Manifest
     except ModuleNotFoundError as e:
         print('\n'.join([
           "Module not found: {}.".format(e),

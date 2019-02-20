@@ -28,9 +28,9 @@ import tempfile
 import urllib.parse
 import urllib.request
 
-from steamosupdate.image import Image
-from steamosupdate.manifest import Manifest
-from steamosupdate.update import Update
+from steamosatomupd.image import Image
+from steamosatomupd.manifest import Manifest
+from steamosatomupd.update import Update
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)

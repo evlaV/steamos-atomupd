@@ -11,7 +11,7 @@ datadir = join_paths(prefix, get_option('datadir'))
 moduledir = join_paths(prefix, 'lib', 'python3', 'dist-packages')
 systemdunitdir = join_paths(prefix, 'lib', 'systemd', 'system')
 
-install_subdir('steamosupdate',
+install_subdir('steamosatomupd',
   exclude_directories: ['__pycache__'],
   install_dir: moduledir,
 )

@@ -18,7 +18,7 @@
 
 import json
 
-from steamosupdate.image import Image
+from steamosatomupd.image import Image
 
 class UpdateCandidate:
 

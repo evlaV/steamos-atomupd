@@ -21,9 +21,9 @@ import logging
 import os
 import pprint
 
-from steamosupdate.image import Image
-from steamosupdate.manifest import Manifest
-from steamosupdate.update import UpdateCandidate, UpdatePath, Update
+from steamosatomupd.image import Image
+from steamosatomupd.manifest import Manifest
+from steamosatomupd.update import UpdateCandidate, UpdatePath, Update
 
 log = logging.getLogger(__name__)
 
