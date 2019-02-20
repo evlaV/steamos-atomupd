@@ -1,3 +1,9 @@
+steamos-update (0.20190220.0-0co1) UNRELEASED; urgency=medium
+
+  * d/control: Add rauc and casync dependencies for the client
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 20 Feb 2019 08:50:40 +0700
+
 steamos-update (0.20190218.1-0co1) clockwerk; urgency=medium
 
   * d/control: Add build depend on python3-semantic-version (for unit tests)
