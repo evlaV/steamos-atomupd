@@ -16,8 +16,9 @@ Depends:
  ${misc:Depends},
  python3,
  python3-semantic-version,
-Description: SteamOS Update (common files)
- Common files for Steamos Update
+Description: SteamOS Atomic Update (common files)
+ Common files for Steamos Atomic Update, basically the private Python library
+ that is used by both the client and the server.
 
 Package: steamos-atomupd-client
 Architecture: any
@@ -28,8 +29,8 @@ Depends:
  rauc-bin,
  rauc-integration,
  steamos-atomupd-common,
-Description: SteamOS Update (client)
- Update client for SteamOS
+Description: SteamOS Atomic Update (client)
+ Atomic update client for SteamOS.
 
 Package: steamos-atomupd-server
 Architecture: any
@@ -38,5 +39,5 @@ Depends:
  python3,
  python3-flask,
  steamos-atomupd-common,
-Description: SteamOS Update (server)
- Update server for SteamOS
+Description: SteamOS Atomic Update (server)
+ Atomic update server for SteamOS.
