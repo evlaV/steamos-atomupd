@@ -1,8 +1,9 @@
-steamos-atomupd (0.20190220.0-0co1) UNRELEASED; urgency=medium
+steamos-atomupd (0.20190220.0-0co1) clockwerk; urgency=medium
 
   * d/control: Add rauc and casync dependencies for the client
+  * Renaming: steamos-update > steamos-atomupd (atomic updater)
 
- -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 20 Feb 2019 08:50:40 +0700
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 20 Feb 2019 09:47:29 +0700
 
 steamos-atomupd (0.20190218.1-0co1) clockwerk; urgency=medium
 
