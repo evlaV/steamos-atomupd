@@ -2,7 +2,3 @@
 
 %:
 	dh $@ --buildsystem=meson
-
-override_dh_install:
-	find debian/tmp -name __pycache__ -prune -exec rm -fr "{}" \;
-	dh_install

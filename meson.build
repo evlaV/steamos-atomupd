@@ -11,7 +11,10 @@ datadir = join_paths(prefix, get_option('datadir'))
 moduledir = join_paths(prefix, 'lib', 'python3', 'dist-packages')
 systemdunitdir = join_paths(prefix, 'lib', 'systemd', 'system')
 
-install_subdir('steamosupdate', install_dir: moduledir)
+install_subdir('steamosupdate',
+  exclude_directories: ['__pycache__'],
+  install_dir: moduledir,
+)
 
 python = find_program('python3', required: false)
 test('Unit tests', python,
