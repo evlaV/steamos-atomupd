@@ -39,11 +39,11 @@ log = logging.getLogger(__name__)
 UPDATE_FILENAME = 'update.json'
 
 # Default args
-DEFAULT_CONFIG_FILE = '/etc/steamos-update/client.conf'
+DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 
 # Default config
 DEFAULT_MANIFEST      = '/usr/manifest.json'
-DEFAULT_RUNTIME_DIR   = '/run/steamos-update'
+DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
 DEFAULT_WANT_UNSTABLE = 'false'
 
 def download_update_file(url, image, want_unstable):

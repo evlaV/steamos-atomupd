@@ -1,5 +1,5 @@
-SteamOS Update
-==============
+SteamOS Atomic Update
+=====================
 
 This is the atomic updater for SteamOS. Read `doc/*` for details.
 
@@ -35,11 +35,11 @@ Run locally:
 
     # Shell #1
     export IN_SOURCE_TREE=1
-    ./bin/steamos-update-server -d -c examples/server-snapshots.conf
+    ./bin/steamos-atomupd-server -d -c examples/server-snapshots.conf
 
     # Shell #2
     export IN_SOURCE_TREE=1
-    ./bin/steamos-update-client -d -c examples/client.conf --query-only
+    ./bin/steamos-atomupd-client -d -c examples/client.conf --query-only
 
 
 
@@ -50,12 +50,12 @@ Integration
 
 Install the client:
 
-    apt install steamos-update-client
+    apt install steamos-atomupd-client
 
-Create a configuration file at `/etc/steamos-update/client.conf`:
+Create a configuration file at `/etc/steamos-atomupd/client.conf`:
 
-    mkdir -p /etc/steamos-update
-    vi /etc/steamos-update/client.conf
+    mkdir -p /etc/steamos-atomupd
+    vi /etc/steamos-atomupd/client.conf
     ----
     [Server]
     QueryUrl = http://localhost:5000
@@ -63,28 +63,28 @@ Create a configuration file at `/etc/steamos-update/client.conf`:
 
 Test the communication with the server:
 
-    steamos-update-client --query-only
+    steamos-atomupd-client --query-only
 
 #### Server-side
 
 Install the server:
 
-    apt install steamos-update-server
+    apt install steamos-atomupd-server
 
-Create a configuration file in `/etc/steamos-update/server/`:
+Create a configuration file in `/etc/steamos-atomupd/server/`:
 
-    mkdir -p /etc/steamos-update/server
-    vi /etc/steamos-update/server/snapshots.conf
+    mkdir -p /etc/steamos-atomupd/server
+    vi /etc/steamos-atomupd/server/snapshots.conf
     ----
     # see `examples/server-snapshots.conf`
 
 Start the server:
 
-    systemctl start steamos-update-server@snapshots.service
+    systemctl start steamos-atomupd-server@snapshots.service
 
 If it all works, you might want to enable this service persistently:
 
-    systemctl enable steamos-update-server@snapshots.service
+    systemctl enable steamos-atomupd-server@snapshots.service
 
 
 

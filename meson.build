@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 
-project('steamos-update',
+project('steamos-atomupd',
   version: '0.1',
   license: 'LGPLv2.1+',
 )

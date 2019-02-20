@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: LGPL-2.1+
 
 binaries = [
-  'steamos-update-client',
-  'steamos-update-mkmanifest',
-  'steamos-update-server',
+  'steamos-atomupd-client',
+  'steamos-atomupd-mkmanifest',
+  'steamos-atomupd-server',
 ]
 
 install_data(binaries,

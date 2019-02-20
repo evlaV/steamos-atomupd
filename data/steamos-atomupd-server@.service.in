@@ -1,0 +1,12 @@
+[Unit]
+Description=SteamOS atomic update server for %I
+After=network-online.target
+Wants=network-online.target
+Documentation=https://gitlab.collabora.com/steam/steamos-atomupd
+
+[Service]
+WorkingDirectory=/etc/steamos-atomupd/server
+ExecStart=@bindir@/steamos-atomupd-server --config %i.conf
+
+[Install]
+WantedBy=multi-user.target
