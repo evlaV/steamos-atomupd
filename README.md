@@ -12,11 +12,12 @@ Get your build depends please:
 
     apt install debhelper meson
 
-Build the package with gbp:
+Build a snapshot package with gbp:
 
     gbp buildpackage \
         --git-force-create \
-        --git-upstream-tree=HEAD
+        --git-upstream-tree=HEAD \
+        -us -uc
 
 
 
