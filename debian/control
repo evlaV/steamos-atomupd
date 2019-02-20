@@ -7,7 +7,7 @@ Build-Depends:
  meson,
  python3 <!nocheck>,
  python3-semantic-version <!nocheck>,
-Standards-Version: 4.2.1
+Standards-Version: 4.3.0
 Homepage: https://store.steampowered.com/steamos/
 
 Package: steamos-update-common
