@@ -1,4 +1,4 @@
-Source: steamos-update
+Source: steamos-atomupd
 Section: admin
 Priority: optional
 Maintainer: Arnaud Rebillout <arnaud.rebillout@collabora.com>
@@ -10,7 +10,7 @@ Build-Depends:
 Standards-Version: 4.3.0
 Homepage: https://store.steampowered.com/steamos/
 
-Package: steamos-update-common
+Package: steamos-atomupd-common
 Architecture: any
 Depends:
  ${misc:Depends},
@@ -19,7 +19,7 @@ Depends:
 Description: SteamOS Update (common files)
  Common files for Steamos Update
 
-Package: steamos-update-client
+Package: steamos-atomupd-client
 Architecture: any
 Depends:
  ${misc:Depends},
@@ -27,16 +27,16 @@ Depends:
  python3,
  rauc-bin,
  rauc-integration,
- steamos-update-common,
+ steamos-atomupd-common,
 Description: SteamOS Update (client)
  Update client for SteamOS
 
-Package: steamos-update-server
+Package: steamos-atomupd-server
 Architecture: any
 Depends:
  ${misc:Depends},
  python3,
  python3-flask,
- steamos-update-common,
+ steamos-atomupd-common,
 Description: SteamOS Update (server)
  Update server for SteamOS
