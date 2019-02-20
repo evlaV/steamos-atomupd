@@ -23,7 +23,10 @@ Package: steamos-update-client
 Architecture: any
 Depends:
  ${misc:Depends},
+ casync,
  python3,
+ rauc-bin,
+ rauc-integration,
  steamos-update-common,
 Description: SteamOS Update (client)
  Update client for SteamOS
