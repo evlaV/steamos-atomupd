@@ -118,6 +118,9 @@ the moment:
 - maybe say if we're running attended or unattended, somehow? I'm not certain
   it would be useful though.
 
+Also, for dev it would be nice to have a special "list" request, and the server
+would return the full list of images.
+
 **Hardening**
 
 We should go over the TUF things, and implements some security improvements
