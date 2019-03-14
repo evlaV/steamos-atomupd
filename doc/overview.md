@@ -15,7 +15,7 @@ artifacts.
 
 - product: `steamos`
 - release: `brewmaster`, `clockwerk`
-- variant: `devel`, `rauc`
+- variant: `devel`, `atomic`
 - arch: `amd64`
 - version: `3.0`, `snapshot`
 - buildid: `20190214.1`

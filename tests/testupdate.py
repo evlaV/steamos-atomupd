@@ -25,7 +25,7 @@ from steamosatomupd.update import Update
 oldimgdata = {
     'product': 'steamos',
     'release': 'clockwerk',
-    'variant': 'rauc',
+    'variant': 'atomic',
     'arch'   : 'amd64',
     'version': '3.0',      # <---
     'buildid': '20190214'
@@ -34,7 +34,7 @@ oldimgdata = {
 newimgdata = {
     'product': 'steamos',
     'release': 'clockwerk',
-    'variant': 'rauc',
+    'variant': 'atomic',
     'arch'   : 'amd64',
     'version': '3.1',      # <---
     'buildid': '20190218'

@@ -11,7 +11,7 @@ The server requires a configuration file with a bunch of mandatory params:
 - whether images are snapshots or not
 - the list of supported products (eg. `steamos`)
 - the list of supported releases (eg. `clockwerk`)
-- the list of supported variants (eg. `rauc`)
+- the list of supported variants (eg. `atomic`)
 - the list of supported architectures (eg. `amd64`)
 
 An update server is stateless, and several update servers can run on the same
@@ -23,7 +23,7 @@ These files are parsed, and the server decides if the image is counted in, or
 discarded (based on product, release, arch, variant, etc...).
 
 The server does not care about how images are organized (ie. a hierarchy like
-`/steamos/clockwerk/3.1/amd64`) or named (ie. `steamos-3.0-amd64-rauc.img`).
+`/steamos/clockwerk/3.1/amd64`) or named (ie. `steamos-3.0-amd64-atomic.img`).
 However, the server expects that all the build artifacts for an image have the
 same filename, and only the extension should differ. More precisely, there
 should be a RAUC bundle with the extension `.raucb`, and a CASync store with
@@ -138,21 +138,21 @@ just an example):
     │       ├── clockwerk
     │       │   ├── 20181105.1
     │       │   │   └── amd64
-    │       │   │       └── steamos-clockwerk-20181105.1-snapshot-amd64-rauc.manifest.json
+    │       │   │       └── steamos-clockwerk-20181105.1-snapshot-amd64-atomic.manifest.json
     │       │   └── 20181108.1
     │       │       └── amd64
     │       │           ├── steamos-clockwerk-20181108.1-snapshot-amd64-devel.manifest.json
-    │       │           └── steamos-clockwerk-20181108.1-snapshot-amd64-rauc.manifest.json
+    │       │           └── steamos-clockwerk-20181108.1-snapshot-amd64-atomic.manifest.json
     │       └── doom
     │           └── 20181105.1
     │               └── amd64
-    │                   └── steamos-clockwerk-20181105.1-snapshot-amd64-rauc.manifest.json
+    │                   └── steamos-clockwerk-20181105.1-snapshot-amd64-atomic.manifest.json
     └── releases
         └── steamos
             └── clockwerk
                 └── 3.0
                     └── amd64
-                        └── steamos-clockwerk-20181110.0-3.0-amd64-rauc.manifest.json
+                        └── steamos-clockwerk-20181110.0-3.0-amd64-atomic.manifest.json
 
 This is quite verbose, but as you can see:
 

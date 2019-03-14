@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 IMAGE_MANIFEST_EXT = '.manifest.json'
 
-# RAUC things
+# Atomic image things
 
 RAUC_BUNDLE_EXT  = '.raucb'
 CASYNC_STORE_EXT = '.castr'

@@ -41,7 +41,7 @@ fake_image() {
     make_manifest $product $release $variant $arch $version $buildid > \
         $imgdir/$imgname.manifest.json
 
-    if [ "$variant" == "rauc" ]; then
+    if [ "$variant" == "atomic" ]; then
         touch $imgdir/$imgname.raucb
 	mkdir $imgdir/$imgname.castr
     fi
@@ -53,12 +53,12 @@ mkdir -p snapshots
   cd snapshots
 
   fake_image steamos clockwerk devel amd64 snapshot 20181102.1
-  fake_image steamos clockwerk rauc  amd64 snapshot 20181102.1
+  fake_image steamos clockwerk atomic  amd64 snapshot 20181102.1
 
   fake_image steamos clockwerk devel amd64 snapshot 20181102.2
 
   fake_image steamos clockwerk devel amd64 snapshot 20181108.1
-  fake_image steamos clockwerk rauc  amd64 snapshot 20181108.1
+  fake_image steamos clockwerk atomic  amd64 snapshot 20181108.1
 )
 
 mkdir -p releases
@@ -67,10 +67,10 @@ mkdir -p releases
   cd releases
 
   fake_image steamos clockwerk devel amd64 3.0 20190211
-  fake_image steamos clockwerk rauc  amd64 3.0 20190211
+  fake_image steamos clockwerk atomic  amd64 3.0 20190211
 
   fake_image steamos clockwerk devel amd64 3.1 20190101
-  fake_image steamos clockwerk rauc  amd64 3.1 20190101
+  fake_image steamos clockwerk atomic  amd64 3.1 20190101
 )
 
 echo "Hierarchy created under '$OUTDIR/images'"
