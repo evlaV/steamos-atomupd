@@ -71,14 +71,16 @@ Install the server:
 
     apt install steamos-atomupd-server
 
-Create a configuration file in `/etc/steamos-atomupd/server/`:
+Create a configuration file in `/etc/steamos-atomupd/server/`. In this example
+we name the config file `snapshots`:
 
     mkdir -p /etc/steamos-atomupd/server
     vi /etc/steamos-atomupd/server/snapshots.conf
     ----
     # see `examples/server-snapshots.conf`
 
-Start the server:
+Start the server for this `snapshots` configuration file (notice that we use
+systemd "instanciated" services here, hence the `@snapshots` suffix):
 
     systemctl start steamos-atomupd-server@snapshots.service
 
