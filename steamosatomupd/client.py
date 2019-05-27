@@ -160,9 +160,6 @@ class UpdateClient:
         parser.add_argument('--update-file',
             help="update from given file, instead of downloading it from server")
 
-        if len(sys.argv) < 2:
-            sys.argv.append('-h')
-
         args = parser.parse_args()
 
         if args.debug:
