@@ -26,8 +26,8 @@ Depends:
  ${misc:Depends},
  casync,
  python3,
- rauc-bin,
- rauc-integration,
+ rauc,
+ rauc-service,
  steamos-atomupd-common,
 Description: SteamOS Atomic Update (client)
  Atomic update client for SteamOS.
