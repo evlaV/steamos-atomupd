@@ -95,6 +95,18 @@ Improvements and TODOs
 
 Grep for TODO in the code.
 
+**Both**
+
+I think the manifest.json was a mistake: the os-release file fits the bill
+already. So I'd prefer to just drop the manifest file, and use an `os-release`
+file instead.
+
+I think the `want-unstable` config client-side is also a mistake: it should
+better be server-side. We could have two servers running: one that serves
+stable images, and one that server both stabe+unstable. On the client-side,
+it's then just a matter of changing the URL of the server, and then there's
+no need for a configuration knob.
+
 **Server**
 
 The server doesn't watch the images directory, so when a new image is added, the
