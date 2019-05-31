@@ -42,7 +42,7 @@ UPDATE_FILENAME = 'update.json'
 DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 
 # Default config
-DEFAULT_MANIFEST      = '/usr/manifest.json'
+DEFAULT_MANIFEST_FILE = '/usr/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
 DEFAULT_WANT_UNSTABLE = 'false'
 
@@ -155,6 +155,9 @@ class UpdateClient:
             help="show debug messages")
         parser.add_argument('--query-only', action='store_true',
             help="only query if an update is available")
+        parser.add_argument('--manifest-file',
+            metavar='FILE', # can't use default= here, see below
+            help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
         parser.add_argument('--mk-manifest-file', action='store_true',
             help="don't use existing manifest file, make one instead")
         parser.add_argument('--update-file',
@@ -173,7 +176,7 @@ class UpdateClient:
 
         config.read_dict({
             'Host': {
-                'Manifest': DEFAULT_MANIFEST,
+                # can't use default for 'Manifest' here, see below
                 'RuntimeDir': DEFAULT_RUNTIME_DIR,
                 'WantUnstable': DEFAULT_WANT_UNSTABLE,
             }})
@@ -183,6 +186,20 @@ class UpdateClient:
 
         assert config['Server']['QueryUrl']
         assert config['Server']['ImagesUrl']
+
+        # Handle the manifest file logic
+
+        if args.mk_manifest_file:
+            manifest_file = None
+            log.debug("Not using any manifest file, making one instead")
+        else:
+            if args.manifest_file:
+                manifest_file = args.manifest_file
+            elif config.has_option('Host', 'Manifest'):
+                manifest_file = config['Host']['Manifest']
+            else:
+                manifest_file = DEFAULT_MANIFEST_FILE
+            log.debug("Using manifest file '{}'".format(manifest_file))
 
         # Create runtime dir
 
@@ -199,14 +216,11 @@ class UpdateClient:
             update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
 
             # Get details about the current image
-            if args.mk_manifest_file:
-                log.debug("Getting image from current OS")
-                image = Image.from_os()
-            else:
-                manifest_file = config['Host']['Manifest']
-                log.debug("Getting image from manifest: {}".format(manifest_file))
+            if manifest_file:
                 manifest = Manifest.from_file(manifest_file)
                 image = manifest.image
+            else:
+                image = Image.from_os()
 
             # Download the update file to a tmp file
             url = config['Server']['QueryUrl']
