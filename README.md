@@ -88,6 +88,8 @@ If it all works, you might want to enable this service persistently:
 
     systemctl enable steamos-atomupd-server@snapshots.service
 
+During operation, send `SIGUSR1` to the server to make it log its state.
+
 
 
 Improvements and TODOs

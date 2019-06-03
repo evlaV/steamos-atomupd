@@ -21,6 +21,7 @@ import configparser
 import json
 import logging
 import os
+import signal
 import sys
 import time
 
@@ -74,6 +75,11 @@ def foo():
 #
 # Update server
 #
+
+def handle_sigusr1(signum, frame):
+    assert signum == signal.SIGUSR1
+    assert IMAGE_POOL
+    print('{}'.format(IMAGE_POOL), flush=True)
 
 class UpdateServer:
 
@@ -147,6 +153,10 @@ class UpdateServer:
         global IMAGE_POOL
         IMAGE_POOL = image_pool
         self.config = config
+
+        # Handle SIGUSR1
+
+        signal.signal(signal.SIGUSR1, handle_sigusr1)
 
     def run(self):
 
