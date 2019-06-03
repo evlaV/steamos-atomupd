@@ -140,6 +140,7 @@ class UpdateServer:
         print("--- Image Pool ---")
         print("{}".format(image_pool))
         print("------------------")
+        sys.stdout.flush()
 
         # Save some stuff for later
 
