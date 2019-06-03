@@ -322,12 +322,11 @@ class UpdateClient:
             log.error("Failed to install update file: {}".format(e))
             return -1
 
-        # Return 1 as we performed an update
-        return 1
+        return 0
 
 
 
 def main():
     client = UpdateClient()
-    exit_code = client.run()
-    sys.exit(exit_code)
+    ret = client.run()
+    sys.exit(abs(ret))
