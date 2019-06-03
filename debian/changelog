@@ -1,3 +1,10 @@
+steamos-atomupd (0.20190605.0-0co1) clockwerk; urgency=medium
+
+  * d/control: Update rauc package name
+  * d/control: Tighten version requirements between binaries
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 05 Jun 2019 07:47:47 +0700
+
 steamos-atomupd (0.20190220.0-0co1) clockwerk; urgency=medium
 
   * d/control: Add rauc and casync dependencies for the client
