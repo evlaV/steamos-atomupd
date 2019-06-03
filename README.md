@@ -97,6 +97,12 @@ Improvements and TODOs
 
 Grep for TODO in the code.
 
+**Debian**
+
+Somehow the server is not restarted after installing a new version of the
+package. My guess is that it's due to the fact that we're doing instanciated
+services.
+
 **Both**
 
 I think the manifest.json was a mistake: the os-release file fits the bill
@@ -136,6 +142,10 @@ the moment:
 
 Also, for dev it would be nice to have a special "list" request, and the server
 would return the full list of images.
+
+When the client exists (throught Ctrl-C for example), we should make sure that
+all the subprocess (ie. rauc) are terminated as well. I don't think it's the
+case at the moment.
 
 **Hardening**
 
