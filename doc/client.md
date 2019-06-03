@@ -33,28 +33,28 @@ an update) are really separated, so that the client can do:
   it somewhere and bail out.
 - step 2: the client open an existing JSON file describing an update, and apply
   it.
-- step 1 + step 2: the client query for update, get an answer, the apply it.
+- step 1 + step 2: the client query for update, get an answer, then apply it.
 
 
 
 Update scenarios
 ----------------
 
-#### Scenario 1 - Unattended 
- 
-This is the case of a Steam device that will boot in "low-power mode", sneakily 
-during the night, and update itself without asking for permission. 
- 
-In this case, we just need a systemd service file that invokes the client after 
+#### Scenario 1 - Unattended
+
+This is the case of a Steam device that will boot in "low-power mode", sneakily
+during the night, and update itself without asking for permission.
+
+In this case, we just need a systemd service file that invokes the client after
 the boot is complete. The client does all the job of querying for an update,
 and applying it if it's found, then exit. After it exits, systemd should either
 poweroff or reboot the device.
- 
+
 Note that we WANT to reboot (and not poweroff) after an update is applied. And
 the machine should boot with full capabilities (not low-power), so that the GPU
 is enabled, and things like building the graphics driver (ie. dkms) can happen.
 Only after this is done, we can consider that the update is complete, which
-means that the user can boot his device and use it immediately, rather than 
+means that the user can boot his device and use it immediately, rather than
 wait 2 minutes because dkms is running to "finish" the update (that would be
 poor user experience).
 
