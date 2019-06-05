@@ -133,8 +133,10 @@ def do_update(images_url, update_path):
 
     if c.returncode != 0:
         # TODO FIXME XXX this shouldn't be here at all....
-        subprocess.run(['fsfreeze', '-u', '/'])
-        raise RuntimeError("Failed to install bundle: {}: {}".format(p.returncode, p.stdout))
+        subprocess.run(['fsfreeze', '-u', '/'],
+                       stderr=subprocess.DEVNULL,
+                       stdout=subprocess.DEVNULL)
+        raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
 
 
 
