@@ -123,16 +123,15 @@ def do_update(images_url, update_path):
     url = urllib.parse.urljoin(images_url, update_path)
 
     log.info("Installing update from {}".format(url))
+    log.info("(check the journal for progress details)")
 
-    with subprocess.Popen(['rauc', 'install', url],
-                          env=rauc_env,
-                          stderr=subprocess.STDOUT,
-                          stdout=subprocess.PIPE,
-                          universal_newlines=True) as p:
-        for line in p.stdout:
-            print(line, end='')
+    c = subprocess.run(['rauc', 'install', url],
+                       env=rauc_env,
+                       stderr=subprocess.STDOUT,
+                       stdout=subprocess.PIPE,
+                       universal_newlines=True)
 
-    if p.returncode != 0:
+    if c.returncode != 0:
         # TODO FIXME XXX this shouldn't be here at all....
         subprocess.run(['fsfreeze', '-u', '/'])
         raise RuntimeError("Failed to install bundle: {}: {}".format(p.returncode, p.stdout))
