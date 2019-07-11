@@ -1,3 +1,9 @@
+steamos-atomupd (0.20190711.0-0co1) clockwerk; urgency=medium
+
+  * Add d/.gitignore
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Thu, 11 Jul 2019 15:11:05 +0700
+
 steamos-atomupd (0.20190605.0-0co1) clockwerk; urgency=medium
 
   * d/control: Update rauc package name
