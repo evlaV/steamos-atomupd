@@ -12,6 +12,12 @@ Get your build depends please:
 
     apt install debhelper meson
 
+Build and test with meson / ninja:
+
+    meson build
+    ninja -C build
+    meson test -v -C build
+
 Build a snapshot package with gbp:
 
     gbp buildpackage \
