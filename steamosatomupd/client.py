@@ -206,14 +206,6 @@ class UpdateClient:
                 manifest_file = DEFAULT_MANIFEST_FILE
             log.debug("Using manifest file '{}'".format(manifest_file))
 
-        # Sanity checks
-
-        with open('/proc/cmdline', 'r') as f:
-            if not 'roothash=' in f.read() and not args.force:
-                print("Atomic update from a RW system is experimental and not much tested.")
-                print("Use '--force' AT YOUR OWN RISK if you want to try anyway.")
-                return -1
-
         # Create runtime dir
 
         runtime_dir = config['Host']['RuntimeDir']
@@ -298,6 +290,14 @@ class UpdateClient:
             return 0
 
         # Apply update
+
+        # Ensure we're running from a read-only system
+
+        with open('/proc/cmdline', 'r') as f:
+            if not 'roothash=' in f.read() and not args.force:
+                print("Atomic update from a RW system is experimental and not much tested.")
+                print("Use '--force' AT YOUR OWN RISK if you want to try anyway.")
+                return -1
 
         # TODO We probably want to check that the current release matches
         #      our current release, just as a safety check
