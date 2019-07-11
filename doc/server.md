@@ -15,7 +15,8 @@ The server requires a configuration file with a bunch of mandatory params:
 - the list of supported architectures (eg. `amd64`)
 
 An update server is stateless, and several update servers can run on the same
-machine, serving different image pools.
+machine, serving different sets of images, possibly all of them living in the
+same directory.
 
 On start, the server walks the image directory, looking for **manifest files**.
 Each image should have a manifest file, with the extension `.manifest.json`.
@@ -33,7 +34,9 @@ The server is configured to work either with **snapshot images**, either with
 **versioned images**. Both kind of images can't be mixed. If the server is
 configured for snapshot images, it will discard every versioned images it
 finds in the image directory, and it will reply nothing to clients that come
-with a versioned image.
+with a versioned image. If the server is configured for versioned images, the
+opposite happens: snapshots are discarded, and clients that run a snapshot
+won't be proposed an update.
 
 Internally, versioned images are compared according to their versions, which
 follows semantic versioning. Snapshot images, for which the version is null,
