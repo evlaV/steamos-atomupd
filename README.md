@@ -115,12 +115,6 @@ I think the manifest.json was a mistake: the os-release file fits the bill
 already. So I'd prefer to just drop the manifest file, and use an `os-release`
 file instead.
 
-I think the `want-unstable` config client-side is also a mistake: it should
-better be server-side. We could have two servers running: one that serves
-stable images, and one that server both stabe+unstable. On the client-side,
-it's then just a matter of changing the URL of the server, and then there's
-no need for a configuration knob.
-
 **Server**
 
 The server doesn't watch the images directory, so when a new image is added, the
@@ -169,9 +163,6 @@ your update from an untrusted source.
 We have a few unit tests, now the next would be to have more advanced tests in
 different scenarios, to ensure that both server and client behave as expected.
 Am I talking about acceptance tests? Here come a few ideas of things to test:
-- test that the 'want-unstable' flag is honored by the server, and works as
-  expected on the client-side as well (getting a boolean from a config object
-  is error-prone).
 - ensure that both client and server behave when there's no update available.
 - ensure that if no update is available, there's no update file in the runtime
   dir (ie. even if there was a file before the client runs, the file should be

@@ -72,17 +72,13 @@ def _get_next_release(release, releases):
 
     return next_release
 
-def _get_update_candidates(candidates, image, want_unstable):
+def _get_update_candidates(candidates, image):
     """Get possible update candidates within a list.
 
     This is where we decide who are the valid update candidates for a
     given image. The valid candidates are:
     - images that are more recent than image
     - images that are either a checkpoint, either the latest image
-    - images that are stable, unless 'want_unstable' is true
-
-    For snapshot images, we ignore want_unstable, because all snapshot
-    images are unstable anyway.
     """
 
     latest = None
@@ -91,10 +87,6 @@ def _get_update_candidates(candidates, image, want_unstable):
     for c in candidates:
         if c.image <= image:
             continue
-
-        if not image.is_snapshot():
-            if not c.image.is_stable() and not want_unstable:
-                continue
 
         if c.image.checkpoint:
             checkpoints.append(c)
@@ -116,9 +108,9 @@ class ImagePool:
     looking for manifest files. It does not matter how the hierarchy
     is organized.
 
-    The truth is that an image pool doesn't contain Image object, but
+    The truth is that an image pool doesn't contain Image objects, but
     instead UpdateCandidate objects, which are simply a wrapper above
-    image, with an additional update_path attribute.
+    images, with an additional update_path attribute.
 
     Internally, candidates are stored in the following structure:
 
@@ -137,8 +129,8 @@ class ImagePool:
 
     """
 
-    def __init__(self, images_dir, work_with_snapshots, supported_products,
-                 supported_releases, supported_variants, supported_archs):
+    def __init__(self, images_dir, work_with_snapshots, want_unstable_images,
+                 supported_products, supported_releases, supported_variants, supported_archs):
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -149,9 +141,15 @@ class ImagePool:
         if not sorted(supported_releases) == supported_releases:
             raise RuntimeError("Release list '{}' is not sorted".format(supported_releases))
 
+        # If we work with snapshots, then obviously we want to consider unstable images
+        # (as snapshots are treated as unstable images)
+        if work_with_snapshots:
+            want_unstable_images = True
+
         # Our variables
         self.images_dir = images_dir
         self.work_with_snapshots = work_with_snapshots
+        self.want_unstable_images = want_unstable_images
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
@@ -202,6 +200,12 @@ class ImagePool:
                     log.debug("Discarded unsupported image {}: {}".format(f, e))
                     continue
 
+                # Discard unstable images if we don't want them
+                # TODO check the code to see if it's worth introducing image.is_unstable() for readability
+                if not want_unstable_images and not image.is_stable():
+                    log.debug("Discarded unstable image {}".format(f))
+                    continue
+
                 # Add image as an update candidate
                 candidate = UpdateCandidate(image, update_path)
                 candidates.append(candidate)
@@ -211,6 +215,7 @@ class ImagePool:
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),
             'Snapshots : {}'.format(self.work_with_snapshots),
+            'Unstable  : {}'.format(self.want_unstable_images),
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
@@ -249,7 +254,7 @@ class ImagePool:
 
         return candidates
 
-    def get_updates_for_release(self, image, release, want_unstable):
+    def get_updates_for_release(self, image, release):
         """Get a list of update candidates for a given release
 
         Return an UpdatePath object, or None if no updates available.
@@ -260,13 +265,13 @@ class ImagePool:
         except ValueError:
             return None
 
-        candidates = _get_update_candidates(all_candidates, image, want_unstable)
+        candidates = _get_update_candidates(all_candidates, image)
         if not candidates:
             return None
 
         return UpdatePath(release, candidates)
 
-    def get_updates(self, image, want_unstable):
+    def get_updates(self, image):
         """Get updates
 
         We look for update candidates in the same release as the image,
@@ -276,12 +281,12 @@ class ImagePool:
         """
 
         curr_release = image.release
-        minor_update = self.get_updates_for_release(image, curr_release, want_unstable)
+        minor_update = self.get_updates_for_release(image, curr_release)
 
         next_release =  _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
-            major_update = self.get_updates_for_release(image, next_release, want_unstable)
+            major_update = self.get_updates_for_release(image, next_release)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)

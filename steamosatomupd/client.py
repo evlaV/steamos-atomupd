@@ -44,14 +44,12 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 # Default config
 DEFAULT_MANIFEST_FILE = '/usr/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
-DEFAULT_WANT_UNSTABLE = 'false'
 
-def download_update_file(url, image, want_unstable):
+def download_update_file(url, image):
     """Download an update file from the server
 
     The parameters for the request are the details of the image that
-    the caller is running, and a flag to say if we want unstable images
-    or not.
+    the caller is running.
 
     The server is expected to return a JSON string, which is then parsed
     by the client, in order to validate it. Then it's printed out to a
@@ -63,7 +61,6 @@ def download_update_file(url, image, want_unstable):
     """
 
     data = image.to_dict()
-    data['want-unstable'] = want_unstable
 
     params = urllib.parse.urlencode(data)
     url = url + '?' + params
@@ -183,7 +180,6 @@ class UpdateClient:
             'Host': {
                 # can't use default for 'Manifest' here, see below
                 'RuntimeDir': DEFAULT_RUNTIME_DIR,
-                'WantUnstable': DEFAULT_WANT_UNSTABLE,
             }})
 
         with open(args.config, 'r') as f:
@@ -229,10 +225,9 @@ class UpdateClient:
 
             # Download the update file to a tmp file
             url = config['Server']['QueryUrl']
-            want_unstable = config['Host'].getboolean('WantUnstable')
             try:
-                log.debug("Downloading update file (want-unstable={}): {}".format(want_unstable, url))
-                tmpfile = download_update_file(url, image, want_unstable)
+                log.debug("Downloading update file {}".format(url))
+                tmpfile = download_update_file(url, image)
             except Exception as e:
                 log.error("Failed to download update file: {}".format(e))
                 return -1

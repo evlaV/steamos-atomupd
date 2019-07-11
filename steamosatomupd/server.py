@@ -34,6 +34,7 @@ log = logging.getLogger(__name__)
 # Default config
 DEFAULT_FLASK_HOSTNAME = 'localhost'
 DEFAULT_FLASK_PORT = 5000
+DEFAULT_SERVE_UNSTABLE = False
 
 # Global
 IMAGE_POOL = None
@@ -52,17 +53,12 @@ def foo():
 
     log.debug("Request: {}".format(request.args))
 
-    # TODO Add a test case for want_unstable
-
-    # Is the client interested in unstable versions?
-    want_unstable = request.args.get('want-unstable', False)
-
     # Make an image out of the request arguments. An exception might
     # be raised, which results in returning 400 to the client.
     image = Image.from_dict(request.args)
 
     # Get update candidates
-    update = IMAGE_POOL.get_updates(image, want_unstable)
+    update = IMAGE_POOL.get_updates(image)
     if not update:
         return ''
 
@@ -109,6 +105,9 @@ class UpdateServer:
             'Server': {
                 'Host': DEFAULT_FLASK_HOSTNAME,
                 'Port': DEFAULT_FLASK_PORT,
+            },
+            'Images': {
+                'Unstable': DEFAULT_SERVE_UNSTABLE,
             }})
 
         with open(args.config, 'r') as f:
@@ -119,6 +118,7 @@ class UpdateServer:
         try:
             images_dir = config['Images']['PoolDir']
             snapshots = config['Images'].getboolean('Snapshots')
+            unstable = config['Images'].getboolean('Unstable')
             products = config['Images']['Products'].split()
             releases = config['Images']['Releases'].split()
             variants = config['Images']['Variants'].split()
@@ -128,17 +128,18 @@ class UpdateServer:
             sys.exit(1)
 
         # We strongly expect releases to be an ordered list. We could sort
-        # it ourselves, but it's even better to refuse an un-ordered list.
-        # That's the best opportunity we have to let the user know about our
-        # particular expectations on releases.
+        # it ourselves, but we can also just refuse an unsorted list, and
+        # take this chance to warn user that we care about releases being
+        # ordered (because we might use release names to compare to image,
+        # and a clockwerk image (3.x) is below a doom (4.x) image).
 
         if sorted(releases) != releases:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
         start = time.time()
-        image_pool = ImagePool(images_dir, snapshots, products, releases,
-                               variants, archs)
+        image_pool = ImagePool(images_dir, snapshots, unstable, products,
+                               releases, variants, archs)
         end = time.time()
         elapsed = end - start
 

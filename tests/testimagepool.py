@@ -57,37 +57,25 @@ class GetUpdateCandidatesTestCase(unittest.TestCase):
         c3 = mk_update_candidate(d3)
 
         # only the last image is an update candidate
-        res = _get_update_candidates([ c1, c2, c3 ], i, False)
+        res = _get_update_candidates([ c1, c2, c3 ], i)
         self.assertTrue(res == [ c3 ])
 
         # checkpoint + last image
         d2['checkpoint'] = True
         c2 = mk_update_candidate(d2)
-        res = _get_update_candidates([ c1, c2, c3 ], i, False)
+        res = _get_update_candidates([ c1, c2, c3 ], i)
         self.assertTrue(res == [ c2, c3 ])
 
-        # checkpoint + last image (no change)
+        # checkpoint + last image (no change, as i == d1 version-wise)
         d1['checkpoint'] = True
         c1 = mk_update_candidate(d1)
-        res = _get_update_candidates([ c1, c2, c3 ], i, False)
-        self.assertTrue(res == [ c2, c3 ])
-
-        # checkpoint only (as last image is unstable)
-        d3['version'] = '2.2-rc1'
-        c3 = mk_update_candidate(d3)
-        res = _get_update_candidates([ c1, c2, c3 ], i, False)
-        self.assertTrue(res == [ c2 ])
-
-        # checkpoint only + last image (as we want unstable)
-        d3['version'] = '2.2-rc1'
-        c3 = mk_update_candidate(d3)
-        res = _get_update_candidates([ c1, c2, c3 ], i, True)
+        res = _get_update_candidates([ c1, c2, c3 ], i)
         self.assertTrue(res == [ c2, c3 ])
 
         # no update candidates (already at latest)
-        d['version'] = '2.2-rc1'
+        d['version'] = '2.2'
         i = mk_image(d)
-        res = _get_update_candidates([ c1, c2, c3 ], i, True)
+        res = _get_update_candidates([ c1, c2, c3 ], i)
         self.assertTrue(res == [])
 
 if __name__ == '__main__':
