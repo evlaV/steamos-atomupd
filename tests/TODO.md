@@ -3,16 +3,18 @@ Tests to do
 
 #### Server
 
-Ensure releases are sorted in the config file
+Ensure releases are sorted in the server config file, fail otherwise.
+
+Ensure server is restarted / reloaded when a new image is added to the pool
+directory (NOT IMPLEMENTED YET).
+
 
 
 #### Client
 
-Check how things behave when there's no network
-
 Config file
-- a config file MUST exist
-- some keys in config file are mandatory
+- a config file MUST exist, fail otherwise
+- some keys in config file are mandatory, fail if missing
 
 Server expectations:
 - if no update is available, the server should return an empty response
@@ -22,7 +24,7 @@ When running with 'query-only':
 - if no update is avail, then any update file should be removed from runtime dir
 
 When parsing update file received from the server:
-- be able to select one release amongs those proposed by the server:
+- be able to select one release among those proposed by the server:
   - 1st: lower checkpoint from next
   - 2nd: lower checkpoint from current
   - 3rd: latest from next

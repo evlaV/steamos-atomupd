@@ -103,17 +103,22 @@ Improvements and TODOs
 
 Grep for TODO in the code.
 
+See tests/TODO.md
+
 **Debian**
 
 Somehow the server is not restarted after installing a new version of the
-package. My guess is that it's due to the fact that we're doing instanciated
-services.
+package. This is due to the fact that we're doing instanciated services.
+- <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=889635>
+- <https://lists.debian.org/debian-devel/2019/07/msg00087.html>
 
 **Both**
 
-I think the manifest.json was a mistake: the os-release file fits the bill
-already. So I'd prefer to just drop the manifest file, and use an `os-release`
-file instead.
+I think the `manifest.json` file was a mistake: I think the [os-release][] file
+fits the bill already. So I'd prefer to just drop the manifest file, and use an
+`os-release` file instead.
+
+[os-release]: https://www.freedesktop.org/software/systemd/man/os-release.html
 
 **Server**
 
@@ -128,6 +133,9 @@ by the number of casync stores, and you understand now why the server can be a
 bit slow to start.
 
 **Client**
+
+Check how the client behave when there's no network, possibly add some test
+cases?
 
 In the client request, we should add a bit more details. What comes to mind at
 the moment:
@@ -158,14 +166,3 @@ configuration setting to allow http if need be. The idea is mostly to prevent
 configuration mistakes, because in production you probably don't want to start
 your update from an untrusted source.
 
-**Testing**
-
-We have a few unit tests, now the next would be to have more advanced tests in
-different scenarios, to ensure that both server and client behave as expected.
-Am I talking about acceptance tests? Here come a few ideas of things to test:
-- ensure that both client and server behave when there's no update available.
-- ensure that if no update is available, there's no update file in the runtime
-  dir (ie. even if there was a file before the client runs, the file should be
-  deleted).
-- ensure that the client returns 0 when no update is performed, and 1 if an
-  update is performed.
