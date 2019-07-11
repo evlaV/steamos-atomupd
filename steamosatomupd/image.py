@@ -242,7 +242,7 @@ class Image:
 
     # A note regarding comparison operators.
     #
-    # When comparing images, we care about version OR buildid.
+    # When comparing images, we care about version OR (release, buildid).
     #
     # When versions are defined for both images, we just compare it.
     #
@@ -253,9 +253,9 @@ class Image:
     # higher.
     #
     # If ever we have to compare an image with a version against an image
-    # without, we raise an exception. These two can't be compared. Not that
-    # such comparison shouldn't happen, the code should take care of never
-    # letting this situation happen.
+    # without, we raise an exception. These two can't be compared. Note that
+    # such comparison shouldn't happen anyway, the calling code should take
+    # care of never letting this situation happen.
 
     def __eq__(self, other):
         if self.version and other.version:
