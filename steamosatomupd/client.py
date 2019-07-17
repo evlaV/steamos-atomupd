@@ -85,22 +85,10 @@ def do_update(images_url, update_path):
     if not images_url.endswith('/'):
         images_url += '/'
 
-    # Set TMPDIR to /tmp
-    #
-    # This is a precaution, as casync makes a very heavy use of TMPDIR,
-    # and uses /var/tmp by default. One issue is that we could run out
-    # of inodes on /var, depending on the size and usage of the partition
-    # backing /var. Another issue is that, if some unexpected failure
-    # happens and casync leaves thousands of tmp files behind, we might
-    # end up filling the /var partition. Using /tmp solves these two issues.
-
-    rauc_env = os.environ.copy()
-    rauc_env['TMPDIR'] = '/tmp'
-
     # Remount /tmp with max memory and inodes number
     #
-    # This is possible as long as /tmp is backed by a tmpfs.
-    # We need this precaution as casync makes a heavy use of its tmpdir.
+    # This is possible as long as /tmp is backed by a tmpfs. We need
+    # this precaution as casync makes a heavy use of its tmpdir in /tmp.
     # It needs enough memory to store the chunks it downloads, and it
     # also needs A LOT of inodes.
 
@@ -123,7 +111,6 @@ def do_update(images_url, update_path):
     log.info("(check the journal for progress details)")
 
     c = subprocess.run(['rauc', 'install', url],
-                       env=rauc_env,
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
