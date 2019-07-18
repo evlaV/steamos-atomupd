@@ -136,8 +136,6 @@ class UpdateClient:
             help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
         parser.add_argument('-d', '--debug', action='store_true',
             help="show debug messages")
-        parser.add_argument('-f', '--force', action='store_true',
-            help="force operations even though it appears a bit unsafe")
         parser.add_argument('--query-only', action='store_true',
             help="only query if an update is available")
         parser.add_argument('--manifest-file',
@@ -270,12 +268,6 @@ class UpdateClient:
         # Apply update
 
         # Ensure we're running from a read-only system
-
-        with open('/proc/cmdline', 'r') as f:
-            if not 'roothash=' in f.read() and not args.force:
-                print("Atomic update from a RW system is experimental and not much tested.")
-                print("Use '--force' AT YOUR OWN RISK if you want to try anyway.")
-                return -1
 
         # TODO We probably want to check that the current release matches
         #      our current release, just as a safety check
