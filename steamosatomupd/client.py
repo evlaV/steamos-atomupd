@@ -116,10 +116,6 @@ def do_update(images_url, update_path):
                        universal_newlines=True)
 
     if c.returncode != 0:
-        # TODO FIXME XXX this shouldn't be here at all....
-        subprocess.run(['fsfreeze', '-u', '/'],
-                       stderr=subprocess.DEVNULL,
-                       stdout=subprocess.DEVNULL)
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
 
 
