@@ -1,3 +1,9 @@
+steamos-atomupd (0.20190724.0-0co1) clockwerk; urgency=medium
+
+  * New version
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 24 Jul 2019 09:47:58 +0700
+
 steamos-atomupd (0.20190711.0-0co1) clockwerk; urgency=medium
 
   * Add d/.gitignore
