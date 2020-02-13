@@ -108,7 +108,8 @@ def do_update(images_url, update_path):
     url = urllib.parse.urljoin(images_url, update_path)
 
     log.info("Installing update from {}".format(url))
-    log.info("(check the journal for progress details)")
+    log.info("Tips: Run the following command to see the progress details:")
+    log.info("      journalctl --unit rauc.service --follow --output=cat")
 
     c = subprocess.run(['rauc', 'install', url],
                        stderr=subprocess.STDOUT,
