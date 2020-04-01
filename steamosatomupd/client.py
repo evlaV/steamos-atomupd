@@ -42,7 +42,7 @@ UPDATE_FILENAME = 'update.json'
 DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 
 # Default config
-DEFAULT_MANIFEST_FILE = '/usr/manifest.json'
+DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
 
 def download_update_file(url, image):
