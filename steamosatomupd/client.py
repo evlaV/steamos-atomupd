@@ -60,11 +60,6 @@ def download_update_file(url, image):
     Exceptions might be raised here and there...
     """
 
-    data = image.to_dict()
-
-    params = urllib.parse.urlencode(data)
-    url = url + '?' + params
-
     with urllib.request.urlopen(url) as response:
         jsonstr = response.read()
 
@@ -208,7 +203,7 @@ class UpdateClient:
                 image = Image.from_os()
 
             # Download the update file to a tmp file
-            url = config['Server']['QueryUrl']
+            url = config['Server']['QueryUrl'] + '?' + urllib.parse.urlencode(image.to_dict())
             try:
                 log.debug("Downloading update file {}".format(url))
                 tmpfile = download_update_file(url, image)
