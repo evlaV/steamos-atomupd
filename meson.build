@@ -9,11 +9,16 @@ prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
 moduledir = join_paths(prefix, 'lib', 'python3', 'dist-packages')
+completionsdir = join_paths(prefix, get_option('datadir'), 'bash-completion', 'completions')
 systemdunitdir = join_paths(prefix, 'lib', 'systemd', 'system')
 
 install_subdir('steamosatomupd',
   exclude_directories: ['__pycache__'],
   install_dir: moduledir,
+)
+
+install_subdir('completions',
+  install_dir: completionsdir,
 )
 
 python = find_program('python3', required: false)

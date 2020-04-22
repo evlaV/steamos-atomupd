@@ -1,0 +1,29 @@
+# -*- mode: sh; indent-tabs-mode: nil; sh-basic-offset: 4; -*-
+# vim: et sts=4 sw=4
+
+#  SPDX-License-Identifier: LGPL-2.1+
+#
+#  Copyright © 2020 Collabora Ltd.
+#
+#  This file is part of steamos-atomupd.
+#
+#  steamos-atomupd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by the
+#  Free Software Foundation; either version 2.1 of the License, or (at your
+#  option) any later version.
+
+_steamos-atomupd-client()
+{
+    local cur prev words cword
+    _init_completion || return
+
+    case "$prev" in
+        -c|--config|--manifest-file|--update-file)
+            _filedir
+            return
+            ;;
+    esac
+
+    COMPREPLY=($(compgen -W "-h --help -c --config -d --debug -f --force --query-only --manifest-file --mk-manifest-file --update-file" -- "$cur"))
+} &&
+complete -F _steamos-atomupd-client steamos-atomupd-client
