@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2020 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,13 @@ DEFAULT_SERVE_UNSTABLE = False
 
 # Global
 IMAGE_POOL = None
+IMAGES_DIR = None
+SNAPSHOTS = None
+UNSTABLE = None
+PRODUCTS = None
+RELEASES = None
+VARIANTS = None
+ARCHS = None
 
 #
 # Flask server
@@ -52,6 +59,8 @@ def foo():
     """Handle requests from client"""
 
     log.debug("Request: {}".format(request.args))
+    if not IMAGE_POOL:
+        return ''
 
     # Make an image out of the request arguments. An exception might
     # be raised, which results in returning 400 to the client.
@@ -74,8 +83,27 @@ def foo():
 
 def handle_sigusr1(signum, frame):
     assert signum == signal.SIGUSR1
-    assert IMAGE_POOL
+    if not IMAGE_POOL:
+        return
+
     print('{}'.format(IMAGE_POOL), flush=True)
+
+def handle_sigusr2(signum, frame):
+    assert signum == signal.SIGUSR2
+
+    start = time.time()
+    image_pool = ImagePool(IMAGES_DIR, SNAPSHOTS, UNSTABLE, PRODUCTS, RELEASES,
+                           VARIANTS, ARCHS)
+    end = time.time()
+    elapsed = end - start
+    print("Image pool created in {0:.3f} seconds".format(elapsed))
+    print("--- Image Pool ---")
+    print('{}'.format(image_pool))
+    print("------------------")
+    sys.stdout.flush()
+
+    global IMAGE_POOL
+    IMAGE_POOL = image_pool
 
 class UpdateServer:
 
@@ -137,27 +165,29 @@ class UpdateServer:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
-        start = time.time()
-        image_pool = ImagePool(images_dir, snapshots, unstable, products,
-                               releases, variants, archs)
-        end = time.time()
-        elapsed = end - start
-
-        print("Image pool created in {0:.3f} seconds".format(elapsed))
-        print("--- Image Pool ---")
-        print("{}".format(image_pool))
-        print("------------------")
-        sys.stdout.flush()
-
         # Save some stuff for later
 
-        global IMAGE_POOL
-        IMAGE_POOL = image_pool
+        global IMAGES_DIR
+        global SNAPSHOTS
+        global UNSTABLE
+        global PRODUCTS
+        global RELEASES
+        global VARIANTS
+        global ARCHS
+        IMAGES_DIR = images_dir
+        SNAPSHOTS = snapshots
+        UNSTABLE = unstable
+        PRODUCTS = products
+        RELEASES = releases
+        VARIANTS = variants
+        ARCHS = archs
         self.config = config
 
-        # Handle SIGUSR1
+        # Handle signals
 
         signal.signal(signal.SIGUSR1, handle_sigusr1)
+        signal.signal(signal.SIGUSR2, handle_sigusr2)
+        os.kill(os.getpid(), signal.SIGUSR2)
 
     def run(self):
 
