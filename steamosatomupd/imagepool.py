@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2020 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -170,6 +170,7 @@ class ImagePool:
         # Populate the candidates dict
         log.debug("Walking the image tree: {}".format(images_dir))
         for root, dirs, files in os.walk(images_dir):
+            [dirs.remove(d) for d in list(dirs) if d.endswith(".castr")]
             for f in files:
                 # We're looking for manifest files
                 if not f.endswith(IMAGE_MANIFEST_EXT):
