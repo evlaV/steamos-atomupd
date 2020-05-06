@@ -96,6 +96,8 @@ If it all works, you might want to enable this service persistently:
 
 During operation, send `SIGUSR1` to the server to make it log its state.
 
+During operation, send `SIGUSR2` to the server to make it reload its pool.
+
 
 
 Improvements and TODOs

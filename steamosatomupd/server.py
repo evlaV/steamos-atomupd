@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2020 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ import signal
 import sys
 import time
 
+from threading import Lock, Thread
 from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
 
@@ -37,7 +38,7 @@ DEFAULT_FLASK_PORT = 5000
 DEFAULT_SERVE_UNSTABLE = False
 
 # Global
-IMAGE_POOL = None
+server = None
 
 #
 # Flask server
@@ -47,23 +48,15 @@ from flask import Flask, abort, request
 app = Flask(__name__)
 
 @app.route('/')
-def foo():
+def updates():
 
     """Handle requests from client"""
 
     log.debug("Request: {}".format(request.args))
 
-    # Make an image out of the request arguments. An exception might
-    # be raised, which results in returning 400 to the client.
-    image = Image.from_dict(request.args)
+    global server
+    data = server.get_update(request.args)
 
-    # Get update candidates
-    update = IMAGE_POOL.get_updates(image)
-    if not update:
-        return ''
-
-    # Return to client
-    data = update.to_dict()
     log.debug("Reply: {}".format(data))
 
     return json.dumps(data)
@@ -72,12 +65,100 @@ def foo():
 # Update server
 #
 
-def handle_sigusr1(signum, frame):
-    assert signum == signal.SIGUSR1
-    assert IMAGE_POOL
-    print('{}'.format(IMAGE_POOL), flush=True)
+def dump_handler(signum, frame):
+
+    global server
+    if not server:
+        return
+
+    server.start_dump()
+
+def reload_handler(signum, frame):
+
+    global server
+    if not server:
+        return
+
+    server.start_reload()
 
 class UpdateServer:
+
+    def get_update(self, data):
+
+        # Make an image out of the request arguments. An exception might be
+        # raised, which results in returning 400 to the client.
+        image = Image.from_dict(request.args)
+        if not image:
+            return ''
+
+        # Get update candidates
+        self.lock.acquire()
+        update = self.image_pool.get_updates(image)
+        self.lock.release()
+        if not update:
+            return ''
+
+        # Return to client
+        data = update.to_dict()
+
+        return data
+
+    def dump_worker(self):
+
+        self.dump()
+        self.dump_thread = None
+
+    def start_dump(self):
+
+        if self.dump_thread:
+            return
+
+        thread = Thread(name='dump', target=UpdateServer.dump_worker,
+                        args=(self,))
+        thread.start()
+        self.dump_thread = thread
+
+    def reload_worker(self):
+
+        print("Creating the pool of image, this may take a while...")
+        start = time.time()
+        self.reload()
+        end = time.time()
+        print("Image pool created in {0:.3f} seconds".format(end - start))
+        self.reload_thread = None
+
+    def start_reload(self):
+
+        if self.reload_thread:
+            return
+
+        thread = Thread(name='reload', target=UpdateServer.reload_worker,
+                        args=(self,))
+        thread.start()
+        self.reload_thread = thread
+
+    def dump(self):
+
+        self.lock.acquire()
+        print("--- Image Pool ---")
+        print('{}'.format(self.image_pool))
+        print("------------------")
+        sys.stdout.flush()
+        self.lock.release()
+
+    def reload(self):
+
+        image_pool = ImagePool(self.config['Images']['PoolDir'],
+                               self.config['Images'].getboolean('Snapshots'),
+                               self.config['Images'].getboolean('Unstable'),
+                               self.config['Images']['Products'].split(),
+                               self.config['Images']['Releases'].split(),
+                               self.config['Images']['Variants'].split(),
+                               self.config['Images']['Archs'].split())
+        self.lock.acquire()
+        self.image_pool = image_pool
+        self.lock.release()
+        self.dump()
 
     def __init__(self):
 
@@ -137,27 +218,22 @@ class UpdateServer:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
-        start = time.time()
-        image_pool = ImagePool(images_dir, snapshots, unstable, products,
-                               releases, variants, archs)
-        end = time.time()
-        elapsed = end - start
-
-        print("Image pool created in {0:.3f} seconds".format(elapsed))
-        print("--- Image Pool ---")
-        print("{}".format(image_pool))
-        print("------------------")
-        sys.stdout.flush()
-
-        # Save some stuff for later
-
-        global IMAGE_POOL
-        IMAGE_POOL = image_pool
         self.config = config
+        self.lock = Lock()
+        self.reload()
 
-        # Handle SIGUSR1
+        # Handle signals
 
-        signal.signal(signal.SIGUSR1, handle_sigusr1)
+        signal.signal(signal.SIGUSR1, dump_handler)
+        signal.signal(signal.SIGUSR2, reload_handler)
+
+    def __del__(self):
+
+        if self.dump_thread:
+            self.dump_thread.cancel()
+
+        if self.reload_thread:
+            self.reload_thread.cancel()
 
     def run(self):
 
@@ -166,8 +242,13 @@ class UpdateServer:
         app.run(host=hostname, port=port)
 
 
+    image_pool = None
+    lock = None
+    dump_thread= None
+    reload_thread = None
 
 def main():
+    global server
     server = UpdateServer()
     exit_code = server.run()
     sys.exit(exit_code)
