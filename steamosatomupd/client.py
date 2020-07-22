@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2020 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -258,7 +258,9 @@ class UpdateClient:
         # Bail out if needed
 
         if args.query_only:
-            log.info("Running with 'query-only', we're out")
+            with open(update_file, 'r') as f:
+                print(f.read())
+            os.remove(update_file)
             return 0
 
         # Apply update
