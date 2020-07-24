@@ -27,6 +27,7 @@ import sys
 import tempfile
 import urllib.parse
 import urllib.request
+from threading import Thread
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
@@ -44,6 +45,18 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 # Default config
 DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
+
+def do_progress():
+    """Print the progression using a journald"""
+
+    c = subprocess.Popen(['steamos-atomupd-client-progress', '--exit'],
+                         stderr=subprocess.STDOUT,
+                         stdout=subprocess.PIPE,
+                         universal_newlines=True)
+
+    while c.poll() is None:
+        print(c.stdout.readline(), end='')
+    c.wait()
 
 def download_update_file(url, image):
     """Download an update file from the server
@@ -74,7 +87,7 @@ def download_update_file(url, image):
 
     return f.name
 
-def do_update(images_url, update_path):
+def do_update(images_url, update_path, progress):
     """Update the system"""
 
     if not images_url.endswith('/'):
@@ -102,14 +115,15 @@ def do_update(images_url, update_path):
 
     url = urllib.parse.urljoin(images_url, update_path)
 
-    log.info("Installing update from {}".format(url))
-    log.info("Tips: Run the following command to see the progress details:")
-    log.info("      journalctl --unit rauc.service --follow --output=cat")
-
+    if progress:
+        t = Thread(target=do_progress)
+        t.start()
     c = subprocess.run(['rauc', 'install', url],
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
+    if t.is_alive():
+        t.join()
 
     if c.returncode != 0:
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
@@ -130,6 +144,8 @@ class UpdateClient:
         parser.add_argument('-c', '--config',
             metavar='FILE', default=DEFAULT_CONFIG_FILE,
             help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
+        parser.add_argument('-p', '--progress', action='store_true',
+            help="show progression")
         parser.add_argument('-d', '--debug', action='store_true',
             help="show debug messages")
         parser.add_argument('--query-only', action='store_true',
@@ -286,7 +302,7 @@ class UpdateClient:
         images_url = config['Server']['ImagesUrl']
         update_path = upd.candidates[0].update_path
         try:
-            do_update(images_url, update_path)
+            do_update(images_url, update_path, args.progress)
         except Exception as e:
             log.error("Failed to install update file: {}".format(e))
             return -1
