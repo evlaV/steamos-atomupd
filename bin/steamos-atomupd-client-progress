@@ -16,14 +16,6 @@
 set -e
 set -u
 
-progress() {
-    if plymouth --ping 2>/dev/null
-    then
-        plymouth system-update --progress "$1"
-    fi
-    echo "$1%"
-}
-
 while [[ "$#" -ne 0 ]]
 do
     if [[ "$1" =~ ^(-h|--help)$ ]]
@@ -70,7 +62,7 @@ do
             percentage="${words[1]%\%}"
             percentage="$(((percentage*25*90/100)/100))"
             percentage="$((percentage+5))"
-            progress "$percentage" "${words[@]}"
+            echo "$percentage%"
         fi
     # Downloading chunks ##%
     elif [[ "${words[0]}" == "downloading" ]] && [[ "${slot:-}" == "rootfs" ]]
@@ -80,39 +72,30 @@ do
             percentage="${words[2]%\%}"
             percentage="$(((percentage*75*90/100)/100))"
             percentage="$((percentage+5+(25*90/100)))"
-            progress "$percentage" "${words[@]}"
+            echo "$percentage%"
         fi
     # installing: ...: All slots updated
     elif [[ "${words[0]}" == "installing" ]] &&
          [[ "${words[*]:2}" == "All slots updated" ]]
     then
         percentage="95"
-        progress "$percentage" "${words[@]}"
+        echo "$percentage%"
     # installing: ...: finished
     elif [[ "${words[0]}" == "installing" ]] &&
          [[ "${words[*]:2}" == "finished" ]]
     then
         percentage="99"
-        progress "$percentage" "${words[@]}"
+        echo "$percentage%"
     # installing: ...: started
     elif [[ "${words[0]}" == "installing" ]] &&
          [[ "${words[*]:2}" == "started" ]]
     then
-        if plymouth --ping 2>/dev/null
-        then
-            plymouth change-mode --system-upgrade
-            percentage="0"
-            progress "$percentage" "${words[@]}"
-        fi
+        percentage="0"
+        echo "$percentage%"
     # installing: ...: failed: ...
     elif [[ "${words[0]}" == "installing" ]] &&
          [[ "${words[*]:2}" =~ "failed: " ]]
     then
-        if plymouth --ping 2>/dev/null
-        then
-            plymouth change-mode --boot-up
-            plymouth display-message --text="Error: System upgrade failed!"
-        fi
         if [[ "${exit:-}" ]]
         then
             exit 0
@@ -122,32 +105,10 @@ do
          [[ "${words[*]:2}" == "succeeded" ]]
     then
         percentage="100"
-        progress "$percentage" "${words[@]}"
-        if plymouth --ping 2>/dev/null
-        then
-            plymouth change-mode --boot-up
-            plymouth display-message --text="System upgrade completed!"
-        fi
+        echo "$percentage%"
         if [[ "${exit:-}" ]]
         then
             exit 0
-        fi
-    # Stopped Rauc Update Service.
-    elif [[ "${words[*]}" == "Stopped Rauc Update Service." ]]
-    then
-        if plymouth --ping 2>/dev/null
-        then
-            plymouth change-mode --boot-up
-            plymouth display-message --text=
-        fi
-    # Started Rauc Update Service.
-    elif [[ "${words[*]}" == "Started Rauc Update Service." ]]
-    then
-        if plymouth --ping 2>/dev/null
-        then
-            plymouth change-mode --system-upgrade
-            percentage="0"
-            progress "$percentage" "${words[@]}"
         fi
     fi
 done < <(journalctl --unit rauc.service --since now --follow --output cat)
