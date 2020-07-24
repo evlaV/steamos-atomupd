@@ -2,7 +2,6 @@
 
 binaries = [
   'steamos-atomupd-client',
-  'steamos-atomupd-client-progress',
   'steamos-atomupd-mkmanifest',
   'steamos-atomupd-server',
 ]

@@ -49,14 +49,37 @@ DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
 def do_progress():
     """Print the progression using a journald"""
 
-    c = subprocess.Popen(['steamos-atomupd-client-progress', '--exit'],
+    c = subprocess.Popen(['journalctl', '--unit=rauc.service', '--since=now',
+                          '--output=cat', '--follow'],
                          stderr=subprocess.STDOUT,
                          stdout=subprocess.PIPE,
                          universal_newlines=True)
 
+    slot = ""
     while c.poll() is None:
-        print(c.stdout.readline(), end='')
-    c.wait()
+        line = c.stdout.readline()
+        log.debug(line)
+
+        words = line.split()
+        if len(words) == 0:
+            continue
+        elif words[0] == "Slot":
+            slot = os.path.basename(os.path.splitext(words[6])[0])
+            slot = os.path.splitext(slot)[0]
+        elif words[0] == "installing" and ' '.join(words[2:]) == "started":
+            print("%d%%" % 0)
+        elif slot == "rootfs" and ' '.join(words[0:-1]) == "seeding...":
+            print("%d%%" % ((float(words[-1][:-1]) * 25 * 0.9 / 100) + 5))
+        elif slot == "rootfs" and ' '.join(words[0:-1]) == "downloading chunks...":
+            print("%d%%" % ((float(words[-1][:-1]) * 75 * 0.9 / 100) + 5 + (25 * 0.9)))
+        elif words[0] == "installing" and ' '.join(words[2:]) == "All slots updated":
+            print("%d%%" % 95)
+        elif words[0] == "installing" and ' '.join(words[2:]) == "finished":
+            print("%d%%" % 100)
+        elif words[0] == "installing" and ' '.join(words[2:]) == "succeeded":
+            break
+
+    c.terminate()
 
 def download_update_file(url, image):
     """Download an update file from the server
