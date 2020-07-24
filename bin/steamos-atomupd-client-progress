@@ -28,8 +28,11 @@ while [[ "$#" -ne 0 ]]
 do
     if [[ "$1" =~ ^(-h|--help)$ ]]
     then
-        echo "Usage: ${0##*/} [-h|--help] [--debug]"
+        echo "Usage: ${0##*/} [-h|--help] [--exit] [--debug]"
         exit 0
+    elif [[ "$1" == "--exit" ]]
+    then
+        exit=true
     elif [[ "$1" == "--debug" ]]
     then
         debug=true
@@ -110,6 +113,10 @@ do
             plymouth change-mode --boot-up
             plymouth display-message --text="Error: System upgrade failed!"
         fi
+        if [[ "${exit:-}" ]]
+        then
+            exit 0
+        fi
     # installing: ...: succeeded
     elif [[ "${words[0]}" == "installing" ]] &&
          [[ "${words[*]:2}" == "succeeded" ]]
@@ -120,6 +127,10 @@ do
         then
             plymouth change-mode --boot-up
             plymouth display-message --text="System upgrade completed!"
+        fi
+        if [[ "${exit:-}" ]]
+        then
+            exit 0
         fi
     # Stopped Rauc Update Service.
     elif [[ "${words[*]}" == "Stopped Rauc Update Service." ]]
@@ -139,4 +150,4 @@ do
             progress "$percentage" "${words[@]}"
         fi
     fi
-done < <(journalctl --unit rauc.service --follow --output cat)
+done < <(journalctl --unit rauc.service --since now --follow --output cat)
