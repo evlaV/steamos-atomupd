@@ -58,7 +58,7 @@ def do_progress():
 
     slot = ""
     while c.poll() is None:
-        line = c.stdout.readline()
+        line = c.stdout.readline().rstrip()
         log.debug(line)
 
         words = line.split()
