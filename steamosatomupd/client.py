@@ -67,7 +67,7 @@ def do_progress():
         elif words[0] == "Slot":
             slot = os.path.basename(os.path.splitext(words[6])[0])
             slot = os.path.splitext(slot)[0]
-        elif words[0] == "installing" and ' '.join(words[2:]) == "started":
+        elif words[0] == "installing" and words[2] == "started":
             print("%d%%" % 0)
         elif slot == "rootfs" and ' '.join(words[0:-1]) == "seeding...":
             print("%d%%" % ((float(words[-1][:-1]) * 25 * 0.9 / 100) + 5))
@@ -75,9 +75,9 @@ def do_progress():
             print("%d%%" % ((float(words[-1][:-1]) * 75 * 0.9 / 100) + 5 + (25 * 0.9)))
         elif words[0] == "installing" and ' '.join(words[2:]) == "All slots updated":
             print("%d%%" % 95)
-        elif words[0] == "installing" and ' '.join(words[2:]) == "finished":
+        elif words[0] == "installing" and words[2] == "finished":
             print("%d%%" % 100)
-        elif words[0] == "installing" and ' '.join(words[2:]) == "succeeded":
+        elif words[0] == "installing" and words[2] == "succeeded":
             break
         elif words[0] == "installing" and words[2] == "failed:":
             break
