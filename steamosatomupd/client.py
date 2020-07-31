@@ -157,12 +157,11 @@ def do_update(images_url, update_path, progress):
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
+    if t.is_alive():
+        t.join()
 
     if c.returncode != 0:
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
-
-    if t.is_alive():
-        t.join()
 
 
 
