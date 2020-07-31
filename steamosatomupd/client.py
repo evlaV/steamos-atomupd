@@ -79,6 +79,8 @@ def do_progress():
             print("%d%%" % 100)
         elif words[0] == "installing" and ' '.join(words[2:]) == "succeeded":
             break
+        elif words[0] == "installing" and words[2] == "failed:":
+            break
 
     c.terminate()
 
