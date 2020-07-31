@@ -28,7 +28,7 @@ import tempfile
 import netrc
 import urllib.parse
 import urllib.request
-from threading import Thread
+import multiprocessing
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
@@ -151,14 +151,16 @@ def do_update(images_url, update_path, progress):
     url = urllib.parse.urljoin(images_url, update_path)
 
     if progress:
-        t = Thread(target=do_progress)
-        t.start()
+        p = multiprocessing.Process(target=do_progress)
+        p.start()
     c = subprocess.run(['rauc', 'install', url],
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
-    if t.is_alive():
-        t.join()
+    if p.is_alive():
+        p.join(5)
+        if p.is_alive():
+            p.terminate()
 
     if c.returncode != 0:
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
