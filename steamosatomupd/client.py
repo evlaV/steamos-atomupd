@@ -157,7 +157,7 @@ def do_update(images_url, update_path, progress):
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
-    if p.is_alive():
+    if progress and p.is_alive():
         p.join(5)
         if p.is_alive():
             p.terminate()
