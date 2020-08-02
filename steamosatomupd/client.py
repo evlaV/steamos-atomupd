@@ -99,14 +99,16 @@ def download_update_file(url, image):
     Exceptions might be raised here and there...
     """
 
-    host = urllib.parse.urlparse(url).netloc
-    auth = netrc.netrc().authenticators(host)
-    if auth:
-        manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-        manager.add_password(None, host, auth[0], auth[2])
-        handler = urllib.request.HTTPBasicAuthHandler(manager)
-        opener = urllib.request.build_opener(handler)
-        urllib.request.install_opener(opener)
+    netrcfile = os.path.expanduser("~/.netrc") 
+    if os.path.isfile(netrcfile):
+        host = urllib.parse.urlparse(url).netloc
+        auth = netrc.netrc(netrcfile).authenticators(host)
+        if auth:
+            manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+            manager.add_password(None, host, auth[0], auth[2])
+            handler = urllib.request.HTTPBasicAuthHandler(manager)
+            opener = urllib.request.build_opener(handler)
+            urllib.request.install_opener(opener)
 
     with urllib.request.urlopen(url) as response:
         jsonstr = response.read()
