@@ -124,7 +124,7 @@ def download_update_file(url, image):
 
     return f.name
 
-def do_update(images_url, update_path, progress):
+def do_update(images_url, update_path, quiet):
     """Update the system"""
 
     if not images_url.endswith('/'):
@@ -152,14 +152,14 @@ def do_update(images_url, update_path, progress):
 
     url = urllib.parse.urljoin(images_url, update_path)
 
-    if progress:
+    if not quiet:
         p = multiprocessing.Process(target=do_progress)
         p.start()
     c = subprocess.run(['rauc', 'install', url],
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
-    if progress and p.is_alive():
+    if not quiet and p.is_alive():
         p.join(5)
         if p.is_alive():
             p.terminate()
@@ -183,8 +183,8 @@ class UpdateClient:
         parser.add_argument('-c', '--config',
             metavar='FILE', default=DEFAULT_CONFIG_FILE,
             help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
-        parser.add_argument('-p', '--progress', action='store_true',
-            help="show progression")
+        parser.add_argument('-q', '--quiet', action='store_true',
+            help="hide output")
         parser.add_argument('-d', '--debug', action='store_true',
             help="show debug messages")
         parser.add_argument('--query-only', action='store_true',
@@ -313,8 +313,9 @@ class UpdateClient:
         # Bail out if needed
 
         if args.query_only:
-            with open(update_file, 'r') as f:
-                print(f.read())
+            if not quiet:
+                with open(update_file, 'r') as f:
+                    print(f.read())
             os.remove(update_file)
             return 0
 
@@ -341,7 +342,7 @@ class UpdateClient:
         images_url = config['Server']['ImagesUrl']
         update_path = upd.candidates[0].update_path
         try:
-            do_update(images_url, update_path, args.progress)
+            do_update(images_url, update_path, args.quiet)
         except Exception as e:
             log.error("Failed to install update file: {}".format(e))
             return -1

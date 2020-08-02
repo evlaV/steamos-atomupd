@@ -24,6 +24,6 @@ _steamos-atomupd-client()
             ;;
     esac
 
-    COMPREPLY=($(compgen -W "-h --help -c --config -p --progress -d --debug -f --force --query-only --manifest-file --mk-manifest-file --update-file" -- "$cur"))
+    COMPREPLY=($(compgen -W "-h --help -c --config -q --quiet -d --debug -f --force --query-only --manifest-file --mk-manifest-file --update-file" -- "$cur"))
 } &&
 complete -F _steamos-atomupd-client steamos-atomupd-client
