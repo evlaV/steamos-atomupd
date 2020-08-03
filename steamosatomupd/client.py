@@ -313,7 +313,7 @@ class UpdateClient:
         # Bail out if needed
 
         if args.query_only:
-            if not quiet:
+            if not args.quiet:
                 with open(update_file, 'r') as f:
                     print(f.read())
             os.remove(update_file)
