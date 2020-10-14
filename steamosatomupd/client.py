@@ -330,10 +330,14 @@ class UpdateClient:
         # TODO Should we check that the versions proposed by the server are
         #      above our own version, or should we trust the server blindly?
 
+        upd = nil
         if update.major:
             upd = update.major
         elif update.minor:
             upd = update.minor
+        else:
+            log.debug("No update")
+            return 0
 
         assert upd
 
