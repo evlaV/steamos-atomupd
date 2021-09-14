@@ -1,8 +1,0 @@
-/*.substvars
-/.debhelper/
-/files
-/debhelper-build-stamp
-/steamos-atomupd-client/
-/steamos-atomupd-common/
-/steamos-atomupd-server/
-/tmp/

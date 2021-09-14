@@ -107,13 +107,6 @@ Grep for TODO in the code.
 
 See tests/TODO.md
 
-**Debian**
-
-Somehow the server is not restarted after installing a new version of the
-package. This is due to the fact that we're doing instanciated services.
-- <https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=889635>
-- <https://lists.debian.org/debian-devel/2019/07/msg00087.html>
-
 **Both**
 
 I think the `manifest.json` file was a mistake: I think the [os-release][] file
