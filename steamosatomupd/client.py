@@ -397,12 +397,8 @@ class UpdateClient:
 
         # "NoOptionError" will be raised if these options are not available in
         # the config file
-        query_url = config.get('Server', 'QueryUrl')
         images_url = config.get('Server', 'ImagesUrl')
-
-        if not query_url:
-            raise configparser.Error(
-                'The option "QueryUrl" cannot have an empty value')
+        meta_url = config.get('Server', 'MetaUrl')
 
         if not images_url:
             raise configparser.Error(
@@ -411,6 +407,10 @@ class UpdateClient:
         if not images_url.endswith('/'):
             images_url += '/'
 
+        if not meta_url:
+            raise configparser.Error(
+                'The option "MetaUrl" cannot have an empty value')
+ 
         runtime_dir = config.get('Host', 'RuntimeDir',
                                  fallback=DEFAULT_RUNTIME_DIR)
         if not os.path.isdir(runtime_dir):
@@ -462,7 +462,7 @@ class UpdateClient:
                 image.variant = args.variant
 
             # Download the update file to a tmp file
-            url = query_url + '?' + urllib.parse.urlencode(image.to_dict())
+            url = meta_url + '/' + image.to_update_path()
             try:
                 log.debug("Downloading update file {}".format(url))
                 tmpfile = download_update_file(url)

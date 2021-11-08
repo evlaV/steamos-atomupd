@@ -20,6 +20,7 @@ import datetime
 import platform
 import re
 import semantic_version
+import urllib
 
 def _load_os_release():
     """Load /etc/os-release in a dictionary"""
@@ -239,6 +240,19 @@ class Image:
         data['estimated_size'] = self.estimated_size
 
         return data
+
+    def quote(self, s: str) -> str:
+        if s.startswith('.'):
+            s = '_' + s[1:]
+
+        return urllib.parse.quote(s.replace('/', '_'))
+
+    def to_update_path(self):
+        """Give an update path in the form of <product>/<arch>/<version>/<variant>/<buildid>.json """
+
+        bits = [self.product, self.arch, self.version or 'snapshot', self.variant, str(self.buildid)]
+
+        return '/'.join([self.quote(b) for b in bits]) + '.json'
 
     def is_snapshot(self):
         """Whether an Image is a snapshot"""
