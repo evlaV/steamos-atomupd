@@ -154,6 +154,7 @@ class ImagePool:
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
         self.supported_archs    = supported_archs
+        self.images_found = []
 
         # Create the hierarchy to store images
         data = {}
@@ -186,6 +187,7 @@ class ImagePool:
                     continue
 
                 image = manifest.image
+                self.images_found.append(image)
 
                 # Get an update path for this image
                 try:
@@ -293,3 +295,12 @@ class ImagePool:
             return Update(minor_update, major_update)
         else:
             return None
+
+    def get_images_found(self):
+        """ Get list of images found
+
+        To iterate over the list of known images we need a list of known images
+
+        Return a list of Image objects.
+        """
+        return self.images_found
