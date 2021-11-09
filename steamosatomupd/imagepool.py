@@ -129,7 +129,16 @@ class ImagePool:
 
     """
 
-    def __init__(self, images_dir, work_with_snapshots, want_unstable_images,
+    def __init__(self, config):
+        return self._create_pool(config['Images']['PoolDir'],
+                         config['Images'].getboolean('Snapshots'),
+                         config['Images'].getboolean('Unstable'),
+                         config['Images']['Products'].split(),
+                         config['Images']['Releases'].split(),
+                         config['Images']['Variants'].split(),
+                         config['Images']['Archs'].split())
+
+    def _create_pool(self, images_dir, work_with_snapshots, want_unstable_images,
                  supported_products, supported_releases, supported_variants, supported_archs):
 
         # Make sure the images directory exist

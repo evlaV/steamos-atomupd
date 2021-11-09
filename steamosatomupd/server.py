@@ -154,13 +154,7 @@ class UpdateServer:
 
     def reload(self):
 
-        image_pool = ImagePool(self.config['Images']['PoolDir'],
-                               self.config['Images'].getboolean('Snapshots'),
-                               self.config['Images'].getboolean('Unstable'),
-                               self.config['Images']['Products'].split(),
-                               self.config['Images']['Releases'].split(),
-                               self.config['Images']['Variants'].split(),
-                               self.config['Images']['Archs'].split())
+        image_pool = ImagePool(self.config)
         self.lock.acquire()
         self.image_pool = image_pool
         self.lock.release()

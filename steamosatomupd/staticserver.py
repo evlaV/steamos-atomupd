@@ -116,13 +116,7 @@ class UpdateParser:
             sys.exit(1)
 
         self.config = config
-        image_pool = ImagePool(images_dir,
-                               snapshots,
-                               unstable,
-                               products,
-                               releases,
-                               variants,
-                               archs)
+        image_pool = ImagePool(config)
         self.image_pool = image_pool
         print("--- Image Pool ---")
         print('{}'.format(self.image_pool))
