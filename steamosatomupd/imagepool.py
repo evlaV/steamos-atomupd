@@ -20,6 +20,7 @@ import errno
 import logging
 import os
 import pprint
+import sys
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
@@ -137,6 +138,30 @@ class ImagePool:
                          config['Images']['Releases'].split(),
                          config['Images']['Variants'].split(),
                          config['Images']['Archs'].split())
+
+    @classmethod
+    def validateConfig(self, config):
+        try:
+            images_dir = config['Images']['PoolDir']
+            snapshots = config['Images'].getboolean('Snapshots')
+            unstable = config['Images'].getboolean('Unstable')
+            products = config['Images']['Products'].split()
+            releases = config['Images']['Releases'].split()
+            variants = config['Images']['Variants'].split()
+            archs    = config['Images']['Archs'].split()
+        except KeyError:
+            log.error("Please provide a valid configuration file")
+            sys.exit(1)
+
+        # We strongly expect releases to be an ordered list. We could sort
+        # it ourselves, but we can also just refuse an unsorted list, and
+        # take this chance to warn user that we care about releases being
+        # ordered (because we might use release names to compare to image,
+        # and a clockwerk image (3.x) is below a doom (4.x) image).
+
+        if sorted(releases) != releases:
+            log.error("Releases in configuration file must be ordered!")
+            sys.exit(1)
 
     def _create_pool(self, images_dir, work_with_snapshots, want_unstable_images,
                  supported_products, supported_releases, supported_variants, supported_archs):
