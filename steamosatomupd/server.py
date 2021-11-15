@@ -250,11 +250,10 @@ class UpdateServer:
 
     image_pool = None
     lock = None
-    dump_thread= None
+    dump_thread = None
     reload_thread = None
 
 def main():
     global server
     server = UpdateServer()
-    exit_code = server.run()
-    sys.exit(exit_code)
+    server.run()
