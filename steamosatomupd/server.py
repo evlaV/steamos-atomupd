@@ -29,6 +29,8 @@ from threading import Lock, Thread
 from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
 
+from flask import Flask, request, Response
+
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
 
@@ -44,8 +46,8 @@ server = None
 # Flask server
 #
 
-from flask import Flask, abort, request
 app = Flask(__name__)
+
 
 @app.route('/')
 def updates():
@@ -55,7 +57,11 @@ def updates():
     log.debug("Request: {}".format(request.args))
 
     global server
-    data = server.get_update(request.args)
+    try:
+        data = server.get_update(request.args)
+    except (ValueError, KeyError) as err:
+        log.debug('Malformed request: {}'.format(err))
+        return Response("Malformed request", status=400)
 
     log.debug("Reply: {}".format(data))
 
