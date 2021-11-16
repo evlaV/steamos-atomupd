@@ -168,14 +168,17 @@ This can be achieved simply if the client return a meaningful exit code, e.g.
 #### Scenario 2 - Attended
 
 This is the case where SteamOS is installed on some custom hardware, for
-example a laptop. There's no "low-power mode" here, so updates have to run at
-some point when SteamOS is up. It also means that there's an user around, and
-we can take this chance to ask him questions.
+example a laptop, or on battery powered handheld devices, for example the
+Steam Deck. The "low-power mode" is either not available or doesn't make sense
+to be used, so updates have to run at some point when SteamOS is up. It also
+means that there's a user around, and  we can take this chance to ask him
+questions.
 
 In this case, we expect to run the client in `query-only` mode on a regular
 basis. In query-mode, the client only queries the server, and if an update is
-available, it just drops a JSON file that describes this update in a well-known
-location. It doesn't apply the update.
+available, it just drops a JSON file that describes this update in the
+directory specified by the configuration key `RuntimeDir` or, as a fallback, to
+`/run/steamos-atomupd`. It doesn't apply the update.
 
 So we can run the client in query mode every hour or so. Additionally, we can
 have a UI that is notified when an update file is created, and can then notify
