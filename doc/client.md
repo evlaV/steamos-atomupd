@@ -8,7 +8,7 @@ Overview
 
 Basically, the update client does two things:
 - query the update server for available updates
-- then, apply the update (ie. download and write the data)
+- then, apply the update (i.e. download and write the data)
 
 To query the server, the clients sends a request with a few arguments to
 introduce himself and say what image he's running. The arguments are taken from
@@ -149,7 +149,7 @@ poweroff or reboot the device.
 
 Note that we WANT to reboot (and not poweroff) after an update is applied. And
 the machine should boot with full capabilities (not low-power), so that the GPU
-is enabled, and things like building the graphics driver (ie. dkms) can happen.
+is enabled, and things like building the graphics driver (i.e. dkms) can happen.
 Only after this is done, we can consider that the update is complete, which
 means that the user can boot his device and use it immediately, rather than
 wait 2 minutes because dkms is running to "finish" the update (that would be
@@ -162,7 +162,7 @@ again, in case there was more than on update to apply
 
 Implementation-wise: the systemd service must know if an update was applied
 (and therefore reboot the device) or not (and therefore simply power it off).
-This can be achieved simply if the client return a meaningful exit code, eg.
+This can be achieved simply if the client return a meaningful exit code, e.g.
 `0` if no update was applied, and `1` if an update was applied.
 
 #### Scenario 2 - Attended
@@ -178,12 +178,12 @@ available, it just drops a JSON file that describes this update in a well-known
 location. It doesn't apply the update.
 
 So we can run the client in query mode every hour or so. Additionally, we can
-have an UI that is notified when a update file is created, and can then notify
+have a UI that is notified when an update file is created, and can then notify
 the user that a new version is available. The user could then decide to update
 now. Or could also do nothing. On shutdown, we could also prompt the user again
 and propose to update.
 
-Not that the update in itself (ie. casync):
+Note that the update in itself (i.e. casync):
 - is CPU intensive, so we can't really run it in the background
 - downloading and applying the update are mixed together, so we can't download
   data in the background, and then "only" write it to disk when the user says
@@ -218,10 +218,10 @@ know how many updates are needed for the client to be up-to-date. For example:
 
 **Distinction between minor and major**
 
-The server separates updates in two: the `minor` updates (ie. updates within
-the same release) and the `major` updates (ie. updates to the next release).
+The server separates updates in two: the `minor` updates (i.e. updates within
+the same release) and the `major` updates (i.e. updates to the next release).
 
-Why? Because if we know that there's an user at the other end, we might want to
+Why? Because if we know that there's a user at the other end, we might want to
 ask him before doing a major update of his device. Major updates take time and
 can break things, so doing so without warning is not super nice.
 
