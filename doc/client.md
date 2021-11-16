@@ -18,8 +18,10 @@ receive unstable updates.
 
 The server looks among the images that are available, and then decides if
 there's an update path for the client or not. If so, it answers some JSON
-data describing the update availables (there might be more than one). If no
-updates are available, it replies nothing.
+data describing the available updates (there might be more than one). If no
+updates are available, it replies with an empty JSON object (i.e. `{}`) or if
+the request is malformed (e.g. missing an expected argument) it replies with an
+HTTP 400 response status code.
 
 Among the possible updates offered by the server, the client should be able
 to decide which one to apply by itself (especially if it runs unattended), or
