@@ -32,10 +32,13 @@ Applying the update, then, boils down to invoking rauc with the given url.
 Implementation-wise, the two steps described above (query for update and apply
 an update) are really separated, so that the client can do:
 - step 1: the client queries the server, receive an answer (a JSON file), save
-  it somewhere and bail out.
+  it somewhere and bail out. This can be performed using the `--query-only`
+  argument.
 - step 2: the client open an existing JSON file describing an update, and apply
-  it.
+  it. To use an existing JSON file the argument `--update-file` needs to be
+  provided
 - step 1 + step 2: the client query for update, get an answer, then apply it.
+  This is currently the default behavior.
 
 
 
