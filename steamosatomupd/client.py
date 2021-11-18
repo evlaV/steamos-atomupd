@@ -317,7 +317,6 @@ class UpdateClient:
             if not args.quiet:
                 with open(update_file, 'r') as f:
                     print(f.read())
-            os.remove(update_file)
             return 0
 
         # Apply update
