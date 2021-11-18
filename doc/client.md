@@ -13,8 +13,10 @@ Basically, the update client does two things:
 To query the server, the clients sends a request with a few arguments to
 introduce himself and say what image he's running. The arguments are taken from
 the manifest file, basically: *product*, *release*, *variant*, *arch*,
-*buildid* and *version*. Additionally, the client can say that it wants to
-receive unstable updates.
+*buildid* and *version*. Additionally, in theory the client could say that it
+wants to receive unstable updates, even if currently the only way to achieve
+that is by setting *version* to the special value `snapshot`, effectively
+preventing the client to ask for versioned unstable updates.
 
 The server looks among the images that are available, and then decides if
 there's an update path for the client or not. If so, it answers some JSON

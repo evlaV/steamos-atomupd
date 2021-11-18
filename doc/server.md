@@ -72,9 +72,11 @@ Unless some of these versions are checkpoints: in the example above, if `3.1`
 is a checkpoint, then the answer will answer with `3.1` and `3.3`, so that the
 client knows that it has two updates to apply in order to be up-to-date.
 
-Additionally, the client can says whether it's interested in unstable updates,
-in such case the server considers images such as `3.4-rc1` (versions strings
-are expected to follow semantic versioning).
+Additionally, the client can theoretically say whether it's interested in
+unstable updates, in such case the server considers images such as `3.4-rc1`
+(versions strings are expected to follow semantic versioning). However there
+isn't yet a proper way for the client to signal its interest in unstable
+updates.
 
 Additionally, there could be a new *release* available. In this case, the
 server will return a second list of relevant updates, for the next release.
