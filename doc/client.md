@@ -134,7 +134,7 @@ located in:
 `https://example.com/jupiter/20211022.4/jupiter-20211022.4-snapshot.castr`
 
 
-[JSON that the server provided]: TODO
+[JSON that the server provided]: server.md#structure-of-update-candidates
 
 Update scenarios
 ----------------

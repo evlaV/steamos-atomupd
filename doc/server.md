@@ -102,6 +102,74 @@ That's why we provide two update paths, minor and major: to allow the client
 to make a decision in this particular case.
 
 
+Structure of update candidates
+------------------------------
+
+When the server is queried about an update, it will reply to the client with
+a JSON object containing information about the available updates.
+Otherwise, if there are no updates, it will reply with an empty JSON object
+(i.e. `{}`).
+
+When an update is available, the JSON *object* has the following keys:
+```
+**minor**
+:   An object describing minor system updates.
+    If there are no minor update, this object will be omitted.
+    The keys are strings:
+
+    **release**
+    :   A short string identifying the operating system release codename,
+        for example **buster** for Debian 10 'buster' or **holo** for
+        SteamOS 3. This is usually the **VERSION_CODENAME** from
+        **os-release**(5).
+
+    **candidates**
+    :   An array of objects, each of them describing a possible update.
+        Every object has the following keys:
+
+        **update_path**
+        :   Relative path pointing to the rauc bundle file, needed to
+            initialize the update. For example
+            `jupiter/20211022.4/jupiter-20211022.4-snapshot.raucb`
+
+        **image**
+        :   An object with the details of the proposed image update.
+            The keys are strings:
+
+            **product**
+            :   A short string identifying the operating system, for example
+                **arch** or **steamos**. This is usually the **ID** from
+                **os-release**(5).
+
+            **release**
+            :   The same **release** explained before
+
+            **variant**
+            :   A short machine-readable string identifying the variant or
+                edition of the operating system, for example **jupiter**.
+                This is usually the **VARIANT_ID** from **os-release**(5).
+
+            **arch**
+            :   A string identifying the image architecture, for example
+                **amd64** or **i386**.
+
+            **version**
+            :   A string that is either a semantic version (https://semver.org),
+                or the special keyword `snapshot`.
+
+            **buildid**
+            :   A string in the `ISO-8601 date` basic format, followed by an
+                optional `.` and a number called the `build increment`.
+
+            **checkpoint**
+            :   A boolean value indicating whether this image is a checkpoint
+                or not.
+
+**major**
+:   An object describing major system updates.
+    If there are no minor update, this object will be omitted.
+    The keys are the same as **minor**.
+```
 
 Knowing details about the client
 --------------------------------
