@@ -41,6 +41,98 @@ an update) are really separated, so that the client can do:
   This is currently the default behavior.
 
 
+The client configuration file
+-----------------------------
+
+The client, in order to run, requires a configuration file.
+The structure is similar to the Windows INI files, consisting of different
+sections, each of which contains keys with values.
+
+#### Mandatory sections and keys
+
+The only mandatory section is `Server`, and it must contain at least the
+keys `QueryUrl` and `ImagesUrl`.
+
+When the client asks for updates it will use the URL specified in `QueryUrl`.
+Instead, when the actual image update needs to be downloaded, it will use the
+URL in `ImagesUrl`.
+
+Check [Query request details][] and [Update request details][] for more info.
+
+[Query request details]: #query-request-details
+[Update request details]: #update-request-details
+
+#### Optional sections and keys
+
+A configuration file might also have the `Host` section with the keys
+`Manifest` and/or `RuntimeDir`.
+
+`Manifest` is used to specify the path to the [image manifest][] and
+`RuntimeDir` the path to the directory where the downloaded JSON file will be
+stored.
+
+[image manifest]: overview.md#the-image-manifest
+
+
+Query request details
+---------------------
+
+To query the update server an HTTP `GET` request is sent.
+
+For example a request will look like this:
+`https://example.com/update?product=steamos&release=holo&variant=jupiter&arch=amd64&version=snapshot&buildid=20211022.4&checkpoint=False`
+
+To the base server URL, taken from the `QueryUrl` field in the
+[configuration file][], is appended a question mark followed by multiple "query"
+parameters, in the form of "key=value", separated by an ampersand (following
+the [RFC 3986][] specification).
+
+`product`, `release`, `variant`, `arch`, `version`, `buildid` and `checkpoint`
+are all guaranteed to be present as "query" parameters.
+Their values are taken from the [image manifest][].
+
+However, if the `manifest.json` has an empty value for one of these parameters,
+e.g. `"product": ""`, the client will not throw any error while parsing that
+JSON, and the resulting `GET` request will have `[...]?product=&release=[...]`.
+
+Additionally `checkpoint` is expected to be a boolean, so the GET request
+usually terminates with either `&checkpoint=False` or `&checkpoint=True`.
+If `checkpoint` is missing from the manifest file, by default its value will
+be assumed to be `False`.
+However, while parsing the `manifest.json` file, its type is not enforced.
+For this reason if the JSON had some unexpected value like
+`"checkpoint": "maybe"`, the request will contain `[...]&checkpoint=maybe`.
+
+[configuration file]: #the-client-configuration-file
+[RFC 3986]: https://datatracker.ietf.org/doc/html/rfc3986#section-3
+
+
+Update request details
+----------------------
+
+To download the actual update an HTTP `GET` request is sent.
+
+For example a request will look like this:
+`https://example.com/jupiter/20211022.4/jupiter-20211022.4-snapshot.raucb`
+
+The URL is composed by two parts:
+
+- The base server URL, taken from the `ImagesUrl` field in the
+  [configuration file][].
+- The path to the file that needs to be downloaded, taken from the
+  `update_path` field in the [JSON that the server provided][] after our initial
+  query.
+
+The RAUC bundle file is directly installed by using `rauc install URL`.
+In order for this to work, the client is expecting the server to provide the
+casync chunk store in the same URL location (with the `.castr` extension
+instead of `.raucb`).
+So in the example used before, the client expects the casync chunk store to be
+located in:
+`https://example.com/jupiter/20211022.4/jupiter-20211022.4-snapshot.castr`
+
+
+[JSON that the server provided]: TODO
 
 Update scenarios
 ----------------
