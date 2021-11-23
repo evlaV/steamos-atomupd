@@ -63,3 +63,4 @@ ENV PYTHONPATH=/usr/local/lib/python3/dist-packages/
 STOPSIGNAL SIGINT
 
 ENTRYPOINT [ "/usr/local/bin/steamos-atomupd-server" ]
+EXPOSE 5000
