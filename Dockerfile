@@ -50,7 +50,9 @@ FROM ubuntu:focal
 # Minus build-only deps
 RUN apt-get update && \
     apt-get install -y python3-flask python3-semantic-version && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && \
+    install -d /atomupd/data && \
+    :
 
 # Copy install from build image into place
 COPY --from=build /built/ /
