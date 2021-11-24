@@ -50,6 +50,11 @@ DESTDIR=/built/ ninja -C /build install; \
 
 FROM ubuntu:focal
 
+ARG BUILD_ID=""
+ARG IMAGE_ID="steamos-atomupd"
+ARG IMAGE_NAME="steamos-atomupd"
+ARG IMAGE_VERSION=""
+
 # Minus build-only deps
 RUN \
 set -eu; \
@@ -57,6 +62,20 @@ apt-get update; \
 apt-get install -y python3-flask python3-semantic-version; \
 rm -rf /var/lib/apt/lists/*; \
 install -d /atomupd/data; \
+if [ -n "${IMAGE_NAME-}" ]; then \
+    echo "$IMAGE_NAME" >> /etc/issue; \
+    echo "$IMAGE_NAME" > /etc/debian_chroot; \
+fi; \
+if [ -n "${IMAGE_ID-}" ]; then \
+    echo "IMAGE_ID=$IMAGE_ID" >> /usr/lib/os-release; \
+fi; \
+if [ -n "${IMAGE_VERSION-}" ]; then \
+    echo "IMAGE_VERSION=$IMAGE_VERSION" >> /usr/lib/os-release; \
+fi; \
+if [ -n "${BUILD_ID-}" ]; then \
+    echo "BUILD_ID=$BUILD_ID" >> /usr/lib/os-release; \
+fi; \
+head -v -n-0 /etc/debian_chroot /etc/issue /usr/lib/os-release || :; \
 :
 
 # Copy install from build image into place
