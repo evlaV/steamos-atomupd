@@ -1,5 +1,5 @@
 #
-# Minimal build and deploy into a ubuntu/focal vm.
+# Minimal build and deploy into a Debian container.
 #
 # build:
 # -----
@@ -25,7 +25,7 @@
 ## Build image
 ##
 
-FROM ubuntu:focal AS build
+FROM debian:bullseye-slim AS build
 
 RUN apt-get update \
     && apt-get install -y \
@@ -48,7 +48,7 @@ DESTDIR=/built/ ninja -C /build install; \
 ## Run image
 ##
 
-FROM ubuntu:focal
+FROM debian:bullseye-slim
 
 ARG BUILD_ID=""
 ARG IMAGE_ID="steamos-atomupd"
