@@ -16,7 +16,7 @@ echo "{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n "$CI_REGISTRY_USER:$CI_
 # e.g. 0.20190724.0-48-g2aad2e3
 BUILD_ID="$(tr A-Z a-z < VERSION | tr -d '\n' | tr -c 'a-z0-9._-' '_')"
 
-if [ -n "${CI_PIPELINE_ID-}" ]; then
+if [ -n "${CI_PIPELINE_ID-}" ] && [ -z "${CI_COMMIT_TAG-}" ]; then
     # e.g. 0.20190724.0-48-g2aad2e3-ci12345
     BUILD_ID="${BUILD_ID}-ci${CI_PIPELINE_ID}"
 fi
