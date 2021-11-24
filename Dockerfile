@@ -35,11 +35,14 @@ RUN apt-get update \
 # Import working directory to /src/, build to /build/, install to /built/
 
 COPY ./ /src/
-RUN cd /src \
-    && meson /build \
-    && ninja -C /build \
-    && meson test -v -C /build \
-    && DESTDIR=/built/ ninja -C /build install
+RUN \
+set -eu; \
+cd /src; \
+meson /build; \
+ninja -C /build; \
+meson test -v -C /build; \
+DESTDIR=/built/ ninja -C /build install; \
+:
 
 ##
 ## Run image
@@ -48,11 +51,13 @@ RUN cd /src \
 FROM ubuntu:focal
 
 # Minus build-only deps
-RUN apt-get update && \
-    apt-get install -y python3-flask python3-semantic-version && \
-    rm -rf /var/lib/apt/lists/* && \
-    install -d /atomupd/data && \
-    :
+RUN \
+set -eu; \
+apt-get update; \
+apt-get install -y python3-flask python3-semantic-version; \
+rm -rf /var/lib/apt/lists/*; \
+install -d /atomupd/data; \
+:
 
 # Copy install from build image into place
 COPY --from=build /built/ /
