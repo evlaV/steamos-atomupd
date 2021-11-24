@@ -23,6 +23,21 @@ make_manifest() {
 EOF
 }
 
+make_checkpoint() {
+    cat << EOF
+{
+  "product": "$1",
+  "release": "$2",
+  "variant": "$3",
+  "arch": "$4",
+  "version": "$5",
+  "buildid": "$6",
+  "checkpoint": true
+}
+EOF
+
+}
+
 fake_image() {
 
     local product=$1
@@ -31,6 +46,7 @@ fake_image() {
     local arch=$4
     local version=$5
     local buildid=$6
+    local checkpoint=$7
 
     local imgdir imgname
 
@@ -38,13 +54,16 @@ fake_image() {
     imgname=$product-$release-$buildid-$version-$arch-$variant
 
     mkdir -p $imgdir
-    make_manifest $product $release $variant $arch $version $buildid > \
-        $imgdir/$imgname.manifest.json
-
-    if [ "$variant" == "atomic" ]; then
-        touch $imgdir/$imgname.raucb
-	mkdir $imgdir/$imgname.castr
+    if [ "$checkpoint" == "1" ]; then
+        make_checkpoint $product $release $variant $arch $version $buildid > \
+            $imgdir/$imgname.manifest.json
+    else
+        make_manifest $product $release $variant $arch $version $buildid > \
+            $imgdir/$imgname.manifest.json
     fi
+
+    touch $imgdir/$imgname.raucb
+    mkdir $imgdir/$imgname.castr
 }
 
 mkdir -p snapshots
@@ -52,13 +71,13 @@ mkdir -p snapshots
 (
   cd snapshots
 
-  fake_image steamos clockwerk devel amd64 snapshot 20181102.1
-  fake_image steamos clockwerk atomic  amd64 snapshot 20181102.1
+  fake_image steamos clockwerk devel amd64 snapshot 20181102.1 0
+  fake_image steamos clockwerk atomic  amd64 snapshot 20181102.1 0
 
-  fake_image steamos clockwerk devel amd64 snapshot 20181102.2
+  fake_image steamos clockwerk devel amd64 snapshot 20181102.2 0
 
-  fake_image steamos clockwerk devel amd64 snapshot 20181108.1
-  fake_image steamos clockwerk atomic  amd64 snapshot 20181108.1
+  fake_image steamos clockwerk devel amd64 snapshot 20181108.1 0
+  fake_image steamos clockwerk atomic  amd64 snapshot 20181108.1 0
 )
 
 mkdir -p releases
@@ -66,11 +85,15 @@ mkdir -p releases
 (
   cd releases
 
-  fake_image steamos clockwerk devel amd64 3.0 20190211
-  fake_image steamos clockwerk atomic  amd64 3.0 20190211
+  fake_image steamos clockwerk devel amd64 3.0 20190211 0
+  fake_image steamos clockwerk atomic  amd64 3.0 20190211 0
 
-  fake_image steamos clockwerk devel amd64 3.1 20190101
-  fake_image steamos clockwerk atomic  amd64 3.1 20190101
+  # Add a checkpoint after 3.0 but before 3.1 regular release
+  fake_image steamos clockwerk devel amd64 3.1 20190101 1
+  fake_image steamos clockwerk atomic amd64 3.1 20190101 1
+
+  fake_image steamos clockwerk devel amd64 3.1 20190201 0
+  fake_image steamos clockwerk atomic  amd64 3.1 20190201 0
 )
 
 echo "Hierarchy created under '$OUTDIR/images'"
