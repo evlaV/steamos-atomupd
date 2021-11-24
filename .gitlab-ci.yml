@@ -1,5 +1,20 @@
+# Copyright 2021 Collabora Ltd
+# SPDX-License-Identifier: MIT
+
+workflow:
+    rules:
+        - if: $CI_COMMIT_TAG
+        - if: $CI_COMMIT_BRANCH
+
 stages:
+    - prepare
+    - build
     - test
+
+default:
+  tags:
+    - docker
+    - linux
 
 .test_dependencies: &test_dependencies
     - |
@@ -16,6 +31,7 @@ stages:
 
 .test_template:
     stage: test
+    needs: []
     tags:
         - docker
         - linux
@@ -53,3 +69,26 @@ test:debian-11:
         paths:
             - _build/tests/meson-logs/*.txt
         when: always
+
+# We can't do this in the docker step because the kaniko executor
+# doesn't have git, therefore no `git describe`
+prepare:
+    stage: prepare
+    image: debian:bullseye-slim
+    script:
+        - ci/prepare.sh > VERSION
+    artifacts:
+        paths:
+            - VERSION
+
+docker:
+    stage: build
+    image:
+        name: gcr.io/kaniko-project/executor:debug
+        entrypoint: [""]
+    needs:
+        - prepare
+    script:
+        - sh ci/docker.sh
+
+# vim:set sw=4 sts=4 et:
