@@ -120,11 +120,40 @@ def download_update_file(url: str) -> str:
             opener = urllib.request.build_opener(handler)
             urllib.request.install_opener(opener)
 
-    with urllib.request.urlopen(url) as response:
-        jsonstr = response.read()
+    jsonstr = None
 
-    if not jsonstr:
-        return ""
+    tries = 0
+    while not jsonstr:
+
+        # Try up to 4 times, removing part of the path each time on 404 responses.
+        # Paths look like <product>/<arch>/<version>/<variant>/<buildid>.json
+        # Once we get up to <product>/<arch>.json that's the last thing we can check
+        # Since a product with an unknown architecture makes no sense.
+        if (tries == 4): 
+            raise Exception('Unable to get json from server')
+
+        tries += 1
+
+        try:
+            log.debug("Trying url: {}".format(url))
+            with urllib.request.urlopen(url) as response:
+                jsonstr = response.read()
+
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                log.debug("Got 404 from server, trying again with less arguments")
+                # Try the next level up in the url until we get a json string.
+                urlparts = urllib.parse.urlparse(url)
+                path = urlparts.path
+                pathparts = path.split('/')
+                pathparts = pathparts[:-1]
+
+                nextpath = "/".join(pathparts)
+                # Add the .json on this new shortened path
+                nextpath += '.json'
+                url = urlparts._replace(path=nextpath).geturl()
+                pass
+>>>>>>> 1b654d4 (Client: Move up heirarchy trying more and more generic paths.)
 
     update_data = json.loads(jsonstr)
     update = Update.from_dict(update_data)
