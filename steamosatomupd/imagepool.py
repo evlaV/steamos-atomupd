@@ -117,12 +117,12 @@ class ImagePool:
 
     {
       product1: {
-        release1: {
-          variant1: {
-            arch1: [ CANDIDATE1, CANDIDATE2, ... ],
-            arch2: [ ... ]
+        arch: {
+          release1: {
+            variant1: [ CANDIDATE1, CANDIDATE2, ... ],
+            variant2: [ ... ]
           },
-          variant2: { ...
+          release2: { ...
           }, ...
         }, ...
       }, ...
@@ -194,12 +194,12 @@ class ImagePool:
         data = {}
         for p in supported_products:
             data[p] = {}
-            for r in supported_releases:
-                data[p][r] = {}
-                for v in supported_variants:
-                    data[p][r][v] = {}
-                    for a in supported_archs:
-                        data[p][r][v][a] = []
+            for a in supported_archs:
+                data[p][a] = {}
+                for r in supported_releases:
+                    data[p][a][r] = {}
+                    for v in supported_variants:
+                        data[p][a][r][v] = []
         self.candidates = data
 
         # Populate the candidates dict
@@ -285,9 +285,20 @@ class ImagePool:
                 r = image.release
             v = image.variant
             a = image.arch
-            candidates = self.candidates[p][r][v][a]
+            candidates = self.candidates[p][a][r][v]
         except KeyError as e:
-            raise ValueError("Image is not supported: {}".format(e))
+            # None with that variant, get all for given product, arch, release
+            try:
+                candidates = []
+                keys = self.candidates[p][a][r].keys()
+                for k in keys:
+                    candidates.extend(self.candidates[p][a][r][k])
+
+                # Now remove any duplicates
+                candidates = list(dict.fromkeys(candidates))
+            except KeyError as e:
+                raise ValueError("Image is not supported: {}".format(e))
+            pass
 
         return candidates
 
