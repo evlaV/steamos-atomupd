@@ -29,6 +29,7 @@ import netrc
 import urllib.parse
 import urllib.request
 import multiprocessing
+from pathlib import Path
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
@@ -125,6 +126,31 @@ def download_update_file(url, image):
 
     return f.name
 
+
+def create_index(runtime_dir: Path, rootfs_dir: Path) -> None:
+    """ Re-create index file, and its symlink, for the given rootfs """
+    """ TODO: validate and reuse the eventual existing index """
+
+    rootfs_index = runtime_dir / 'rootfs.caibx'
+    rootfs_index.unlink(missing_ok=True)
+
+    c = subprocess.run(['desync', 'make', rootfs_index, rootfs_dir],
+                       stderr=subprocess.STDOUT,
+                       stdout=subprocess.PIPE,
+                       universal_newlines=True)
+
+    if c.returncode != 0:
+        raise RuntimeError(
+            "Failed to create the index file for the active partition rootfs: {}: {}".format(
+                c.returncode, c.stdout))
+
+    # Create a symlink next to the index as required by `desync extract`.
+    # We can pass only the index filename to the command.
+    rootfs_symlink = runtime_dir / 'rootfs'
+    rootfs_symlink.unlink(missing_ok=True)
+    os.symlink(rootfs_dir, rootfs_symlink)
+
+
 def do_update(images_url, update_path, quiet):
     """Update the system"""
 
@@ -168,6 +194,43 @@ def do_update(images_url, update_path, quiet):
     if c.returncode != 0:
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
 
+
+def get_rootfs_device() -> Path:
+    """ Get the rootfs device path from RAUC """
+
+    c = subprocess.run(['rauc', 'status', '--output-format=json'],
+                       capture_output=True,
+                       text=True)
+
+    if c.returncode != 0:
+        raise RuntimeError(
+            'Failed to get RAUC status output: {}: {}'.format(c.returncode,
+                                                              c.stdout))
+
+    status = json.loads(c.stdout)
+    boot_primary = status['boot_primary']
+    if not boot_primary:
+        raise RuntimeError("RAUC cannot determine the booted slot")
+
+    for s in status['slots']:
+        if boot_primary in s:
+            return Path(s[boot_primary]['device'])
+
+    raise RuntimeError('Failed to parse the RAUC status output')
+
+
+def is_desync_in_use() -> bool:
+    """ Use RAUC configuration to check if Desync will be used """
+
+    rauc_conf_path = '/etc/rauc/system.conf'
+
+    config = configparser.ConfigParser()
+    config.read(rauc_conf_path)
+
+    if 'casync' not in config:
+        return False
+
+    return config['casync'].getboolean('use-desync', fallback=False)
 
 
 class UpdateClient:
@@ -323,6 +386,9 @@ class UpdateClient:
                     print(f.read())
             os.remove(update_file)
             return 0
+
+        if is_desync_in_use():
+            create_index(Path(runtime_dir), get_rootfs_device())
 
         # Apply update
 
