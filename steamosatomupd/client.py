@@ -197,6 +197,10 @@ class UpdateClient:
             help="don't use existing manifest file, make one instead")
         parser.add_argument('--update-file',
             help="update from given file, instead of downloading it from server")
+        parser.add_argument('--update-version',
+            help="update to a specific buildid version. It will fail if either "
+                 "the update file doesn't contain this buildid or if it "
+                 "requires a base image that is newer than the current one")
 
         args = parser.parse_args()
 
@@ -331,21 +335,28 @@ class UpdateClient:
         # TODO Should we check that the versions proposed by the server are
         #      above our own version, or should we trust the server blindly?
 
-        upd = None
+        update_path = ""
         if update.major:
-            upd = update.major
-        elif update.minor:
-            upd = update.minor
-        else:
-            log.debug("No update")
-            return 0
+            candidate = update.major.candidates[0]
+            if not args.update_version or args.update_version == str(candidate.image.buildid):
+                update_path = candidate.update_path
 
-        assert upd
+        if not update_path and update.minor:
+            candidate = update.minor.candidates[0]
+            if not args.update_version or args.update_version == str(candidate.image.buildid):
+                update_path = candidate.update_path
+
+        if not update_path:
+            if args.update_version:
+                log.error("The requested update version is not a valid option")
+                return -1
+            else:
+                log.debug("No update")
+                return 0
 
         log.debug("Applying update NOW")
 
         images_url = config['Server']['ImagesUrl']
-        update_path = upd.candidates[0].update_path
         try:
             do_update(images_url, update_path, args.quiet)
         except Exception as e:
