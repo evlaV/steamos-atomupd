@@ -48,6 +48,7 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
 
+
 def do_progress():
     """Print the progression using a journald"""
 
@@ -57,6 +58,7 @@ def do_progress():
                          stdout=subprocess.PIPE,
                          universal_newlines=True)
 
+    using_desync = is_desync_in_use()
     slot = ""
     while c.poll() is None:
         line = c.stdout.readline().rstrip()
@@ -65,26 +67,31 @@ def do_progress():
         words = line.split()
         if len(words) == 0:
             continue
-        elif words[0] == "Slot":
-            slot = os.path.basename(os.path.splitext(words[6])[0])
-            slot = os.path.splitext(slot)[0]
         elif words[0] == "installing" and words[2] == "started":
             print("%d%%" % 0)
-        elif slot == "rootfs" and ' '.join(words[0:-1]) == "seeding...":
-            print("%d%%" % ((float(words[-1][:-1]) * 25 * 0.9 / 100) + 5))
-        elif slot == "rootfs" and ' '.join(words[0:-1]) == "downloading chunks...":
-            print("%d%%" % ((float(words[-1][:-1]) * 75 * 0.9 / 100) + 5 + (25 * 0.9)))
-        elif words[0] == "installing" and ' '.join(words[2:]) == "All slots updated":
-            print("%d%%" % 95)
         elif words[0] == "installing" and words[2] == "finished":
             print("%d%%" % 100)
         elif words[0] == "installing" and words[2] == "succeeded":
             break
         elif words[0] == "installing" and words[2] == "failed:":
             break
+        elif using_desync:
+            if words[0].endswith('%') and len(words) < 3:
+                print(line.strip())
+        else:
+            if words[0] == "Slot":
+                slot = os.path.basename(os.path.splitext(words[6])[0])
+                slot = os.path.splitext(slot)[0]
+            elif slot == "rootfs" and ' '.join(words[0:-1]) == "seeding...":
+                print("%d%%" % ((float(words[-1][:-1]) * 25 * 0.9 / 100) + 5))
+            elif slot == "rootfs" and ' '.join(words[0:-1]) == "downloading chunks...":
+                print("%d%%" % ((float(words[-1][:-1]) * 75 * 0.9 / 100) + 5 + (25 * 0.9)))
+            elif words[0] == "installing" and ' '.join(words[2:]) == "All slots updated":
+                print("%d%%" % 95)
         sys.stdout.flush()
 
     c.terminate()
+
 
 def download_update_file(url, image):
     """Download an update file from the server
