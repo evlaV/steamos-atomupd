@@ -161,4 +161,4 @@ class UpdateParser:
 def main():
     server = UpdateParser()
     exit_code = server.parse_all()
-    sys.exit(exit_code)
+    return exit_code
