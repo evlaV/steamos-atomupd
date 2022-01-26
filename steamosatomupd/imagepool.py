@@ -205,6 +205,9 @@ class ImagePool:
         # Populate the candidates dict
         log.debug("Walking the image tree: {}".format(images_dir))
         for root, dirs, files in os.walk(images_dir):
+            # Sort dirs and files to get the same order on all systems.
+            dirs.sort()
+            files.sort()
             [dirs.remove(d) for d in list(dirs) if d.endswith(".castr")]
             for f in files:
                 # We're looking for manifest files
