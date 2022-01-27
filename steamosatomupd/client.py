@@ -271,6 +271,9 @@ class UpdateClient:
             help="update to a specific buildid version. It will fail if either "
                  "the update file doesn't contain this buildid or if it "
                  "requires a base image that is newer than the current one")
+        parser.add_argument('--variant',
+            help="use this 'variant' value instead of the one parsed from the "
+                 "manifest file")
 
         args = parser.parse_args()
 
@@ -329,6 +332,10 @@ class UpdateClient:
                 image = manifest.image
             else:
                 image = Image.from_os()
+
+            # Replace the variant value with the one provided as an argument
+            if args.variant:
+                image.variant = args.variant
 
             # Download the update file to a tmp file
             url = config['Server']['QueryUrl'] + '?' + urllib.parse.urlencode(image.to_dict())
