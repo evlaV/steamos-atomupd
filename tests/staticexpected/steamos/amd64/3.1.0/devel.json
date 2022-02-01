@@ -1,1 +1,31 @@
-"{}"
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20190101.0",
+                    "checkpoint": true,
+                    "product": "steamos",
+                    "release": "clockwerk",
+                    "variant": "devel",
+                    "version": "3.1.0"
+                },
+                "update_path": "steamos/clockwerk/3.1/amd64/steamos-clockwerk-20190101-3.1-amd64-devel.raucb"
+            },
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20190201.0",
+                    "checkpoint": false,
+                    "product": "steamos",
+                    "release": "clockwerk",
+                    "variant": "devel",
+                    "version": "3.1.0"
+                },
+                "update_path": "steamos/clockwerk/3.1/amd64/steamos-clockwerk-20190201-3.1-amd64-devel.raucb"
+            }
+        ],
+        "release": "clockwerk"
+    }
+}
