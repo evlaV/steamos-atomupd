@@ -56,7 +56,9 @@ class BuildIdTestCase(unittest.TestCase):
         d2 = dict(imgdata)
 
         d1['buildid'] = '20190214'
+        d1['version'] = '3.0'
         d2['buildid'] = '20190214.0'
+        d2['version'] = '3.0'
         self.assertTrue(Image.from_dict(d1) == Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d1) <= Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d1) >= Image.from_dict(d2))
