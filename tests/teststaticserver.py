@@ -28,6 +28,9 @@ sys.path.insert(1, os.getcwd())
 class StaticServerTestCase(unittest.TestCase):
 
     def test_static_server(self):
+        # First build example files
+        p = run(['./examples/build-image-hierarchy.sh'])
+
         # First import staticserver
         try:
             from steamosatomupd import staticserver 

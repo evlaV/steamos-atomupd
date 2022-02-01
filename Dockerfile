@@ -40,7 +40,6 @@ set -eu; \
 cd /src; \
 meson /build; \
 ninja -C /build; \
-examples/build-image-hierarchy.sh; \
 meson test -v -C /build; \
 DESTDIR=/built/ ninja -C /build install; \
 :

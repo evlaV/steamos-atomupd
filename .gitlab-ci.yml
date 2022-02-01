@@ -46,7 +46,6 @@ test:debian-10:
 
             meson _build/tests
             ninja -C _build/tests
-            examples/build-image-hierarchy.sh
             meson test --verbose -C _build/tests
 
     artifacts:
@@ -64,7 +63,6 @@ test:debian-11:
 
             meson _build/tests
             ninja -C _build/tests
-            examples/build-image-hierarchy.sh
             meson test --verbose -C _build/tests
 
     artifacts:
