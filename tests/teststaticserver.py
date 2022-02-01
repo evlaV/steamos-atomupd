@@ -40,8 +40,8 @@ class StaticServerTestCase(unittest.TestCase):
             sys.exit(1)
 
         # Then run staticserver with example file
-        sys.argv = ["./staticserver.py", "--config", "./examples/server-releases.conf"]
-        staticserver.main()
+        args = ["--config", "./examples/server-releases.conf"]
+        staticserver.main(args)
 
         # time.sleep(1)
         

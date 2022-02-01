@@ -61,7 +61,7 @@ class UpdateParser:
 
         return data
 
-    def __init__(self):
+    def __init__(self, args=None):
 
         # Arguments
 
@@ -72,7 +72,7 @@ class UpdateParser:
         parser.add_argument('-d', '--debug', action='store_true',
             help="show debug messages")
 
-        args = parser.parse_args()
+        args = parser.parse_args(args)
 
         if args.debug:
             logging.getLogger().setLevel(logging.DEBUG)
@@ -158,7 +158,7 @@ class UpdateParser:
 
     image_pool = None
 
-def main():
-    server = UpdateParser()
+def main(args=None):
+    server = UpdateParser(args)
     exit_code = server.parse_all()
     return exit_code
