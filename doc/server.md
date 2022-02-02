@@ -161,6 +161,12 @@ When an update is available, the JSON *object* has the following keys:
             :   A string in the `ISO-8601 date` basic format, followed by an
                 optional `.` and a number called the `build increment`.
 
+            **estimated_size**
+            :   An integer representing the estimated download size, in Bytes,
+                to perform the update. When this key is either missing, or its
+                value is zero, the estimated size should be assumed to be
+                unknown.
+
             **checkpoint**
             :   A boolean value indicating whether this image is a checkpoint
                 or not.

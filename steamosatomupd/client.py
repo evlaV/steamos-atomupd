@@ -33,7 +33,7 @@ from pathlib import Path
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
-from steamosatomupd.update import Update
+from steamosatomupd.update import Update, UpdatePath
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -134,11 +134,16 @@ def download_update_file(url, image):
     return f.name
 
 
-def create_index(runtime_dir: Path, rootfs_dir: Path) -> None:
-    """ Re-create index file, and its symlink, for the given rootfs """
-    """ TODO: validate and reuse the eventual existing index """
+def create_index(runtime_dir: Path, rootfs_dir: Path, replace: bool) -> Path:
+    """ Re-create index file, and its symlink, for the given rootfs
+
+    Returns the index file path.
+    """
 
     rootfs_index = runtime_dir / 'rootfs.caibx'
+    if rootfs_index.exists() and not replace:
+        return rootfs_index
+
     rootfs_index.unlink(missing_ok=True)
 
     c = subprocess.run(['desync', 'make', rootfs_index, rootfs_dir],
@@ -156,6 +161,8 @@ def create_index(runtime_dir: Path, rootfs_dir: Path) -> None:
     rootfs_symlink = runtime_dir / 'rootfs'
     rootfs_symlink.unlink(missing_ok=True)
     os.symlink(rootfs_dir, rootfs_symlink)
+
+    return rootfs_index
 
 
 def do_update(images_url, update_path, quiet):
@@ -200,6 +207,96 @@ def do_update(images_url, update_path, quiet):
 
     if c.returncode != 0:
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
+
+
+def estimate_download_size(runtime_dir: Path, update_url: str,
+                           buildid: str, required_buildid: str) -> int:
+    """Estimate the download size for the provided buildid.
+
+    The estimation will be based against the required_buildid or, if not set,
+    against the current active partition.
+
+    Returns the estimated size in Bytes or zero if we were not able to estimate
+    the download size.
+    """
+    if not is_desync_in_use():
+        return 0
+
+    destination = runtime_dir / buildid
+
+    # If we already extracted this update bundle, don't do it again
+    if not destination.exists():
+        c = subprocess.run(['rauc', 'extract', update_url, destination],
+                           stderr=subprocess.STDOUT,
+                           stdout=subprocess.PIPE,
+                           text=True)
+
+        if c.returncode != 0:
+            # Estimating the download size is not a critical operation.
+            # If it fails we try to continue anyway.
+            log.warning("Failed to extract bundle: {}: {}".format(c.returncode, c.stdout))
+            return 0
+
+    update_index = destination / 'rootfs.img.caibx'
+    if not update_index.exists():
+        log.warning("The extracted bundle doesn't have the expected 'rootfs.img.caibx' file")
+        return 0
+
+    if required_buildid:
+        seed = runtime_dir / required_buildid
+        if not seed.exists():
+            log.debug("Unable to estimate the download size because the "
+                      "required base image bundle is missing")
+            return 0
+    else:
+        # This image can be installed directly, use the current active
+        # partition as a seed
+        seed = create_index(runtime_dir, get_rootfs_device(), False)
+
+    c = subprocess.run(['desync', 'info', '--seed', seed, update_index],
+                       capture_output=True,
+                       text=True)
+
+    if c.returncode != 0:
+        log.warning(
+            "Failed to gather information about the update: {}: {}".format(
+                c.returncode,
+                c.stdout
+            )
+        )
+        return 0
+
+    index_info = json.loads(c.stdout)
+    return index_info.get("dedup-size-not-in-seed", 0)
+
+
+def ensure_estimated_download_size(update_path: UpdatePath,
+                                   images_url: str,
+                                   runtime_dir: Path) -> UpdatePath:
+    """Estimate the download size for all the candidates in update_path
+
+    If an estimation is already present, it will not be recalculated.
+
+    Returns an UpdatePath object that includes the estimated download sizes.
+    """
+    if not update_path:
+        return update_path
+    required_buildid = ""
+    for i, candidate in enumerate(update_path.candidates):
+        if candidate.image.estimated_size != 0:
+            # If the server already provided an estimation for the
+            # download size, we don't need to recalculate it
+            continue
+        update_url = urllib.parse.urljoin(images_url, candidate.update_path)
+        update_path.candidates[i].image.estimated_size = estimate_download_size(
+            Path(runtime_dir),
+            update_url,
+            str(candidate.image.buildid),
+            required_buildid
+        )
+        required_buildid = candidate.image.buildid
+
+    return update_path
 
 
 def get_rootfs_device() -> Path:
@@ -260,6 +357,9 @@ class UpdateClient:
             help="show debug messages")
         parser.add_argument('--query-only', action='store_true',
             help="only query if an update is available")
+        parser.add_argument('--estimate-download-size', action='store_true',
+            help="Include in the update file the estimated download size for "
+                 "each image candidate")
         parser.add_argument('--manifest-file',
             metavar='FILE', # can't use default= here, see below
             help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
@@ -392,17 +492,30 @@ class UpdateClient:
         if update.major:
             log_update(update.major)
 
+        images_url = config['Server']['ImagesUrl']
+        if not images_url.endswith('/'):
+            images_url += '/'
+
+        if args.estimate_download_size:
+            update.minor = ensure_estimated_download_size(update.minor,
+                                                          images_url,
+                                                          Path(runtime_dir))
+            update.major = ensure_estimated_download_size(update.major,
+                                                          images_url,
+                                                          Path(runtime_dir))
+
         # Bail out if needed
 
         if args.query_only:
             if not args.quiet:
-                with open(update_file, 'r') as f:
-                    print(f.read())
+                print(json.dumps(update.to_dict(), indent=2))
             os.remove(update_file)
             return 0
 
         if is_desync_in_use():
-            create_index(Path(runtime_dir), get_rootfs_device())
+            # TODO if we skip invalid seeds in Desync we can avoid recreating
+            # the seed index
+            create_index(Path(runtime_dir), get_rootfs_device(), True)
 
         # Apply update
 
@@ -436,7 +549,6 @@ class UpdateClient:
 
         log.debug("Applying update NOW")
 
-        images_url = config['Server']['ImagesUrl']
         try:
             do_update(images_url, update_path, args.quiet)
         except Exception as e:

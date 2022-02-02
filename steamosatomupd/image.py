@@ -90,6 +90,10 @@ class BuildId:
     def __repr__(self):
         return "{}.{}".format(self.date.strftime('%Y%m%d'), self.incr)
 
+    def __str__(self):
+        return self.__repr__()
+
+
 class Image:
 
     """An OS image
@@ -102,9 +106,11 @@ class Image:
     version: SemanticVersion
     buildid: BuildId
     checkpoint: bool
+    estimated_size: int
     """
 
-    def __init__(self, product, release, variant, arch, version, buildid, checkpoint):
+    def __init__(self, product, release, variant, arch, version, buildid,
+                 checkpoint, estimated_size):
         self.product = product
         self.release = release
         self.variant = variant
@@ -112,10 +118,11 @@ class Image:
         self.version = version
         self.buildid = buildid
         self.checkpoint = checkpoint
+        self.estimated_size = estimated_size
 
     @classmethod
     def from_values(cls, product, release, variant, arch,
-                    version_str, buildid_str, checkpoint):
+                    version_str, buildid_str, checkpoint, estimated_size):
         """Create an Image from mandatory values
 
         This method performs mandatory conversions and sanity checks before
@@ -138,7 +145,7 @@ class Image:
             arch = 'amd64'
 
         # Return an instance
-        return cls(product, release, variant, arch, version, buildid, checkpoint)
+        return cls(product, release, variant, arch, version, buildid, checkpoint, estimated_size)
 
     @classmethod
     def from_dict(cls, data):
@@ -161,13 +168,17 @@ class Image:
         if 'checkpoint' in data:
             checkpoint = data['checkpoint']
 
+        estimated_size = data.get('estimated_size', 0)
+
         # Return an instance
         return cls.from_values(product, release, variant, arch,
-                               version_str, buildid_str, checkpoint)
+                               version_str, buildid_str, checkpoint,
+                               estimated_size)
 
     @classmethod
     def from_os(cls, product=None, release=None, variant=None, arch=None,
-                version_str=None, buildid_str=None, checkpoint=False):
+                version_str=None, buildid_str=None, checkpoint=False,
+                estimated_size=0):
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
@@ -207,7 +218,8 @@ class Image:
 
         # Return an instance, might raise exceptions
         return cls.from_values(product, release, variant, arch,
-                               version_str, buildid_str, checkpoint)
+                               version_str, buildid_str, checkpoint,
+                               estimated_size)
 
     def to_dict(self):
         """Export an Image to a dictionary"""
@@ -224,6 +236,7 @@ class Image:
             data['version'] = 'snapshot'
         data['buildid'] = str(self.buildid)
         data['checkpoint'] = self.checkpoint
+        data['estimated_size'] = self.estimated_size
 
         return data
 
