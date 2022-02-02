@@ -20,7 +20,7 @@ import datetime
 import platform
 import re
 import semantic_version
-import urllib
+import urllib.parse
 
 def _load_os_release():
     """Load /etc/os-release in a dictionary"""
