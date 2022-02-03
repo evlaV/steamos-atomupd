@@ -129,7 +129,7 @@ def download_update_file(url: str) -> str:
         # Paths look like <product>/<arch>/<version>/<variant>/<buildid>.json
         # Once we get up to <product>/<arch>.json that's the last thing we can check
         # Since a product with an unknown architecture makes no sense.
-        if (tries == 4): 
+        if tries == 4:
             raise Exception('Unable to get json from server')
 
         tries += 1
@@ -152,8 +152,6 @@ def download_update_file(url: str) -> str:
                 # Add the .json on this new shortened path
                 nextpath += '.json'
                 url = urlparts._replace(path=nextpath).geturl()
-                pass
->>>>>>> 1b654d4 (Client: Move up heirarchy trying more and more generic paths.)
 
     update_data = json.loads(jsonstr)
     update = Update.from_dict(update_data)
