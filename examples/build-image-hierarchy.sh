@@ -71,13 +71,13 @@ mkdir -p snapshots
 (
   cd snapshots
 
-  fake_image steamos clockwerk devel amd64 snapshot 20181102.1 0
-  fake_image steamos clockwerk atomic  amd64 snapshot 20181102.1 0
+  fake_image steamos holo steamdeck amd64 snapshot 20181102.1 0
+  fake_image steamos holo steamdeck-beta amd64 snapshot 20181102.1 0
 
-  fake_image steamos clockwerk devel amd64 snapshot 20181102.2 0
+  fake_image steamos holo steamdeck amd64 snapshot 20181102.2 0
 
-  fake_image steamos clockwerk devel amd64 snapshot 20181108.1 0
-  fake_image steamos clockwerk atomic  amd64 snapshot 20181108.1 0
+  fake_image steamos holo steamdeck amd64 snapshot 20181108.1 0
+  fake_image steamos holo steamdeck-beta amd64 snapshot 20181108.1 0
 )
 
 mkdir -p releases
@@ -85,15 +85,18 @@ mkdir -p releases
 (
   cd releases
 
-  fake_image steamos clockwerk devel amd64 3.0 20190211 0
-  fake_image steamos clockwerk atomic  amd64 3.0 20190211 0
+  fake_image steamos holo steamdeck amd64 3.0 20190211 0
+  fake_image steamos holo steamdeck-beta  amd64 3.0 20190211 0
+  fake_image steamos holo atomic amd64 3.0 20190211 0
 
   # Add a checkpoint after 3.0 but before 3.1 regular release
-  fake_image steamos clockwerk devel amd64 3.1 20190101 1
-  fake_image steamos clockwerk atomic amd64 3.1 20190101 1
+  fake_image steamos holo steamdeck amd64 3.1 20190101 1
+  fake_image steamos holo steamdeck-beta amd64 3.1 20190101 1
+  fake_image steamos holo atomic amd64 3.1 20190101 1
 
-  fake_image steamos clockwerk devel amd64 3.1 20190201 0
-  fake_image steamos clockwerk atomic  amd64 3.1 20190201 0
+  fake_image steamos holo steamdeck amd64 3.1 20190201 0
+  fake_image steamos holo steamdeck-beta  amd64 3.1 20190201 0
+  fake_image steamos holo atomic amd64 3.1 20190201 0
 )
 
 echo "Hierarchy created under '$OUTDIR/images'"
