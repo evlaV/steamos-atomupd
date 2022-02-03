@@ -137,6 +137,7 @@ class ImagePool:
                          config['Images']['Products'].split(),
                          config['Images']['Releases'].split(),
                          config['Images']['Variants'].split(),
+                         config['Images']['DefaultVariant'],
                          config['Images']['Archs'].split())
 
     @classmethod
@@ -164,7 +165,7 @@ class ImagePool:
             sys.exit(1)
 
     def _create_pool(self, images_dir, work_with_snapshots, want_unstable_images,
-                 supported_products, supported_releases, supported_variants, supported_archs):
+                 supported_products, supported_releases, supported_variants, default_variant, supported_archs):
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -187,6 +188,7 @@ class ImagePool:
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
+        self.default_variant = default_variant
         self.supported_archs    = supported_archs
         self.images_found = []
 
@@ -259,6 +261,7 @@ class ImagePool:
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
+            'DefaultVariant : {}'.format(self.default_variant),
             'Archs     : {}'.format(self.supported_archs),
             'Candidates: (see below)',
             '{}'.format(pprint.pformat(self.candidates))
@@ -291,14 +294,9 @@ class ImagePool:
             candidates = self.candidates[p][a][r][v]
         except KeyError as e:
             # None with that variant, get all for given product, arch, release
+            # Using default variant
             try:
-                candidates = []
-                keys = self.candidates[p][a][r].keys()
-                for k in keys:
-                    candidates.extend(self.candidates[p][a][r][k])
-
-                # Now remove any duplicates
-                candidates = list(dict.fromkeys(candidates))
+                candidates = self.candidates[p][a][r][self.default_variant]
             except KeyError as e:
                 raise ValueError("Image is not supported: {}".format(e))
             pass
