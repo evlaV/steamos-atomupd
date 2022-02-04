@@ -97,6 +97,8 @@ mkdir -p releases
   fake_image steamos holo steamdeck amd64 3.1 20190201 0
   fake_image steamos holo steamdeck-beta  amd64 3.1 20190201 0
   fake_image steamos holo atomic amd64 3.1 20190201 0
+
+  fake_image steamos holo steamdeck amd64 3.1 20190312 0
 )
 
 echo "Hierarchy created under '$OUTDIR/images'"
