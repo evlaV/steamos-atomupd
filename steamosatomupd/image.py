@@ -285,9 +285,9 @@ class Image:
     # care of never letting this situation happen.
 
     def __eq__(self, other):
-        if self.version and other.version and self.release and other.release and self.buildid and other.buildid:
+        if self.version and other.version:
             return ((self.version, self.release, self.buildid) == (other.version, other.release, other.buildid))
-        elif self.release and other.release and self.buildid and other.buildid:
+        elif not self.version and not other.version:
             return ((self.release, self.buildid) == (other.release, other.buildid))
         raise RuntimeError("Can't compare snapshot with versioned image")
 
@@ -295,30 +295,30 @@ class Image:
         return not (self == other)
 
     def __lt__(self, other):
-        if self.version and other.version and self.release and other.release and self.buildid and other.buildid:
+        if self.version and other.version:
             return ((self.version, self.release, self.buildid) < (other.version, other.release, other.buildid))
-        elif self.release and other.release and self.buildid and other.buildid:
+        elif not self.version and not other.version:
             return ((self.release, self.buildid) < (other.release, other.buildid))
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __le__(self, other):
-        if self.version and other.version and self.release and other.release and self.buildid and other.buildid:
+        if self.version and other.version:
             return ((self.version, self.release, self.buildid) <= (other.version, other.release, other.buildid))
-        elif self.release and other.release and self.buildid and other.buildid:
+        elif not self.version and not other.version:
             return ((self.release, self.buildid) <= (other.release, other.buildid))
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __gt__(self, other):
-        if self.version and other.version and self.release and other.release and self.buildid and other.buildid:
+        if self.version and other.version:
             return ((self.version, self.release, self.buildid) > (other.version, other.release, other.buildid))
-        elif self.release and other.release and self.buildid and other.buildid:
+        elif not self.version and not other.version:
             return ((self.release, self.buildid) > (other.release, other.buildid))
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __ge__(self, other):
-        if self.version and other.version and self.release and other.release and self.buildid and other.buildid:
+        if self.version and other.version:
             return ((self.version, self.release, self.buildid) >= (other.version, other.release, other.buildid))
-        elif self.release and other.release and self.buildid and other.buildid:
+        elif not self.version and not other.version:
             return ((self.release, self.buildid) >= (other.release, other.buildid))
         raise RuntimeError("Can't compare snapshot with versioned image")
 
