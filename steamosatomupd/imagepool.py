@@ -131,14 +131,14 @@ class ImagePool:
     """
 
     def __init__(self, config):
-        return self._create_pool(config['Images']['PoolDir'],
-                         config['Images'].getboolean('Snapshots'),
-                         config['Images'].getboolean('Unstable'),
-                         config['Images']['Products'].split(),
-                         config['Images']['Releases'].split(),
-                         config['Images']['Variants'].split(),
-                         config['Images']['DefaultVariant'],
-                         config['Images']['Archs'].split())
+        self._create_pool(config['Images']['PoolDir'],
+                          config['Images'].getboolean('Snapshots'),
+                          config['Images'].getboolean('Unstable'),
+                          config['Images']['Products'].split(),
+                          config['Images']['Releases'].split(),
+                          config['Images']['Variants'].split(),
+                          config['Images']['DefaultVariant'],
+                          config['Images']['Archs'].split())
 
     @classmethod
     def validateConfig(self, config):
