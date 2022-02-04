@@ -149,6 +149,7 @@ class ImagePool:
             products = config['Images']['Products'].split()
             releases = config['Images']['Releases'].split()
             variants = config['Images']['Variants'].split()
+            default_version = config['Images']['Defaultvariant']
             archs    = config['Images']['Archs'].split()
         except KeyError:
             log.error("Please provide a valid configuration file")
