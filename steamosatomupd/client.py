@@ -134,8 +134,8 @@ def download_update_file(url, image):
     return f.name
 
 
-def create_index(runtime_dir: Path, rootfs_dir: Path, replace: bool) -> Path:
-    """ Re-create index file, and its symlink, for the given rootfs
+def create_index(runtime_dir: Path, replace: bool) -> Path:
+    """ Re-create index file, and its symlink, for the rootfs
 
     Returns the index file path.
     """
@@ -146,6 +146,7 @@ def create_index(runtime_dir: Path, rootfs_dir: Path, replace: bool) -> Path:
 
     rootfs_index.unlink(missing_ok=True)
 
+    rootfs_dir = get_rootfs_device()
     c = subprocess.run(['desync', 'make', rootfs_index, rootfs_dir],
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
@@ -165,8 +166,13 @@ def create_index(runtime_dir: Path, rootfs_dir: Path, replace: bool) -> Path:
     return rootfs_index
 
 
-def do_update(url: str, quiet: bool) -> None:
+def do_update(url: str, runtime_dir: Path, quiet: bool) -> None:
     """Update the system"""
+
+    if is_desync_in_use():
+        # TODO if we skip invalid seeds in Desync we can avoid recreating
+        # the seed index
+        create_index(runtime_dir, True)
 
     # Remount /tmp with max memory and inodes number
     #
@@ -246,7 +252,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     else:
         # This image can be installed directly, use the current active
         # partition as a seed
-        seed = create_index(runtime_dir, get_rootfs_device(), False)
+        seed = create_index(runtime_dir, False)
 
     c = subprocess.run(['desync', 'info', '--seed', seed, update_index],
                        capture_output=True,
@@ -507,11 +513,6 @@ class UpdateClient:
             os.remove(update_file)
             return 0
 
-        if is_desync_in_use():
-            # TODO if we skip invalid seeds in Desync we can avoid recreating
-            # the seed index
-            create_index(Path(runtime_dir), get_rootfs_device(), True)
-
         # Apply update
 
         # Ensure we're running from a read-only system
@@ -546,7 +547,7 @@ class UpdateClient:
 
         try:
             update_url = urllib.parse.urljoin(images_url, update_path)
-            do_update(update_url, args.quiet)
+            do_update(update_url, Path(runtime_dir), args.quiet)
         except Exception as e:
             log.error("Failed to install update file: {}".format(e))
             return -1
