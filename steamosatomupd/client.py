@@ -165,11 +165,8 @@ def create_index(runtime_dir: Path, rootfs_dir: Path, replace: bool) -> Path:
     return rootfs_index
 
 
-def do_update(images_url, update_path, quiet):
+def do_update(url: str, quiet: bool) -> None:
     """Update the system"""
-
-    if not images_url.endswith('/'):
-        images_url += '/'
 
     # Remount /tmp with max memory and inodes number
     #
@@ -190,8 +187,6 @@ def do_update(images_url, update_path, quiet):
         # Let's keep going and hope that /tmp can handle the load
 
     # Let's update now
-
-    url = urllib.parse.urljoin(images_url, update_path)
 
     if not quiet:
         p = multiprocessing.Process(target=do_progress)
@@ -550,7 +545,8 @@ class UpdateClient:
         log.debug("Applying update NOW")
 
         try:
-            do_update(images_url, update_path, args.quiet)
+            update_url = urllib.parse.urljoin(images_url, update_path)
+            do_update(update_url, args.quiet)
         except Exception as e:
             log.error("Failed to install update file: {}".format(e))
             return -1
