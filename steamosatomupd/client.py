@@ -368,6 +368,8 @@ class UpdateClient:
             help="don't use existing manifest file, make one instead")
         parser.add_argument('--update-file',
             help="update from given file, instead of downloading it from server")
+        parser.add_argument('--update-from-url',
+            help="update to a specific RAUC bundle image")
         parser.add_argument('--update-version',
             help="update to a specific buildid version. It will fail if either "
                  "the update file doesn't contain this buildid or if it "
@@ -399,6 +401,20 @@ class UpdateClient:
         assert config['Server']['QueryUrl']
         assert config['Server']['ImagesUrl']
 
+        runtime_dir = config['Host']['RuntimeDir']
+        if not os.path.isdir(runtime_dir):
+            log.debug("Creating runtime dir {}".format(runtime_dir))
+            os.makedirs(runtime_dir)
+
+        if args.update_from_url:
+            log.debug("Installing an update from the given URL")
+            try:
+                do_update(args.update_from_url, Path(runtime_dir), args.quiet)
+            except Exception as e:
+                log.error("Failed to install update from URL: {}".format(e))
+                return -1
+            return 0
+
         # Handle the manifest file logic
 
         if args.mk_manifest_file:
@@ -412,13 +428,6 @@ class UpdateClient:
             else:
                 manifest_file = DEFAULT_MANIFEST_FILE
             log.debug("Using manifest file '{}'".format(manifest_file))
-
-        # Create runtime dir
-
-        runtime_dir = config['Host']['RuntimeDir']
-        if not os.path.isdir(runtime_dir):
-            log.debug("Creating runtime dir {}".format(runtime_dir))
-            os.makedirs(runtime_dir)
 
         # Download update file, unless one is given in args
 
