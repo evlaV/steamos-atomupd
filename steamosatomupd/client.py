@@ -108,13 +108,14 @@ def download_update_file(url: str) -> str:
     Exceptions might be raised here and there...
     """
 
-    netrcfile = os.path.expanduser("~/.netrc") 
+    netrcfile = os.path.expanduser("~/.netrc")
     if os.path.isfile(netrcfile):
         host = urllib.parse.urlparse(url).netloc
         auth = netrc.netrc(netrcfile).authenticators(host)
         if auth:
+            login, _, password = auth
             manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-            manager.add_password(None, host, auth[0], auth[2])
+            manager.add_password(None, host, login, password)
             handler = urllib.request.HTTPBasicAuthHandler(manager)
             opener = urllib.request.build_opener(handler)
             urllib.request.install_opener(opener)
