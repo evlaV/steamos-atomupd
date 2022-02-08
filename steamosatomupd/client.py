@@ -401,8 +401,21 @@ class UpdateClient:
         with open(args.config, 'r') as f:
             config.read_file(f)
 
-        assert config['Server']['QueryUrl']
-        assert config['Server']['ImagesUrl']
+        # "NoOptionError" will be raised if these options are not available in
+        # the config file
+        query_url = config.get('Server', 'QueryUrl')
+        images_url = config.get('Server', 'ImagesUrl')
+
+        if not query_url:
+            raise configparser.Error(
+                'The option "QueryUrl" cannot have an empty value')
+
+        if not images_url:
+            raise configparser.Error(
+                'The option "ImagesUrl" cannot have an empty value')
+
+        if not images_url.endswith('/'):
+            images_url += '/'
 
         runtime_dir = config['Host']['RuntimeDir']
         if not os.path.isdir(runtime_dir):
@@ -451,7 +464,7 @@ class UpdateClient:
                 image.variant = args.variant
 
             # Download the update file to a tmp file
-            url = config['Server']['QueryUrl'] + '?' + urllib.parse.urlencode(image.to_dict())
+            url = query_url + '?' + urllib.parse.urlencode(image.to_dict())
             try:
                 log.debug("Downloading update file {}".format(url))
                 tmpfile = download_update_file(url)
@@ -504,10 +517,6 @@ class UpdateClient:
 
         if update.major:
             log_update(update.major)
-
-        images_url = config['Server']['ImagesUrl']
-        if not images_url.endswith('/'):
-            images_url += '/'
 
         if args.estimate_download_size:
             update.minor = ensure_estimated_download_size(update.minor,
