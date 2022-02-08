@@ -93,7 +93,7 @@ def do_progress():
     c.terminate()
 
 
-def download_update_file(url, image):
+def download_update_file(url: str) -> str:
     """Download an update file from the server
 
     The parameters for the request are the details of the image that
@@ -451,7 +451,7 @@ class UpdateClient:
             url = config['Server']['QueryUrl'] + '?' + urllib.parse.urlencode(image.to_dict())
             try:
                 log.debug("Downloading update file {}".format(url))
-                tmpfile = download_update_file(url, image)
+                tmpfile = download_update_file(url)
             except Exception as e:
                 log.error("Failed to download update file: {}".format(e))
                 return -1
