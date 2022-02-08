@@ -362,11 +362,6 @@ class UpdateClient:
         parser.add_argument('--estimate-download-size', action='store_true',
             help="Include in the update file the estimated download size for "
                  "each image candidate")
-        parser.add_argument('--manifest-file',
-            metavar='FILE', # can't use default= here, see below
-            help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
-        parser.add_argument('--mk-manifest-file', action='store_true',
-            help="don't use existing manifest file, make one instead")
         parser.add_argument('--update-file',
             help="update from given file, instead of downloading it from server")
         parser.add_argument('--update-from-url',
@@ -378,6 +373,13 @@ class UpdateClient:
         parser.add_argument('--variant',
             help="use this 'variant' value instead of the one parsed from the "
                  "manifest file")
+
+        manifest_group = parser.add_mutually_exclusive_group()
+        manifest_group.add_argument('--manifest-file',
+            metavar='FILE',  # can't use default= here, see below
+            help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
+        manifest_group.add_argument('--mk-manifest-file', action='store_true',
+            help="don't use existing manifest file, make one instead")
 
         args = parser.parse_args()
 
