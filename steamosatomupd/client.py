@@ -475,8 +475,10 @@ class UpdateClient:
                 log.info("Server returned something, guess an update is available")
                 shutil.move(tmpfile, update_file)
             else:
-                log.info("Server returned nothing, guess we're up to date")
-                return 0
+                # This should never happen. We either expect a valid JSON in
+                # the body or an HTTP error code
+                log.debug("The server unexpectedly replied with an empty body")
+                return -1
 
         # Parse update file
 
@@ -484,6 +486,11 @@ class UpdateClient:
 
         with open(update_file, 'r') as f:
             update_data = json.load(f)
+
+        if not update_data:
+            # With no available updates the server returns an empty JSON
+            log.debug("We are up to date")
+            return 0
 
         update = Update.from_dict(update_data)
 
