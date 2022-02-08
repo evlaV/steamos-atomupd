@@ -454,6 +454,9 @@ class UpdateClient:
             else:
                 image = Image.from_os()
 
+            # Cleanup an eventual previously downloaded update file
+            Path(update_file).unlink(missing_ok=True)
+
             # Replace the variant value with the one provided as an argument
             if args.variant:
                 image.variant = args.variant
@@ -473,8 +476,6 @@ class UpdateClient:
                 shutil.move(tmpfile, update_file)
             else:
                 log.info("Server returned nothing, guess we're up to date")
-                if os.path.exists(update_file):
-                    os.remove(update_file)
                 return 0
 
         # Parse update file
