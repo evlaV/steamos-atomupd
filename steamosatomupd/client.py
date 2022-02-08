@@ -392,12 +392,6 @@ class UpdateClient:
 
         config = configparser.ConfigParser()
 
-        config.read_dict({
-            'Host': {
-                # can't use default for 'Manifest' here, see below
-                'RuntimeDir': DEFAULT_RUNTIME_DIR,
-            }})
-
         with open(args.config, 'r') as f:
             config.read_file(f)
 
@@ -417,7 +411,8 @@ class UpdateClient:
         if not images_url.endswith('/'):
             images_url += '/'
 
-        runtime_dir = config['Host']['RuntimeDir']
+        runtime_dir = config.get('Host', 'RuntimeDir',
+                                 fallback=DEFAULT_RUNTIME_DIR)
         if not os.path.isdir(runtime_dir):
             log.debug("Creating runtime dir {}".format(runtime_dir))
             os.makedirs(runtime_dir)
