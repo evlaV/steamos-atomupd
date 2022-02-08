@@ -103,7 +103,7 @@ def download_update_file(url: str) -> str:
     by the client, in order to validate it. Then it's printed out to a
     temporary file, and the filename is returned.
 
-    If the server returns an empty string, then we return None.
+    If the server returns an empty string, then we return it too.
 
     Exceptions might be raised here and there...
     """
@@ -123,7 +123,7 @@ def download_update_file(url: str) -> str:
         jsonstr = response.read()
 
     if not jsonstr:
-        return None
+        return ""
 
     update_data = json.loads(jsonstr)
     update = Update.from_dict(update_data)
