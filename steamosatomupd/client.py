@@ -76,6 +76,8 @@ def do_progress():
             break
         elif words[0] == "installing" and words[2] == "failed:":
             break
+        elif line == "stopping service" or line.startswith("Got exit signal"):
+            break
         elif using_desync:
             if words[0].endswith('%') and len(words) < 3:
                 print(line.strip())
