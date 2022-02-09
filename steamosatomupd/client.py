@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -48,6 +49,15 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 # Default config
 DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
+
+progress_process = multiprocessing.Process()
+
+
+def sig_handler(_signum, _frame):
+    global progress_process
+    if progress_process.is_alive():
+        progress_process.kill()
+    sys.exit(1)
 
 
 def do_progress():
@@ -254,6 +264,7 @@ def create_index(runtime_dir: Path, replace: bool) -> Path:
 def do_update(url: str, runtime_dir: Path, quiet: bool) -> None:
     """Update the system"""
 
+    global progress_process
     if is_desync_in_use():
         # TODO if we skip invalid seeds in Desync we can avoid recreating
         # the seed index
@@ -280,16 +291,16 @@ def do_update(url: str, runtime_dir: Path, quiet: bool) -> None:
     # Let's update now
 
     if not quiet:
-        p = multiprocessing.Process(target=do_progress)
-        p.start()
+        progress_process = multiprocessing.Process(target=do_progress)
+        progress_process.start()
     c = subprocess.run(['rauc', 'install', url],
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
-    if not quiet and p.is_alive():
-        p.join(5)
-        if p.is_alive():
-            p.terminate()
+    if not quiet and progress_process.is_alive():
+        progress_process.join(5)
+        if progress_process.is_alive():
+            progress_process.terminate()
 
     if c.returncode != 0:
         raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
@@ -666,8 +677,10 @@ class UpdateClient:
         return 0
 
 
-
 def main():
+    signal.signal(signal.SIGTERM, sig_handler)
+    signal.signal(signal.SIGINT, sig_handler)
+
     client = UpdateClient()
     ret = client.run()
     sys.exit(abs(ret))
