@@ -7,7 +7,7 @@
 #
 # run (server):
 # ------------
-#   # This assumes /path/to/server.conf references "/atompupd/data" as its root,
+#   # This assumes /path/to/server.conf references "/atomupd/data" as its root,
 #   # maps the config file and relevant data directory into docker as read-only,
 #   # and publishes the expected ports.
 #   #
