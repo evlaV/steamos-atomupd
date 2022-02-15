@@ -224,7 +224,6 @@ class ImagePool:
                     continue
 
                 image = manifest.image
-                self.images_found.append(image)
 
                 # Get an update path for this image
                 try:
@@ -245,6 +244,9 @@ class ImagePool:
                 if not want_unstable_images and not image.is_stable():
                     log.debug("Discarded unstable image {}".format(f))
                     continue
+
+                # Only add it as an image found if it's valid, etc.
+                self.images_found.append(image)
 
                 # Add image as an update candidate
                 candidate = UpdateCandidate(image, update_path)
