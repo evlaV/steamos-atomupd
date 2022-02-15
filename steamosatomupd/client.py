@@ -125,11 +125,12 @@ def download_update_file(url: str) -> str:
     tries = 0
     while not jsonstr:
 
-        # Try up to 4 times, removing part of the path each time on 404 responses.
+        # Try up to 2 times, removing part of the path each time on 404 responses.
         # Paths look like <product>/<arch>/<version>/<variant>/<buildid>.json
-        # Once we get up to <product>/<arch>.json that's the last thing we can check
-        # Since a product with an unknown architecture makes no sense.
-        if tries == 4:
+        # Once we get up to <product>/<arch>/<version>/<variant>.json that's the 
+        # last thing we can check
+        # Since a product with an unknown architecture version and variant makes no sense.
+        if tries == 2:
             raise Exception('Unable to get json from server')
 
         tries += 1

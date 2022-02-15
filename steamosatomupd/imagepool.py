@@ -137,7 +137,6 @@ class ImagePool:
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
-                          config['Images']['DefaultVariant'],
                           config['Images']['Archs'].split())
 
     @classmethod
@@ -149,7 +148,6 @@ class ImagePool:
             products = config['Images']['Products'].split()
             releases = config['Images']['Releases'].split()
             variants = config['Images']['Variants'].split()
-            default_version = config['Images']['Defaultvariant']
             archs    = config['Images']['Archs'].split()
         except KeyError:
             log.error("Please provide a valid configuration file")
@@ -166,7 +164,7 @@ class ImagePool:
             sys.exit(1)
 
     def _create_pool(self, images_dir, work_with_snapshots, want_unstable_images,
-                 supported_products, supported_releases, supported_variants, default_variant, supported_archs):
+                 supported_products, supported_releases, supported_variants, supported_archs):
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -189,7 +187,6 @@ class ImagePool:
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
-        self.default_variant = default_variant
         self.supported_archs    = supported_archs
         self.images_found = []
 
@@ -262,7 +259,6 @@ class ImagePool:
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
-            'DefaultVariant : {}'.format(self.default_variant),
             'Archs     : {}'.format(self.supported_archs),
             'Candidates: (see below)',
             '{}'.format(pprint.pformat(self.candidates))
@@ -294,13 +290,8 @@ class ImagePool:
             a = image.arch
             candidates = self.candidates[p][a][r][v]
         except KeyError as e:
-            # None with that variant, get all for given product, arch, release
-            # Using default variant
-            try:
-                candidates = self.candidates[p][a][r][self.default_variant]
-            except KeyError as e:
-                raise ValueError("Image is not supported: {}".format(e))
-            pass
+            # None with that variant, so don't suggest anything
+            raise ValueError("Image is not supported: {}".format(e))
 
         return candidates
 

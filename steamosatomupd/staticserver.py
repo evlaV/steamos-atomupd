@@ -137,22 +137,6 @@ class UpdateParser:
             with open(os.path.join(product, arch, version, '{}.json'.format(variant)), 'w') as file:
                 file.write(jsonresult)
 
-            # Then again to write version.json up one level
-            values['variant'] = ''
-            jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
-            print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
-
-            with open(os.path.join(product, arch, '{}.json'.format(version)), 'w') as file:
-                file.write(jsonresult)
-
-            # Finally write the arch.json for this product and arch from all other values unknown
-            values['version'] = '0.0'
-            jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
-            print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
-
-            with open(os.path.join(product, '{}.json'.format(arch)), 'w') as file:
-                file.write(jsonresult)
-
         return 0
 
 
