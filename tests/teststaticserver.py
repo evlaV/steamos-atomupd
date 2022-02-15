@@ -53,6 +53,15 @@ class StaticServerTestCase(unittest.TestCase):
         
         self.assertTrue(p.returncode == 0)
 
+        # Now test snapshots
+        p = run(['rm', '-fR', './steamos'])
+        args = ["--config", "./examples/server-snapshots.conf"]
+        staticserver.main(args)
+
+        p = run(['diff', '-rq', './steamos', './tests/staticsnapexpected/steamos'])
+
+        self.assertTrue(p.returncode == 0)
+
 if __name__ == '__main__':
     # Run static server on test config
     # Compare output with expected results
