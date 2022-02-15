@@ -17,9 +17,38 @@
 #              -p 8000:8000 -p 5000:5000 \
 #              steamos-atomupd:latest -d -c /atomupd/server.conf
 #
-# launch shell against running:
-# ----------------------
+# launch shell against a running server:
+# -------------------------------------
 #   docker exec -ti my-atomupd-server bash
+#
+# run (export metadata for static server):
+# ----------------------------------------
+#   # This assumes /path/to/server.conf references "/atomupd/data" as its root.
+#   # The metadata export writes to the current working directory, so we set
+#   # /atomupd/meta to be the current working directory.
+#   #
+#   # /path/to/data must be published by a web server as the ImagesUrl.
+#   # /path/to/meta must be published by a web server as the MetaUrl.
+#   #
+#   docker run --rm --init --name my-atomupd-staticserver \
+#              -v ./path/to/server.conf:/atomupd/server.conf:ro \
+#              -v ./path/to/data/:/atomupd/data/:ro \
+#              -v ./path/to/meta/:/atomupd/meta/:rw \
+#              -w /atomupd/meta \
+#              --entrypoint /usr/local/bin/steamos-atomupd-staticserver \
+#              steamos-atomupd:latest -d -c /atomupd/server.conf
+#
+#   # To test the static server:
+#   mkdir tmp
+#   docker run --rm --name my-atomupd-staticserver \
+#              -v $(pwd)/examples/server-releases.conf:/atomupd/server.conf:ro \
+#              -v $(pwd)/examples/examples-data:/atomupd/data/examples-data:ro \
+#              -v $(pwd)/tmp:/atomupd/data:rw \
+#              -w /atomupd/data \
+#              --entrypoint /usr/local/bin/steamos-atomupd-staticserver \
+#              steamos-atomupd:latest -d -c /atomupd/server.conf
+#    # There should be no difference
+#    diff -ru tests/staticexpected/steamos tmp/steamos
 
 ##
 ## Build image
