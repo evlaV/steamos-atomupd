@@ -116,7 +116,12 @@ def write_json_to_file(json_str: str) -> str:
     The filename of the temporary file will be returned.
     """
 
-    update_data = json.loads(json_str)
+    try:
+        update_data = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        log.error("Unable to parse JSON from server: {}".format(e))
+        return ""
+
     update = Update.from_dict(update_data)
 
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
@@ -135,9 +140,7 @@ def download_update_from_rest_url(url: str) -> str:
     by the client, in order to validate it. Then it's printed out to a
     temporary file, and the filename is returned.
 
-    If the server returns an empty string, then we return it too.
-
-    Exceptions might be raised here and there...
+    An empty string will be returned if an error occurs.
     """
 
     log.debug("Downloading update file {}".format(url))
@@ -155,7 +158,8 @@ def download_update_from_rest_url(url: str) -> str:
         # last thing we can check
         # Since a product with an unknown architecture version and variant makes no sense.
         if tries == 2:
-            raise Exception('Unable to get json from server')
+            log.error("Unable to get JSON from server")
+            return ""
 
         tries += 1
 
@@ -178,7 +182,8 @@ def download_update_from_rest_url(url: str) -> str:
                 nextpath += '.json'
                 url = urlparts._replace(path=nextpath).geturl()
             else:
-                raise Exception("Unable to get json from server") from e
+                log.error("Unable to get JSON from server: {}".format(e))
+                return ""
 
     return write_json_to_file(jsonstr)
 
@@ -511,21 +516,13 @@ class UpdateClient:
 
             # Download the update file to a tmp file
             url = meta_url + '/' + image.to_update_path()
-            try:
-                tmpfile = download_update_from_rest_url(url)
-            except Exception as e:
-                log.error("Failed to download update file: {}".format(e))
+            tmpfile = download_update_from_rest_url(url)
+
+            if not tmpfile:
                 return -1
 
-            # Handle the result
-            if tmpfile:
-                log.info("Server returned something, guess an update is available")
-                shutil.move(tmpfile, update_file)
-            else:
-                # This should never happen. We either expect a valid JSON in
-                # the body or an HTTP error code
-                log.debug("The server unexpectedly replied with an empty body")
-                return -1
+            log.info("Server returned something, guess an update is available")
+            shutil.move(tmpfile, update_file)
 
         # Parse update file
 
