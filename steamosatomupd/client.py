@@ -119,7 +119,7 @@ def write_json_to_file(json_str: str) -> str:
     try:
         update_data = json.loads(json_str)
     except json.JSONDecodeError as e:
-        log.error("Unable to parse JSON from server: {}".format(e))
+        log.warning("Unable to parse JSON from server: {}".format(e))
         return ""
 
     update = Update.from_dict(update_data)
@@ -158,7 +158,7 @@ def download_update_from_rest_url(url: str) -> str:
         # last thing we can check
         # Since a product with an unknown architecture version and variant makes no sense.
         if tries == 2:
-            log.error("Unable to get JSON from server")
+            log.warning("Unable to get JSON from server")
             return ""
 
         tries += 1
@@ -182,10 +182,39 @@ def download_update_from_rest_url(url: str) -> str:
                 nextpath += '.json'
                 url = urlparts._replace(path=nextpath).geturl()
             else:
-                log.error("Unable to get JSON from server: {}".format(e))
+                log.warning("Unable to get JSON from server: {}".format(e))
                 return ""
 
     return write_json_to_file(jsonstr)
+
+
+def download_update_from_query_url(url: str) -> str:
+    """Download an update file from the server with a query URL
+
+    The parameters for the request are the details of the image that
+    the caller is running.
+
+    The server is expected to return a JSON string, which is then parsed
+    by the client, in order to validate it. Then it's printed out to a
+    temporary file, and the filename is returned.
+
+    An empty string will be returned if either the server unexpectedly sent us
+    an empty reply or if an error occurs.
+    """
+
+    log.debug("Downloading update file {}".format(url))
+
+    initialize_http_authentication(url)
+
+    try:
+        with urllib.request.urlopen(url) as response:
+            json_str = response.read()
+
+    except (urllib.error.HTTPError, urllib.error.URLError) as e:
+        log.warning("Unable to get JSON from server: {}".format(e))
+        return ""
+
+    return write_json_to_file(json_str)
 
 
 def create_index(runtime_dir: Path, replace: bool) -> Path:
@@ -448,10 +477,12 @@ class UpdateClient:
         with open(args.config, 'r') as f:
             config.read_file(f)
 
-        # "NoOptionError" will be raised if these options are not available in
+        query_url = config.get('Server', 'QueryUrl', fallback="")
+        meta_url = config.get('Server', 'MetaUrl', fallback="")
+
+        # "NoOptionError" will be raised if this option is not available in
         # the config file
         images_url = config.get('Server', 'ImagesUrl')
-        meta_url = config.get('Server', 'MetaUrl')
 
         if not images_url:
             raise configparser.Error(
@@ -460,10 +491,11 @@ class UpdateClient:
         if not images_url.endswith('/'):
             images_url += '/'
 
-        if not meta_url:
+        if not query_url and not meta_url:
             raise configparser.Error(
-                'The option "MetaUrl" cannot have an empty value')
- 
+                'Either one of "QueryUrl" or "MetaUrl" must be provided and '
+                'not with an empty value')
+
         runtime_dir = config.get('Host', 'RuntimeDir',
                                  fallback=DEFAULT_RUNTIME_DIR)
         if not os.path.isdir(runtime_dir):
@@ -498,6 +530,7 @@ class UpdateClient:
         if args.update_file:
             update_file = args.update_file
         else:
+            tmp_file = ""
             update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
 
             # Get details about the current image
@@ -515,14 +548,22 @@ class UpdateClient:
                 image.variant = args.variant
 
             # Download the update file to a tmp file
-            url = meta_url + '/' + image.to_update_path()
-            tmpfile = download_update_from_rest_url(url)
+            # If we have both MetaUrl and QueryUrl, try the meta first and use
+            # the query as a fallback
+            if meta_url:
+                url = meta_url + '/' + image.to_update_path()
+                tmp_file = download_update_from_rest_url(url)
+            if images_url and not tmp_file:
+                log.info("MetaURL is either missing or not working, falling "
+                         "back to QueryURL")
+                url = query_url + '?' + urllib.parse.urlencode(image.to_dict())
+                tmp_file = download_update_from_query_url(url)
 
-            if not tmpfile:
+            if not tmp_file:
                 return -1
 
             log.info("Server returned something, guess an update is available")
-            shutil.move(tmpfile, update_file)
+            shutil.move(tmp_file, update_file)
 
         # Parse update file
 
