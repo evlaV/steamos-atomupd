@@ -164,8 +164,8 @@ def download_update_from_rest_url(url: str) -> str:
             with urllib.request.urlopen(url) as response:
                 jsonstr = response.read()
 
-        except urllib.error.HTTPError as e:
-            if e.code == 404:
+        except (urllib.error.HTTPError, urllib.error.URLError) as e:
+            if type(e) == urllib.error.HTTPError and e.code == 404:
                 log.debug("Got 404 from server, trying again with less arguments")
                 # Try the next level up in the url until we get a json string.
                 urlparts = urllib.parse.urlparse(url)
@@ -177,6 +177,8 @@ def download_update_from_rest_url(url: str) -> str:
                 # Add the .json on this new shortened path
                 nextpath += '.json'
                 url = urlparts._replace(path=nextpath).geturl()
+            else:
+                raise Exception("Unable to get json from server") from e
 
     return write_json_to_file(jsonstr)
 
