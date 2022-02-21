@@ -109,7 +109,22 @@ def initialize_http_authentication(url: str):
             urllib.request.install_opener(opener)
 
 
-def download_update_file(url: str) -> str:
+def write_json_to_file(json_str: str) -> str:
+    """Write a JSON string to a temporary file
+
+    The filename of the temporary file will be returned.
+    """
+
+    update_data = json.loads(json_str)
+    update = Update.from_dict(update_data)
+
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
+        f.write(update.to_string())
+
+    return f.name
+
+
+def download_update_from_rest_url(url: str) -> str:
     """Download an update file from the server
 
     The parameters for the request are the details of the image that
@@ -124,16 +139,18 @@ def download_update_file(url: str) -> str:
     Exceptions might be raised here and there...
     """
 
+    log.debug("Downloading update file {}".format(url))
+
     initialize_http_authentication(url)
 
-    jsonstr = None
+    jsonstr = ""
 
     tries = 0
     while not jsonstr:
 
         # Try up to 2 times, removing part of the path each time on 404 responses.
         # Paths look like <product>/<arch>/<version>/<variant>/<buildid>.json
-        # Once we get up to <product>/<arch>/<version>/<variant>.json that's the 
+        # Once we get up to <product>/<arch>/<version>/<variant>.json that's the
         # last thing we can check
         # Since a product with an unknown architecture version and variant makes no sense.
         if tries == 2:
@@ -160,13 +177,7 @@ def download_update_file(url: str) -> str:
                 nextpath += '.json'
                 url = urlparts._replace(path=nextpath).geturl()
 
-    update_data = json.loads(jsonstr)
-    update = Update.from_dict(update_data)
-
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-        f.write(update.to_string())
-
-    return f.name
+    return write_json_to_file(jsonstr)
 
 
 def create_index(runtime_dir: Path, replace: bool) -> Path:
@@ -498,8 +509,7 @@ class UpdateClient:
             # Download the update file to a tmp file
             url = meta_url + '/' + image.to_update_path()
             try:
-                log.debug("Downloading update file {}".format(url))
-                tmpfile = download_update_file(url)
+                tmpfile = download_update_from_rest_url(url)
             except Exception as e:
                 log.error("Failed to download update file: {}".format(e))
                 return -1
