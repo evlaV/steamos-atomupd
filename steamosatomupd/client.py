@@ -93,6 +93,22 @@ def do_progress():
     c.terminate()
 
 
+def initialize_http_authentication(url: str):
+    """Parse '.netrc' and perform an HTTP basic authentication, if necessary"""
+
+    netrcfile = os.path.expanduser("~/.netrc")
+    if os.path.isfile(netrcfile):
+        host = urllib.parse.urlparse(url).netloc
+        auth = netrc.netrc(netrcfile).authenticators(host)
+        if auth:
+            login, _, password = auth
+            manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
+            manager.add_password(None, host, login, password)
+            handler = urllib.request.HTTPBasicAuthHandler(manager)
+            opener = urllib.request.build_opener(handler)
+            urllib.request.install_opener(opener)
+
+
 def download_update_file(url: str) -> str:
     """Download an update file from the server
 
@@ -108,17 +124,7 @@ def download_update_file(url: str) -> str:
     Exceptions might be raised here and there...
     """
 
-    netrcfile = os.path.expanduser("~/.netrc")
-    if os.path.isfile(netrcfile):
-        host = urllib.parse.urlparse(url).netloc
-        auth = netrc.netrc(netrcfile).authenticators(host)
-        if auth:
-            login, _, password = auth
-            manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-            manager.add_password(None, host, login, password)
-            handler = urllib.request.HTTPBasicAuthHandler(manager)
-            opener = urllib.request.build_opener(handler)
-            urllib.request.install_opener(opener)
+    initialize_http_authentication(url)
 
     jsonstr = None
 
