@@ -26,6 +26,7 @@ import subprocess
 import sys
 import tempfile
 import netrc
+import urllib.error
 import urllib.parse
 import urllib.request
 import multiprocessing
