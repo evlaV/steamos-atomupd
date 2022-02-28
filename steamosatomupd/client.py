@@ -409,13 +409,11 @@ def get_rootfs_device() -> Path:
                                                               c.stdout))
 
     status = json.loads(c.stdout)
-    boot_primary = status['boot_primary']
-    if not boot_primary:
-        raise RuntimeError("RAUC cannot determine the booted slot")
-
     for s in status['slots']:
-        if boot_primary in s:
-            return Path(s[boot_primary]['device'])
+        # We expect just a single entry for every "slots" object
+        slot_name = next(iter(s))
+        if s[slot_name]['state'] == 'booted':
+            return Path(s[slot_name]['device'])
 
     raise RuntimeError('Failed to parse the RAUC status output')
 
