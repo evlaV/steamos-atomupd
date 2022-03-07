@@ -537,6 +537,17 @@ class UpdateClient:
                 manifest_file = DEFAULT_MANIFEST_FILE
             log.debug("Using manifest file '{}'".format(manifest_file))
 
+        # Get details about the current image
+        if manifest_file:
+            manifest = Manifest.from_file(manifest_file)
+            current_image = manifest.image
+        else:
+            current_image = Image.from_os()
+
+        # Replace the variant value with the one provided as an argument
+        if args.variant:
+            current_image.variant = args.variant
+
         # Download update file, unless one is given in args
 
         if args.update_file:
@@ -545,30 +556,19 @@ class UpdateClient:
             tmp_file = ""
             update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
 
-            # Get details about the current image
-            if manifest_file:
-                manifest = Manifest.from_file(manifest_file)
-                image = manifest.image
-            else:
-                image = Image.from_os()
-
             # Cleanup an eventual previously downloaded update file
             Path(update_file).unlink(missing_ok=True)
-
-            # Replace the variant value with the one provided as an argument
-            if args.variant:
-                image.variant = args.variant
 
             # Download the update file to a tmp file
             # If we have both MetaUrl and QueryUrl, try the meta first and use
             # the query as a fallback
             if meta_url:
-                url = meta_url + '/' + image.to_update_path()
+                url = meta_url + '/' + current_image.to_update_path()
                 tmp_file = download_update_from_rest_url(url)
             if images_url and not tmp_file:
                 log.info("MetaURL is either missing or not working, falling "
                          "back to QueryURL")
-                url = query_url + '?' + urllib.parse.urlencode(image.to_dict())
+                url = query_url + '?' + urllib.parse.urlencode(current_image.to_dict())
                 tmp_file = download_update_from_query_url(url)
 
             if not tmp_file:
