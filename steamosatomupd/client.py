@@ -434,7 +434,8 @@ def is_desync_in_use() -> bool:
 
 class UpdateClient:
 
-    def __init__(self):
+    def __init__(self, args=None):
+        self.args = args
         pass
 
     def run(self):
@@ -474,7 +475,7 @@ class UpdateClient:
         manifest_group.add_argument('--mk-manifest-file', action='store_true',
             help="don't use existing manifest file, make one instead")
 
-        args = parser.parse_args()
+        args = parser.parse_args(self.args)
 
         if args.debug:
             logging.getLogger().setLevel(logging.DEBUG)
@@ -675,10 +676,10 @@ class UpdateClient:
         return 0
 
 
-def main():
+def main(args=None):
     signal.signal(signal.SIGTERM, sig_handler)
     signal.signal(signal.SIGINT, sig_handler)
 
-    client = UpdateClient()
+    client = UpdateClient(args)
     ret = client.run()
     sys.exit(abs(ret))
