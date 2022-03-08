@@ -396,6 +396,37 @@ def ensure_estimated_download_size(update_path: UpdatePath,
     return update_path
 
 
+def prevent_update_loop(update_path: UpdatePath,
+                        current_image: Image) -> UpdatePath:
+    """Remove the current image from the list of update candidates
+
+    If the server included the current image as the first update candidate, we
+    remove it to avoid a possible infinite update loop.
+    """
+    if not update_path:
+        return update_path
+
+    skip_first_candidate = False
+
+    for i, candidate in enumerate(update_path.candidates):
+        if candidate.image != current_image:
+            continue
+
+        if i == 0:
+            skip_first_candidate = True
+            log.debug("The requested update will apply the same version that is "
+                      "currently in use, skipping it.")
+        else:
+            # The current image cannot be within the candidates. This effectively
+            # causes an update loop, which can not be resolved.
+            raise ValueError("Update loop has been detected")
+
+    if skip_first_candidate:
+        update_path.candidates.pop(0)
+
+    return update_path if update_path.candidates else None
+
+
 def get_rootfs_device() -> Path:
     """ Get the rootfs device path from RAUC """
 
@@ -595,6 +626,9 @@ class UpdateClient:
             log.debug("No update candidate, even though the server returned something")
             log.debug("This is very unexpected, please inspect '{}'".format(update_file))
             return -1
+
+        update.minor = prevent_update_loop(update.minor, current_image)
+        update.major = prevent_update_loop(update.major, current_image)
 
         # Log a bit
 
