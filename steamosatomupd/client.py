@@ -386,7 +386,7 @@ def ensure_estimated_download_size(update_path: UpdatePath,
             continue
         update_url = urllib.parse.urljoin(images_url, candidate.update_path)
         update_path.candidates[i].image.estimated_size = estimate_download_size(
-            Path(runtime_dir),
+            runtime_dir,
             update_url,
             str(candidate.image.buildid),
             required_buildid
