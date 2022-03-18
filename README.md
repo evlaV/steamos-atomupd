@@ -14,9 +14,9 @@ Get your build depends please:
 
 Build and test with meson / ninja:
 
-    meson build
-    ninja -C build
-    meson test -v -C build
+    meson setup build
+    meson compile -C build // or ninja -C build (meson 0.53 and older)
+    meson test -C build
 
 
 Run
