@@ -18,14 +18,6 @@ Build and test with meson / ninja:
     ninja -C build
     meson test -v -C build
 
-Build a snapshot package with gbp:
-
-    gbp buildpackage \
-        --git-force-create \
-        --git-upstream-tree=HEAD \
-        -us -uc
-
-
 
 Run
 ---
