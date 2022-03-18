@@ -7,9 +7,9 @@ workflow:
         - if: $CI_COMMIT_BRANCH
 
 stages:
-    - prepare
-    - build
     - test
+    - docker-prepare
+    - docker-build
 
 default:
   tags:
@@ -54,7 +54,7 @@ test:debian-11:
 # We can't do this in the docker step because the kaniko executor
 # doesn't have git, therefore no `git describe`
 prepare:
-    stage: prepare
+    stage: docker-prepare
     image: debian:bullseye-slim
     script:
         - ci/prepare.sh > VERSION
@@ -63,7 +63,7 @@ prepare:
             - VERSION
 
 docker:
-    stage: build
+    stage: docker-build
     image:
         name: gcr.io/kaniko-project/executor:debug
         entrypoint: [""]
