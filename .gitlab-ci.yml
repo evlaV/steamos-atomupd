@@ -34,12 +34,9 @@ default:
             python3-flask \
             python3-semantic-version \
             ${NULL+}
-        - |
-            set -eux
-
-            meson _build/tests
-            ninja -C _build/tests
-            meson test --verbose -C _build/tests
+        - meson setup _build/tests
+        - meson compile -C _build/tests || ninja -C _build/tests
+        - meson test -C _build/tests
 
     artifacts:
         paths:
