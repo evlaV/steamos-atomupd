@@ -67,10 +67,8 @@ COPY ./ /src/
 RUN \
 set -eu; \
 cd /src; \
-meson /build; \
-ninja -C /build; \
-meson test -v -C /build; \
-DESTDIR=/built/ ninja -C /build install; \
+meson setup /build; \
+DESTDIR=/built/ meson install -C /build; \
 :
 
 ##
