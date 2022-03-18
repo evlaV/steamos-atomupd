@@ -16,59 +16,43 @@ default:
     - docker
     - linux
 
-.test_dependencies: &test_dependencies
-    - |
-        set -eux
-
-        apt-get -y update
-        apt-get -y upgrade
-        apt-get -y --no-install-recommends install \
-        meson \
-        python3 \
-        python3-flask \
-        python3-semantic-version \
-        ${NULL+}
-
 .test_template:
     stage: test
     needs: []
     tags:
         - docker
         - linux
+    script:
+        - |
+            set -eux
+
+            apt-get -y update
+            apt-get -y upgrade
+            apt-get -y --no-install-recommends install \
+            meson \
+            python3 \
+            python3-flask \
+            python3-semantic-version \
+            ${NULL+}
+        - |
+            set -eux
+
+            meson _build/tests
+            ninja -C _build/tests
+            meson test --verbose -C _build/tests
+
+    artifacts:
+        paths:
+            - _build/tests/meson-logs/*.txt
+        when: always
 
 test:debian-10:
     extends: .test_template
     image: debian:buster-slim
-    script:
-        - *test_dependencies
-        - |
-            set -eux
-
-            meson _build/tests
-            ninja -C _build/tests
-            meson test --verbose -C _build/tests
-
-    artifacts:
-        paths:
-            - _build/tests/meson-logs/*.txt
-        when: always
 
 test:debian-11:
     extends: .test_template
     image: debian:bullseye-slim
-    script:
-        - *test_dependencies
-        - |
-            set -eux
-
-            meson _build/tests
-            ninja -C _build/tests
-            meson test --verbose -C _build/tests
-
-    artifacts:
-        paths:
-            - _build/tests/meson-logs/*.txt
-        when: always
 
 # We can't do this in the docker step because the kaniko executor
 # doesn't have git, therefore no `git describe`
