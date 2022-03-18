@@ -26,14 +26,9 @@ default:
         - |
             set -eux
 
-            apt-get -y update
-            apt-get -y upgrade
-            apt-get -y --no-install-recommends install \
-            meson \
-            python3 \
-            python3-flask \
-            python3-semantic-version \
-            ${NULL+}
+            apt-get update
+            apt-get install -y \
+            meson python3-flask python3-semantic-version
         - meson setup _build/tests
         - meson compile -C _build/tests || ninja -C _build/tests
         - meson test -C _build/tests
