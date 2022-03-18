@@ -50,31 +50,6 @@
 #    # There should be no difference
 #    diff -ru tests/staticexpected/steamos tmp/steamos
 
-##
-## Build image
-##
-
-FROM debian:bullseye-slim AS build
-
-RUN apt-get update \
-    && apt-get install -y \
-       meson python3-flask python3-semantic-version \
-    && rm -rf /var/lib/apt/lists/*
-
-# Import working directory to /src/, build to /build/, install to /built/
-
-COPY ./ /src/
-RUN \
-set -eu; \
-cd /src; \
-meson setup /build; \
-DESTDIR=/built/ meson install -C /build; \
-:
-
-##
-## Run image
-##
-
 FROM debian:bullseye-slim
 
 ARG BUILD_ID=""
@@ -82,12 +57,29 @@ ARG IMAGE_ID="steamos-atomupd"
 ARG IMAGE_NAME="steamos-atomupd"
 ARG IMAGE_VERSION=""
 
-# Minus build-only deps
+RUN apt-get update \
+    && apt-get install -y \
+       meson python3-flask python3-semantic-version \
+    && rm -rf /var/lib/apt/lists/*
+
+# Import working directory to /src/, build to /build/, install to /
+# ... and clean after ourselves.
+
+COPY ./ /src/
 RUN \
 set -eu; \
-apt-get update; \
-apt-get install -y python3-flask python3-semantic-version; \
-rm -rf /var/lib/apt/lists/*; \
+cd /src; \
+meson setup /build; \
+meson install -C /build; \
+rm -rf /src /build; \
+apt-get purge -y meson; \
+:
+
+# Use the non-standard pythonpath we install to
+ENV PYTHONPATH=/usr/local/lib/python3/dist-packages/
+
+RUN \
+set -eu; \
 install -d /atomupd/data; \
 if [ -n "${IMAGE_NAME-}" ]; then \
     echo "$IMAGE_NAME" >> /etc/issue; \
@@ -104,12 +96,6 @@ if [ -n "${BUILD_ID-}" ]; then \
 fi; \
 head -v -n-0 /etc/debian_chroot /etc/issue /usr/lib/os-release || :; \
 :
-
-# Copy install from build image into place
-COPY --from=build /built/ /
-
-# Use the non-standard pythonpath we install to
-ENV PYTHONPATH=/usr/local/lib/python3/dist-packages/
 
 STOPSIGNAL SIGINT
 
