@@ -31,6 +31,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import multiprocessing
+from functools import cache
 from pathlib import Path
 
 from steamosatomupd.image import Image
@@ -458,6 +459,7 @@ def get_rauc_config() -> configparser.ConfigParser:
     return config
 
 
+@cache
 def is_desync_in_use() -> bool:
     """ Use RAUC configuration to check if Desync will be used """
 

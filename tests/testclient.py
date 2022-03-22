@@ -18,6 +18,7 @@
 import io
 import json
 import shutil
+import sys
 import tempfile
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
@@ -25,9 +26,15 @@ import unittest
 from pathlib import Path
 from typing import List
 
-from steamosatomupd import client
 from steamosatomupd.image import BuildId
 from steamosatomupd.update import Update
+try:
+    from steamosatomupd import client
+except ImportError as e:
+    if sys.version_info < (3, 9, 0):
+        raise unittest.SkipTest("We need at least Python 3.9 to execute the client part")
+    else:
+        raise e
 
 data_path = Path(__file__).parent.resolve() / 'client_data'
 
