@@ -449,13 +449,19 @@ def get_rootfs_device() -> Path:
     raise RuntimeError('Failed to parse the RAUC status output')
 
 
+def get_rauc_config() -> configparser.ConfigParser:
+    """ Return the RAUC system configuration """
+
+    config = configparser.ConfigParser()
+    config.read('/etc/rauc/system.conf')
+
+    return config
+
+
 def is_desync_in_use() -> bool:
     """ Use RAUC configuration to check if Desync will be used """
 
-    rauc_conf_path = '/etc/rauc/system.conf'
-
-    config = configparser.ConfigParser()
-    config.read(rauc_conf_path)
+    config = get_rauc_config()
 
     if 'casync' not in config:
         return False
