@@ -21,6 +21,7 @@ import configparser
 import json
 import logging
 import os
+import shlex
 import shutil
 import signal
 import subprocess
@@ -230,20 +231,17 @@ def download_update_from_query_url(url: str) -> str:
     return write_json_to_file(json_str)
 
 
-def create_index(runtime_dir: Path, replace: bool) -> Path:
-    """ Re-create index file, and its symlink, for the rootfs
+def create_index(replace: bool) -> None:
+    """ Re-create index file, and its symlink, for the rootfs """
 
-    Returns the index file path.
-    """
+    seed_index = get_active_slot_index()
+    if seed_index.exists() and not replace:
+        return
 
-    rootfs_index = runtime_dir / 'rootfs.caibx'
-    if rootfs_index.exists() and not replace:
-        return rootfs_index
-
-    rootfs_index.unlink(missing_ok=True)
+    seed_index.unlink(missing_ok=True)
 
     rootfs_dir = get_rootfs_device()
-    c = subprocess.run(['desync', 'make', rootfs_index, rootfs_dir],
+    c = subprocess.run(['desync', 'make', seed_index, rootfs_dir],
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
@@ -255,21 +253,19 @@ def create_index(runtime_dir: Path, replace: bool) -> Path:
 
     # Create a symlink next to the index as required by `desync extract`.
     # We can pass only the index filename to the command.
-    rootfs_symlink = runtime_dir / 'rootfs'
+    rootfs_symlink = seed_index.with_suffix('')
     rootfs_symlink.unlink(missing_ok=True)
     os.symlink(rootfs_dir, rootfs_symlink)
 
-    return rootfs_index
 
-
-def do_update(url: str, runtime_dir: Path, quiet: bool) -> None:
+def do_update(url: str, quiet: bool) -> None:
     """Update the system"""
 
     global progress_process
     if is_desync_in_use():
         # TODO if we skip invalid seeds in Desync we can avoid recreating
         # the seed index
-        create_index(runtime_dir, True)
+        create_index(replace=True)
 
     # Remount /tmp with max memory and inodes number
     #
@@ -349,7 +345,8 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     else:
         # This image can be installed directly, use the current active
         # partition as a seed
-        seed = create_index(runtime_dir, False)
+        create_index(replace=False)
+        seed = get_active_slot_index()
 
     c = subprocess.run(['desync', 'info', '--seed', seed, update_index],
                        capture_output=True,
@@ -460,6 +457,33 @@ def get_rauc_config() -> configparser.ConfigParser:
 
 
 @cache
+def get_active_slot_index() -> Path:
+    """ Get the active slot seed index path from the RAUC configuration
+
+    An error will be raised if the RAUC config doesn't have the expected
+    seed path listed in the install-args casync section
+    """
+
+    config = get_rauc_config()
+
+    if 'casync' not in config:
+        raise RuntimeError("The RAUC config doesn't have the expected 'casync' entry")
+
+    install_args_values = config['casync'].get('install-args', fallback='')
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--seed')
+    install_args, _ = parser.parse_known_args(shlex.split(install_args_values))
+
+    if not install_args.seed:
+        raise RuntimeError('Failed to parse the seed index path from RAUC config')
+
+    log.debug('The active slot seed index is located in: {}'.format(install_args.seed))
+
+    return Path(install_args.seed)
+
+
+@cache
 def is_desync_in_use() -> bool:
     """ Use RAUC configuration to check if Desync will be used """
 
@@ -553,10 +577,16 @@ class UpdateClient:
             log.debug("Creating runtime dir {}".format(runtime_dir))
             os.makedirs(runtime_dir)
 
+        if is_desync_in_use():
+            seed_index = get_active_slot_index()
+            if not seed_index.parent.is_dir():
+                log.debug("Creating active slot index dir {}".format(seed_index.parent))
+                os.makedirs(seed_index.parent)
+
         if args.update_from_url:
             log.debug("Installing an update from the given URL")
             try:
-                do_update(args.update_from_url, Path(runtime_dir), args.quiet)
+                do_update(args.update_from_url, args.quiet)
             except Exception as e:
                 log.error("Failed to install update from URL: {}".format(e))
                 return -1
@@ -710,7 +740,7 @@ class UpdateClient:
 
         try:
             update_url = urllib.parse.urljoin(images_url, update_path)
-            do_update(update_url, Path(runtime_dir), args.quiet)
+            do_update(update_url, args.quiet)
         except Exception as e:
             log.error("Failed to install update file: {}".format(e))
             return -1
