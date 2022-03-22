@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
+import configparser
 import io
 import json
 import shutil
@@ -25,6 +26,7 @@ from dataclasses import dataclass, field
 import unittest
 from pathlib import Path
 from typing import List
+from unittest.mock import patch
 
 from steamosatomupd.image import BuildId
 from steamosatomupd.update import Update
@@ -37,6 +39,7 @@ except ImportError as e:
         raise e
 
 data_path = Path(__file__).parent.resolve() / 'client_data'
+rauc_conf_dir = Path(__file__).parent.resolve() / 'rauc_conf_dir'
 
 
 @dataclass
@@ -147,6 +150,68 @@ class LoopPrevention(unittest.TestCase):
                 self.assertEqual(len(data.major_updates), len(candidates))
                 for i, c in enumerate(candidates):
                     self.assertEqual(data.major_updates[i], c.image.buildid)
+
+
+@dataclass
+class RaucConfData:
+    msg: str
+    rauc_config: Path
+    seed_index: Path = Path()
+    desync_in_use: bool = False
+    config_error: bool = False
+
+
+rauc_conf_data = [
+    RaucConfData(
+        msg='Using Casync',
+        rauc_config=rauc_conf_dir / 'casync.conf',
+    ),
+    RaucConfData(
+        msg='Using Desync',
+        rauc_config=rauc_conf_dir / 'desync.conf',
+        seed_index=Path('/var/lib/steamos-atomupd/rootfs.caibx'),
+        desync_in_use=True,
+    ),
+    RaucConfData(
+        msg='Using Desync with seed option not at the beginning',
+        rauc_config=rauc_conf_dir / 'desync_reordered.conf',
+        seed_index=Path('/var/lib/steamos-atomupd/rootfs.caibx'),
+        desync_in_use=True,
+    ),
+    RaucConfData(
+        msg='Using Desync without seed',
+        rauc_config=rauc_conf_dir / 'desync_without_seed.conf',
+        desync_in_use=True,
+        config_error=True,
+    ),
+    RaucConfData(
+        msg='Missing Casync entry',
+        rauc_config=rauc_conf_dir / 'missing_casync_entry.conf',
+    ),
+]
+
+
+class RaucConfigParsing(unittest.TestCase):
+    @patch('steamosatomupd.client.get_rauc_config')
+    def test_parsing_rauc_conf(self, get_rauc_config):
+        for data in rauc_conf_data:
+            with self.subTest(msg=data.msg):
+                # Instead of the hard-coded '/etc/rauc/system.conf', we patch
+                # get_rauc_config() to use the config specified in the tests
+                config = configparser.ConfigParser()
+                config.read(data.rauc_config)
+                get_rauc_config.return_value = config
+
+                client.is_desync_in_use.cache_clear()
+                client.get_active_slot_index.cache_clear()
+
+                self.assertEqual(client.is_desync_in_use(), data.desync_in_use)
+
+                if data.config_error or not data.desync_in_use:
+                    with self.assertRaises(RuntimeError):
+                        client.get_active_slot_index()
+                else:
+                    self.assertEqual(client.get_active_slot_index(), data.seed_index)
 
 
 if __name__ == '__main__':
