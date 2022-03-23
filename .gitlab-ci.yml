@@ -42,6 +42,15 @@ default:
         apt-get install -y \
         meson python3-flask python3-semantic-version
 
+.test_archlinux_template:
+    extends: .test_template
+    before_script:
+    - |
+        set -eux
+
+        pacman -Syu --needed --noconfirm --noprogressbar \
+        meson python-flask python-semantic-version
+
 test:debian-10:
     extends: .test_debian_template
     image: debian:buster-slim
@@ -49,6 +58,10 @@ test:debian-10:
 test:debian-11:
     extends: .test_debian_template
     image: debian:bullseye-slim
+
+test:archlinux:
+    extends: .test_archlinux_template
+    image: archlinux:base-devel
 
 # We can't do this in the docker step because the kaniko executor
 # doesn't have git, therefore no `git describe`
