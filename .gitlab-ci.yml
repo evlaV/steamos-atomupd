@@ -23,12 +23,6 @@ default:
         - docker
         - linux
     script:
-        - |
-            set -eux
-
-            apt-get update
-            apt-get install -y \
-            meson python3-flask python3-semantic-version
         - meson setup _build/tests
         - meson compile -C _build/tests || ninja -C _build/tests
         - meson test -C _build/tests
@@ -38,12 +32,22 @@ default:
             - _build/tests/meson-logs/*.txt
         when: always
 
-test:debian-10:
+.test_debian_template:
     extends: .test_template
+    before_script:
+    - |
+        set -eux
+
+        apt-get update
+        apt-get install -y \
+        meson python3-flask python3-semantic-version
+
+test:debian-10:
+    extends: .test_debian_template
     image: debian:buster-slim
 
 test:debian-11:
-    extends: .test_template
+    extends: .test_debian_template
     image: debian:bullseye-slim
 
 # We can't do this in the docker step because the kaniko executor
