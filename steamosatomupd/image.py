@@ -167,8 +167,8 @@ class Image:
                                estimated_size)
 
     @classmethod
-    def from_os(cls, product=None, release=None, variant=None, arch=None,
-                version_str=None, buildid_str=None, checkpoint=False,
+    def from_os(cls, product='', release='', variant='', arch='',
+                version_str='', buildid_str='', checkpoint=False,
                 estimated_size=0):
         """Create an Image with parameters, use running OS for defaults.
 

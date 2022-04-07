@@ -65,12 +65,12 @@ def _get_next_release(release, releases):
     try:
         idx = releases.index(release)
     except ValueError:
-        return None
+        return ''
 
     try:
         next_release = releases[idx + 1]
     except IndexError:
-        return None
+        return ''
 
     return next_release
 
@@ -270,7 +270,7 @@ class ImagePool:
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
-    def _get_candidate_list(self, image, release=None):
+    def _get_candidate_list(self, image, release=''):
         """Return the list of update candidates that an image belong to
 
         The optional 'release' field is used to override the image release.
