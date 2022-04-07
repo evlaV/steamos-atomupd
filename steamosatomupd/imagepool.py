@@ -35,7 +35,7 @@ RAUC_BUNDLE_EXT = '.raucb'
 CASYNC_STORE_EXT = '.castr'
 
 
-def _get_rauc_update_path(image, images_dir, manifest_path):
+def _get_rauc_update_path(images_dir, manifest_path):
 
     rauc_bundle = manifest_path[:-len(IMAGE_MANIFEST_EXT)] + RAUC_BUNDLE_EXT
     if not os.path.isfile(rauc_bundle):
@@ -231,7 +231,7 @@ class ImagePool:
 
                 # Get an update path for this image
                 try:
-                    update_path = _get_rauc_update_path(image, images_dir, manifest_path)
+                    update_path = _get_rauc_update_path(images_dir, manifest_path)
                 except Exception as e:
                     log.debug("Failed to get update path for manifest {}: {}".format(f, e))
                     continue
