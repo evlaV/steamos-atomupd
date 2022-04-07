@@ -16,24 +16,26 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+# Needed to support list annotation for Python 3.7, without using the
+# deprecated "typing".
+from __future__ import annotations
+
 import json
+from dataclasses import dataclass
+from typing import Union
 
 from steamosatomupd.image import Image
 
-class UpdateCandidate:
 
+@dataclass
+class UpdateCandidate:
     """An update candidate
 
     An update candidate is simply an image with an update path.
-
-    -- This is the dataclass definition (requires python >= 3.7) --
-    image: Image
-    update_path: str
     """
 
-    def __init__(self, image, update_path):
-        self.image = image
-        self.update_path = update_path
+    image: Image
+    update_path: str
 
     @classmethod
     def from_dict(cls, data):
@@ -120,8 +122,9 @@ class UpdatePath:
 
         return data
 
-class Update:
 
+@dataclass
+class Update:
     """An update
 
     An update lists the update paths possible for an image. It's just
@@ -135,15 +138,10 @@ class Update:
         'minor': { UPDATE_PATH },
         'major': { UPDATE_PATH },
       }
-
-    -- This is the dataclass definition (requires python >= 3.7) --
-    minor: UpdatePath
-    major: UpdatePath
     """
 
-    def __init__(self, minor, major):
-        self.minor = minor
-        self.major = major
+    minor: Union[UpdatePath, None]
+    major: Union[UpdatePath, None]
 
     @classmethod
     def from_dict(cls, data):

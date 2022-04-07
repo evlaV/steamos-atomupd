@@ -19,6 +19,8 @@
 import datetime
 import platform
 import re
+from dataclasses import dataclass, asdict
+
 import semantic_version
 import urllib.parse
 
@@ -36,13 +38,14 @@ def _load_os_release():
 
     return data
 
+
+@dataclass
 class BuildId:
 
     """A build ID"""
 
-    def __init__(self, date, increment):
-        self.date = date
-        self.incr = increment
+    date: datetime
+    incr: int
 
     @classmethod
     def from_string(cls, text):
@@ -95,31 +98,18 @@ class BuildId:
         return self.__repr__()
 
 
+@dataclass
 class Image:
+    """An OS image"""
 
-    """An OS image
-
-    -- This is the dataclass definition (requires python >= 3.7) --
     product: str
     release: str
     variant: str
     arch: str
-    version: SemanticVersion
+    version: semantic_version.Version
     buildid: BuildId
     checkpoint: bool
     estimated_size: int
-    """
-
-    def __init__(self, product, release, variant, arch, version, buildid,
-                 checkpoint, estimated_size):
-        self.product = product
-        self.release = release
-        self.variant = variant
-        self.arch = arch
-        self.version = version
-        self.buildid = buildid
-        self.checkpoint = checkpoint
-        self.estimated_size = estimated_size
 
     @classmethod
     def from_values(cls, product, release, variant, arch,
@@ -225,19 +215,13 @@ class Image:
     def to_dict(self):
         """Export an Image to a dictionary"""
 
-        data = {}
+        data = asdict(self)
 
-        data['product'] = self.product
-        data['release'] = self.release
-        data['variant'] = self.variant
-        data['arch'] = self.arch
         if self.version:
             data['version'] = str(self.version)
         else:
             data['version'] = 'snapshot'
         data['buildid'] = str(self.buildid)
-        data['checkpoint'] = self.checkpoint
-        data['estimated_size'] = self.estimated_size
 
         return data
 
