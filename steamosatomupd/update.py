@@ -52,11 +52,7 @@ class UpdateCandidate:
     def to_dict(self):
         """Export an UpdateCandidate to a dictionary"""
 
-        data = {}
-        data['image'] = self.image.to_dict()
-        data['update_path'] = self.update_path
-
-        return data
+        return {'image': self.image.to_dict(), 'update_path': self.update_path}
 
     def __repr__(self):
         return "{}, {}".format(self.image, self.update_path)
@@ -116,11 +112,7 @@ class UpdatePath:
             cdata = c.to_dict()
             array.append(cdata)
 
-        data = {}
-        data['release'] = self.release
-        data['candidates'] = array
-
-        return data
+        return {'release': self.release, 'candidates': array}
 
 
 @dataclass

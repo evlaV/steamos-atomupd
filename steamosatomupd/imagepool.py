@@ -22,7 +22,6 @@ import os
 import pprint
 import sys
 
-from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import UpdateCandidate, UpdatePath, Update
 
@@ -32,8 +31,9 @@ IMAGE_MANIFEST_EXT = '.manifest.json'
 
 # Atomic image things
 
-RAUC_BUNDLE_EXT  = '.raucb'
+RAUC_BUNDLE_EXT = '.raucb'
 CASYNC_STORE_EXT = '.castr'
+
 
 def _get_rauc_update_path(image, images_dir, manifest_path):
 
@@ -41,7 +41,7 @@ def _get_rauc_update_path(image, images_dir, manifest_path):
     if not os.path.isfile(rauc_bundle):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), rauc_bundle)
 
-    casync_store =  manifest_path[:-len(IMAGE_MANIFEST_EXT)] + CASYNC_STORE_EXT
+    casync_store = manifest_path[:-len(IMAGE_MANIFEST_EXT)] + CASYNC_STORE_EXT
     if not os.path.isdir(casync_store):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), casync_store)
 
@@ -50,6 +50,7 @@ def _get_rauc_update_path(image, images_dir, manifest_path):
     return rauc_bundle_relpath
 
 # Image pool
+
 
 def _get_next_release(release, releases):
     """Get the next release in a list of releases.
@@ -72,6 +73,7 @@ def _get_next_release(release, releases):
         return None
 
     return next_release
+
 
 def _get_update_candidates(candidates, image):
     """Get possible update candidates within a list.
@@ -100,6 +102,7 @@ def _get_update_candidates(candidates, image):
         winners.append(latest)
 
     return winners
+
 
 class ImagePool:
 
@@ -140,7 +143,7 @@ class ImagePool:
                           config['Images']['Archs'].split())
 
     @classmethod
-    def validateConfig(self, config):
+    def validate_config(cls, config):
         try:
             images_dir = config['Images']['PoolDir']
             snapshots = config['Images'].getboolean('Snapshots')
@@ -148,7 +151,7 @@ class ImagePool:
             products = config['Images']['Products'].split()
             releases = config['Images']['Releases'].split()
             variants = config['Images']['Variants'].split()
-            archs    = config['Images']['Archs'].split()
+            archs = config['Images']['Archs'].split()
         except KeyError:
             log.error("Please provide a valid configuration file")
             sys.exit(1)
@@ -164,7 +167,8 @@ class ImagePool:
             sys.exit(1)
 
     def _create_pool(self, images_dir, work_with_snapshots, want_unstable_images,
-                 supported_products, supported_releases, supported_variants, supported_archs):
+                     supported_products, supported_releases, supported_variants,
+                     supported_archs):
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -187,7 +191,7 @@ class ImagePool:
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
-        self.supported_archs    = supported_archs
+        self.supported_archs = supported_archs
         self.images_found = []
 
         # Create the hierarchy to store images
@@ -326,7 +330,7 @@ class ImagePool:
         curr_release = image.release
         minor_update = self.get_updates_for_release(image, curr_release)
 
-        next_release =  _get_next_release(curr_release, self.supported_releases)
+        next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
             major_update = self.get_updates_for_release(image, next_release)

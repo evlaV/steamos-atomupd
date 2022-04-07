@@ -50,7 +50,7 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 
 # Default config
 DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
-DEFAULT_RUNTIME_DIR   = '/run/steamos-atomupd'
+DEFAULT_RUNTIME_DIR = '/run/steamos-atomupd'
 
 progress_process = multiprocessing.Process()
 
@@ -505,38 +505,39 @@ class UpdateClient:
 
         # Arguments
 
-        parser = argparse.ArgumentParser(
-            description = "SteamOS Update Client")
+        parser = argparse.ArgumentParser(description="SteamOS Update Client")
         parser.add_argument('-c', '--config',
-            metavar='FILE', default=DEFAULT_CONFIG_FILE,
-            help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
+                            metavar='FILE', default=DEFAULT_CONFIG_FILE,
+                            help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))
         parser.add_argument('-q', '--quiet', action='store_true',
-            help="hide output")
+                            help="hide output")
         parser.add_argument('-d', '--debug', action='store_true',
-            help="show debug messages")
+                            help="show debug messages")
         parser.add_argument('--query-only', action='store_true',
-            help="only query if an update is available")
+                            help="only query if an update is available")
         parser.add_argument('--estimate-download-size', action='store_true',
-            help="Include in the update file the estimated download size for "
-                 "each image candidate")
+                            help="Include in the update file the estimated "
+                                 "download size for each image candidate")
         parser.add_argument('--update-file',
-            help="update from given file, instead of downloading it from server")
+                            help="update from given file, instead of "
+                                 "downloading it from server")
         parser.add_argument('--update-from-url',
-            help="update to a specific RAUC bundle image")
+                            help="update to a specific RAUC bundle image")
         parser.add_argument('--update-version',
-            help="update to a specific buildid version. It will fail if either "
-                 "the update file doesn't contain this buildid or if it "
-                 "requires a base image that is newer than the current one")
+                            help="update to a specific buildid version. It will "
+                                 "fail if either the update file doesn't contain "
+                                 "this buildid or if it requires a base image that "
+                                 "is newer than the current one")
         parser.add_argument('--variant',
-            help="use this 'variant' value instead of the one parsed from the "
-                 "manifest file")
+                            help="use this 'variant' value instead of the one parsed "
+                                 "from the manifest file")
 
         manifest_group = parser.add_mutually_exclusive_group()
         manifest_group.add_argument('--manifest-file',
-            metavar='FILE',  # can't use default= here, see below
-            help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
+                                    metavar='FILE',  # can't use default= here, see below
+                                    help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
         manifest_group.add_argument('--mk-manifest-file', action='store_true',
-            help="don't use existing manifest file, make one instead")
+                                    help="don't use existing manifest file, make one instead")
 
         args = parser.parse_args(self.args)
 

@@ -20,7 +20,6 @@ import argparse
 import configparser
 import json
 import logging
-import os
 import signal
 import sys
 import time
@@ -71,6 +70,7 @@ def updates():
 # Update server
 #
 
+
 def dump_handler(signum, frame):
 
     global server
@@ -79,6 +79,7 @@ def dump_handler(signum, frame):
 
     server.start_dump()
 
+
 def reload_handler(signum, frame):
 
     global server
@@ -86,6 +87,7 @@ def reload_handler(signum, frame):
         return
 
     server.start_reload()
+
 
 class UpdateServer:
 
@@ -197,7 +199,7 @@ class UpdateServer:
         # Create image pool
 
         # Will sys.exit if invalid
-        ImagePool.validateConfig(config)
+        ImagePool.validate_config(config)
 
         self.config = config
         self.lock = Lock()
@@ -222,11 +224,11 @@ class UpdateServer:
         port = int(self.config['Server']['Port'])
         app.run(host=hostname, port=port)
 
-
     image_pool = None
     lock = None
     dump_thread = None
     reload_thread = None
+
 
 def main():
     global server

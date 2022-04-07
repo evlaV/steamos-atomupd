@@ -19,10 +19,11 @@
 import datetime
 import platform
 import re
+import urllib.parse
 from dataclasses import dataclass, asdict
 
 import semantic_version
-import urllib.parse
+
 
 def _load_os_release():
     """Load /etc/os-release in a dictionary"""
@@ -30,7 +31,7 @@ def _load_os_release():
     envre = re.compile(r'''^([^\s=]+)=(?:[\s"']*)(.+?)(?:[\s"']*)$''')
     data = {}
 
-    with open('/etc/os-release') as f:
+    with open('/etc/os-release', encoding='utf-8') as f:
         for line in f:
             match = envre.match(line)
             if match is not None:
@@ -57,7 +58,6 @@ class BuildId:
         Examples: 20181105, 20190211.1
         """
 
-        date = None
         incr = 0
 
         fields = text.split('.')
@@ -74,22 +74,22 @@ class BuildId:
         return cls(date, incr)
 
     def __eq__(self, other):
-        return ((self.date, self.incr) == (other.date, other.incr))
+        return (self.date, self.incr) == (other.date, other.incr)
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def __lt__(self, other):
-        return ((self.date, self.incr) <  (other.date, other.incr))
+        return (self.date, self.incr) < (other.date, other.incr)
 
     def __le__(self, other):
-        return ((self.date, self.incr) <= (other.date, other.incr))
+        return (self.date, self.incr) <= (other.date, other.incr)
 
     def __gt__(self, other):
-        return ((self.date, self.incr) >  (other.date, other.incr))
+        return (self.date, self.incr) > (other.date, other.incr)
 
     def __ge__(self, other):
-        return ((self.date, self.incr) >= (other.date, other.incr))
+        return (self.date, self.incr) >= (other.date, other.incr)
 
     def __repr__(self):
         return "{}.{}".format(self.date.strftime('%Y%m%d'), self.incr)
@@ -150,7 +150,7 @@ class Image:
         product = data['product']
         release = data['release']
         variant = data['variant']
-        arch    = data['arch']
+        arch = data['arch']
         version_str = data['version']
         buildid_str = data['buildid']
 
@@ -201,7 +201,7 @@ class Image:
             if not buildid_str:
                 buildid_str = osrel['BUILD_ID']
         except KeyError as e:
-            raise RuntimeError("Missing key in os-release: {}".format(e))
+            raise RuntimeError("Missing key in os-release") from e
 
         # Arch comes from the platform
         if not arch:
@@ -225,16 +225,21 @@ class Image:
 
         return data
 
-    def quote(self, s: str) -> str:
-        if s.startswith('.'):
-            s = '_' + s[1:]
+    @staticmethod
+    def quote(string: str) -> str:
+        """Quote a string by replacing the eventual initial '.' with a '_', and then
+        following the RFC 3986 Uniform Resource Identifier (URI)"""
+        if string.startswith('.'):
+            string = '_' + string[1:]
 
-        return urllib.parse.quote(s.replace('/', '_'))
+        return urllib.parse.quote(string.replace('/', '_'))
 
     def to_update_path(self):
-        """Give an update path in the form of <product>/<arch>/<version>/<variant>/<buildid>.json """
+        """Give an update path in the form of
+        <product>/<arch>/<version>/<variant>/<buildid>.json """
 
-        bits = [self.product, self.arch, self.version or 'snapshot', self.variant, str(self.buildid)]
+        bits = [self.product, self.arch, self.version
+                or 'snapshot', self.variant, str(self.buildid)]
 
         return '/'.join([self.quote(b) for b in bits]) + '.json'
 
@@ -248,8 +253,8 @@ class Image:
 
         if self.version:
             return not self.version.prerelease
-        else:
-            return False
+
+        return False
 
     # A note regarding comparison operators.
     #
@@ -270,40 +275,45 @@ class Image:
 
     def __eq__(self, other):
         if self.version and other.version:
-            return ((self.version, self.release, self.buildid) == (other.version, other.release, other.buildid))
-        elif not self.version and not other.version:
-            return ((self.release, self.buildid) == (other.release, other.buildid))
+            return (self.version, self.release, self.buildid) == (
+                other.version, other.release, other.buildid)
+        if not self.version and not other.version:
+            return (self.release, self.buildid) == (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __ne__(self, other):
-        return not (self == other)
+        return not self == other
 
     def __lt__(self, other):
         if self.version and other.version:
-            return ((self.version, self.release, self.buildid) < (other.version, other.release, other.buildid))
-        elif not self.version and not other.version:
-            return ((self.release, self.buildid) < (other.release, other.buildid))
+            return (self.version, self.release, self.buildid) < (
+                other.version, other.release, other.buildid)
+        if not self.version and not other.version:
+            return (self.release, self.buildid) < (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __le__(self, other):
         if self.version and other.version:
-            return ((self.version, self.release, self.buildid) <= (other.version, other.release, other.buildid))
-        elif not self.version and not other.version:
-            return ((self.release, self.buildid) <= (other.release, other.buildid))
+            return (self.version, self.release, self.buildid) <= (
+                other.version, other.release, other.buildid)
+        if not self.version and not other.version:
+            return (self.release, self.buildid) <= (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __gt__(self, other):
         if self.version and other.version:
-            return ((self.version, self.release, self.buildid) > (other.version, other.release, other.buildid))
-        elif not self.version and not other.version:
-            return ((self.release, self.buildid) > (other.release, other.buildid))
+            return (self.version, self.release, self.buildid) > (
+                other.version, other.release, other.buildid)
+        if not self.version and not other.version:
+            return (self.release, self.buildid) > (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __ge__(self, other):
         if self.version and other.version:
-            return ((self.version, self.release, self.buildid) >= (other.version, other.release, other.buildid))
-        elif not self.version and not other.version:
-            return ((self.release, self.buildid) >= (other.release, other.buildid))
+            return (self.version, self.release, self.buildid) >= (
+                other.version, other.release, other.buildid)
+        if not self.version and not other.version:
+            return (self.release, self.buildid) >= (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
     def __repr__(self):

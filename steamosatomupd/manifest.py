@@ -20,6 +20,7 @@ import json
 
 from steamosatomupd.image import Image
 
+
 class Manifest:
 
     """An image manifest"""
@@ -29,7 +30,7 @@ class Manifest:
 
     @classmethod
     def from_file(cls, filename):
-        """Create an Manifest from file
+        """Create a Manifest from file
 
         Raise exceptions if needed
         """

@@ -24,9 +24,7 @@ import configparser
 import json
 import logging
 import os
-import signal
 import sys
-import time
 
 from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
@@ -37,9 +35,11 @@ log = logging.getLogger(__name__)
 # Default config
 DEFAULT_SERVE_UNSTABLE = False
 
+
 #
 # Update server
 #
+
 
 class UpdateParser:
 
@@ -65,12 +65,11 @@ class UpdateParser:
 
         # Arguments
 
-        parser = argparse.ArgumentParser(
-            description = "SteamOS Update Server")
+        parser = argparse.ArgumentParser(description="SteamOS Update Server")
         parser.add_argument('-c', '--config', metavar='FILE', required=True,
-            help="configuration file")
+                            help="configuration file")
         parser.add_argument('-d', '--debug', action='store_true',
-            help="show debug messages")
+                            help="show debug messages")
 
         args = parser.parse_args(args)
 
@@ -94,7 +93,7 @@ class UpdateParser:
         # Create image pool
 
         # Will sys.exit if invalid
-        ImagePool.validateConfig(config)
+        ImagePool.validate_config(config)
 
         self.config = config
         image_pool = ImagePool(config)
@@ -112,12 +111,10 @@ class UpdateParser:
             values = image.to_dict()
 
             product = values['product']
-            release = values['release']
             variant = values['variant']
             arch = values['arch']
             buildid = values['buildid']
             version = values['version']
-            checkpoint = values['checkpoint']
 
             os.makedirs(os.path.join(product, arch, version, variant), exist_ok=True)
 
@@ -126,7 +123,8 @@ class UpdateParser:
             print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
 
             # Write .json files for each variation
-            with open(os.path.join(product, arch, version, variant, '{}.json'.format(buildid)), 'w') as file:
+            with open(os.path.join(product, arch, version, variant,
+                                   '{}.json'.format(buildid)), 'w') as file:
                 file.write(jsonresult)
 
             # Now check if buildid is old/invalid to write variant.json up one level
@@ -139,8 +137,8 @@ class UpdateParser:
 
         return 0
 
-
     image_pool = None
+
 
 def main(args=None):
     server = UpdateParser(args)

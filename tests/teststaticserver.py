@@ -33,7 +33,7 @@ class StaticServerTestCase(unittest.TestCase):
 
         # First import staticserver
         try:
-            from steamosatomupd import staticserver 
+            from steamosatomupd import staticserver
         except ModuleNotFoundError as e:
             print('\n'.join([
               "Module not found: {}.".format(e),
@@ -47,10 +47,10 @@ class StaticServerTestCase(unittest.TestCase):
         staticserver.main(args)
 
         # time.sleep(1)
-        
+
         # Then compare result with expected result
         p = run(['diff', '-rq', './steamos', './tests/staticexpected/steamos'])
-        
+
         self.assertTrue(p.returncode == 0)
 
         # Now test snapshots
