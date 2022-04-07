@@ -49,12 +49,12 @@ class UpdateParser:
         # raised, which results in returning 400 to the client.
         image = Image.from_dict(data)
         if not image:
-            return '{}'
+            return {}
 
         # Get update candidates
         update = self.image_pool.get_updates(image)
         if not update:
-            return '{}'
+            return {}
 
         # Return to client
         data = update.to_dict()
