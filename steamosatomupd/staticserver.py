@@ -43,7 +43,7 @@ DEFAULT_SERVE_UNSTABLE = False
 
 class UpdateParser:
 
-    def get_update(self, data):
+    def get_update(self, data: dict) -> dict:
 
         # Make an image out of the request arguments. An exception might be
         # raised, which results in returning 400 to the client.
@@ -103,7 +103,7 @@ class UpdateParser:
         print("------------------")
         sys.stdout.flush()
 
-    def parse_all(self):
+    def parse_all(self) -> int:
         # Create file structure as needed based on known images
         images = self.image_pool.get_images_found()
         for image in images:

@@ -16,6 +16,10 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+# Needed until PEP 563 string-based annotations is not enabled by default
+# (scheduled for Python 3.11)
+from __future__ import annotations
+
 import datetime
 import platform
 import re
@@ -49,7 +53,7 @@ class BuildId:
     incr: int
 
     @classmethod
-    def from_string(cls, text):
+    def from_string(cls, text: str) -> BuildId:
         """Create a BuildId from a string containing the date and the increment.
 
         The date is expected to be ISO-8601, basic format. The increment is separated
@@ -73,28 +77,28 @@ class BuildId:
 
         return cls(date, incr)
 
-    def __eq__(self, other):
+    def __eq__(self, other: BuildId) -> bool:
         return (self.date, self.incr) == (other.date, other.incr)
 
-    def __ne__(self, other):
+    def __ne__(self, other: BuildId) -> bool:
         return not self == other
 
-    def __lt__(self, other):
+    def __lt__(self, other: BuildId) -> bool:
         return (self.date, self.incr) < (other.date, other.incr)
 
-    def __le__(self, other):
+    def __le__(self, other: BuildId) -> bool:
         return (self.date, self.incr) <= (other.date, other.incr)
 
-    def __gt__(self, other):
+    def __gt__(self, other: BuildId) -> bool:
         return (self.date, self.incr) > (other.date, other.incr)
 
-    def __ge__(self, other):
+    def __ge__(self, other: BuildId) -> bool:
         return (self.date, self.incr) >= (other.date, other.incr)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}.{}".format(self.date.strftime('%Y%m%d'), self.incr)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.__repr__()
 
 
@@ -112,8 +116,9 @@ class Image:
     estimated_size: int
 
     @classmethod
-    def from_values(cls, product, release, variant, arch,
-                    version_str, buildid_str, checkpoint, estimated_size):
+    def from_values(cls, product: str, release: str, variant: str, arch: str,
+                    version_str: str, buildid_str: str, checkpoint: bool,
+                    estimated_size: int) -> Image:
         """Create an Image from mandatory values
 
         This method performs mandatory conversions and sanity checks before
@@ -139,7 +144,7 @@ class Image:
         return cls(product, release, variant, arch, version, buildid, checkpoint, estimated_size)
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: dict[str, ...]) -> Image:
         """Create an Image from a dictionary.
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -169,7 +174,7 @@ class Image:
     @classmethod
     def from_os(cls, product='', release='', variant='', arch='',
                 version_str='', buildid_str='', checkpoint=False,
-                estimated_size=0):
+                estimated_size: int = 0) -> Image:
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
@@ -212,7 +217,7 @@ class Image:
                                version_str, buildid_str, checkpoint,
                                estimated_size)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, ...]:
         """Export an Image to a dictionary"""
 
         data = asdict(self)
@@ -234,7 +239,7 @@ class Image:
 
         return urllib.parse.quote(string.replace('/', '_'))
 
-    def to_update_path(self):
+    def to_update_path(self) -> str:
         """Give an update path in the form of
         <product>/<arch>/<version>/<variant>/<buildid>.json """
 
@@ -243,13 +248,13 @@ class Image:
 
         return '/'.join([self.quote(b) for b in bits]) + '.json'
 
-    def is_snapshot(self):
+    def is_snapshot(self) -> bool:
         """Whether an Image is a snapshot"""
 
         return not self.version
 
-    def is_stable(self):
-        """Whether an Image is stable (ie. it has a stable version)"""
+    def is_stable(self) -> bool:
+        """Whether an Image is stable (i.e. it has a stable version)"""
 
         if self.version:
             return not self.version.prerelease
@@ -273,7 +278,7 @@ class Image:
     # such comparison shouldn't happen anyway, the calling code should take
     # care of never letting this situation happen.
 
-    def __eq__(self, other):
+    def __eq__(self, other: Image) -> bool:
         if self.version and other.version:
             return (self.version, self.release, self.buildid) == (
                 other.version, other.release, other.buildid)
@@ -281,10 +286,10 @@ class Image:
             return (self.release, self.buildid) == (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
-    def __ne__(self, other):
+    def __ne__(self, other: Image) -> bool:
         return not self == other
 
-    def __lt__(self, other):
+    def __lt__(self, other: Image) -> bool:
         if self.version and other.version:
             return (self.version, self.release, self.buildid) < (
                 other.version, other.release, other.buildid)
@@ -292,7 +297,7 @@ class Image:
             return (self.release, self.buildid) < (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
-    def __le__(self, other):
+    def __le__(self, other: Image) -> bool:
         if self.version and other.version:
             return (self.version, self.release, self.buildid) <= (
                 other.version, other.release, other.buildid)
@@ -300,7 +305,7 @@ class Image:
             return (self.release, self.buildid) <= (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
-    def __gt__(self, other):
+    def __gt__(self, other: Image) -> bool:
         if self.version and other.version:
             return (self.version, self.release, self.buildid) > (
                 other.version, other.release, other.buildid)
@@ -308,7 +313,7 @@ class Image:
             return (self.release, self.buildid) > (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
-    def __ge__(self, other):
+    def __ge__(self, other: Image) -> bool:
         if self.version and other.version:
             return (self.version, self.release, self.buildid) >= (
                 other.version, other.release, other.buildid)
@@ -316,7 +321,7 @@ class Image:
             return (self.release, self.buildid) >= (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{{ {}, {}, {}, {}, {}, {}, {} }}".format(
             self.product, self.release, self.variant, self.arch,
             self.version, self.buildid, self.checkpoint)

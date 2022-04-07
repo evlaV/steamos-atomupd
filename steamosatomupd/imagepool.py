@@ -16,12 +16,19 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+# Needed to support list annotation for Python 3.7, without using the
+# deprecated "typing".
+from __future__ import annotations
+
 import errno
 import logging
 import os
 import pprint
 import sys
+from configparser import ConfigParser
+from typing import Union
 
+from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import UpdateCandidate, UpdatePath, Update
 
@@ -35,7 +42,7 @@ RAUC_BUNDLE_EXT = '.raucb'
 CASYNC_STORE_EXT = '.castr'
 
 
-def _get_rauc_update_path(images_dir, manifest_path):
+def _get_rauc_update_path(images_dir: str, manifest_path: str) -> str:
 
     rauc_bundle = manifest_path[:-len(IMAGE_MANIFEST_EXT)] + RAUC_BUNDLE_EXT
     if not os.path.isfile(rauc_bundle):
@@ -52,7 +59,7 @@ def _get_rauc_update_path(images_dir, manifest_path):
 # Image pool
 
 
-def _get_next_release(release, releases):
+def _get_next_release(release: str, releases: list[str]) -> str:
     """Get the next release in a list of releases.
 
     Releases are expected to be strings, sorted alphabetically, ie:
@@ -75,7 +82,7 @@ def _get_next_release(release, releases):
     return next_release
 
 
-def _get_update_candidates(candidates, image):
+def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> list[UpdateCandidate]:
     """Get possible update candidates within a list.
 
     This is where we decide who are the valid update candidates for a
@@ -143,7 +150,7 @@ class ImagePool:
                           config['Images']['Archs'].split())
 
     @classmethod
-    def validate_config(cls, config):
+    def validate_config(cls, config: ConfigParser) -> None:
         try:
             images_dir = config['Images']['PoolDir']
             snapshots = config['Images'].getboolean('Snapshots')
@@ -166,9 +173,10 @@ class ImagePool:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
-    def _create_pool(self, images_dir, work_with_snapshots, want_unstable_images,
-                     supported_products, supported_releases, supported_variants,
-                     supported_archs):
+    def _create_pool(self, images_dir: str, work_with_snapshots: bool,
+                     want_unstable_images: bool, supported_products: list[str],
+                     supported_releases: list[str], supported_variants: list[str],
+                     supported_archs: list[str]) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -257,7 +265,7 @@ class ImagePool:
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: {}".format(f))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),
             'Snapshots : {}'.format(self.work_with_snapshots),
@@ -270,7 +278,7 @@ class ImagePool:
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
-    def _get_candidate_list(self, image, release=''):
+    def _get_candidate_list(self, image: Image, release='') -> list[UpdateCandidate]:
         """Return the list of update candidates that an image belong to
 
         The optional 'release' field is used to override the image release.
@@ -301,7 +309,7 @@ class ImagePool:
 
         return candidates
 
-    def get_updates_for_release(self, image, release):
+    def get_updates_for_release(self, image: Image, release: str) -> Union[UpdatePath, None]:
         """Get a list of update candidates for a given release
 
         Return an UpdatePath object, or None if no updates available.
@@ -318,7 +326,7 @@ class ImagePool:
 
         return UpdatePath(release, candidates)
 
-    def get_updates(self, image):
+    def get_updates(self, image: Image) -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
@@ -340,7 +348,7 @@ class ImagePool:
         else:
             return None
 
-    def get_images_found(self):
+    def get_images_found(self) -> list[Image]:
         """ Get list of images found
 
         To iterate over the list of known images we need a list of known images

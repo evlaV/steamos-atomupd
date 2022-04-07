@@ -38,7 +38,7 @@ class UpdateCandidate:
     update_path: str
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: dict[str, ...]) -> UpdateCandidate:
         """Create an UpdateCandidate from a dictionary
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -49,12 +49,12 @@ class UpdateCandidate:
         update_path = data['update_path']
         return cls(image, update_path)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, ...]:
         """Export an UpdateCandidate to a dictionary"""
 
         return {'image': self.image.to_dict(), 'update_path': self.update_path}
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "{}, {}".format(self.image, self.update_path)
 
 
@@ -72,13 +72,9 @@ class UpdatePath:
         'release': 'clockwerk',
         'candidates': [ CANDIDATE1, CANDIDATE2, ... ]
       }
-
-    -- This is the dataclass definition (requires python >= 3.7) --
-    release: str
-    candidates: List[UpdateCandidate]
     """
 
-    def __init__(self, release, candidates):
+    def __init__(self, release: str, candidates: list[UpdateCandidate]):
         self.release = release
         self.candidates = []
 
@@ -88,7 +84,7 @@ class UpdatePath:
         self.candidates = sorted(candidates, key=lambda c: c.image)
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data: dict[str, ...]) -> UpdatePath:
         """Create an UpdatePath from a dictionary
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -104,7 +100,7 @@ class UpdatePath:
 
         return cls(release, candidates)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, ...]:
         """Export an UpdatePath to a dictionary"""
 
         array = []
@@ -136,7 +132,7 @@ class Update:
     major: Union[UpdatePath, None]
 
     @classmethod
-    def from_dict(cls, data):
+    def from_dict(cls, data) -> Update:
         """Create an Update from a dictionary
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -153,7 +149,7 @@ class Update:
 
         return cls(minor, major)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, ...]:
         """Export an Update to a dictionary"""
 
         data = {}
@@ -164,7 +160,7 @@ class Update:
 
         return data
 
-    def to_string(self):
+    def to_string(self) -> str:
         """Export an Update to string"""
 
         data = self.to_dict()

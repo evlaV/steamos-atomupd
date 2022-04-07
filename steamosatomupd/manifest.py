@@ -25,11 +25,11 @@ class Manifest:
 
     """An image manifest"""
 
-    def __init__(self, image):
+    def __init__(self, image: Image):
         self.image = image
 
     @classmethod
-    def from_file(cls, filename):
+    def from_file(cls, filename: str):
         """Create a Manifest from file
 
         Raise exceptions if needed
@@ -41,7 +41,7 @@ class Manifest:
         image = Image.from_dict(data)
         return cls(image)
 
-    def to_string(self):
+    def to_string(self) -> str:
         """Export a Manifest to string"""
 
         data = self.image.to_dict()
