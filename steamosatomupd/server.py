@@ -16,6 +16,8 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+# pylint: skip-file
+
 import argparse
 import configparser
 import json
