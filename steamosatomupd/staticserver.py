@@ -36,14 +36,11 @@ log = logging.getLogger(__name__)
 DEFAULT_SERVE_UNSTABLE = False
 
 
-#
-# Update server
-#
-
-
 class UpdateParser:
+    """Image pool with static update JSON files"""
 
     def get_update(self, data: dict) -> dict:
+        """Get the update candidates from the provided image dictionary"""
 
         # Make an image out of the request arguments. An exception might be
         # raised, which results in returning 400 to the client.
@@ -78,7 +75,7 @@ class UpdateParser:
 
         # Config file
 
-        log.debug("Parsing config from file: {}".format(args.config))
+        log.debug("Parsing config from file: %s", args.config)
 
         config = configparser.ConfigParser()
 
@@ -87,7 +84,7 @@ class UpdateParser:
                 'Unstable': DEFAULT_SERVE_UNSTABLE,
             }})
 
-        with open(args.config, 'r') as f:
+        with open(args.config, 'r', encoding='utf-8') as f:
             config.read_file(f)
 
         # Create image pool
@@ -99,12 +96,13 @@ class UpdateParser:
         image_pool = ImagePool(config)
         self.image_pool = image_pool
         print("--- Image Pool ---")
-        print('{}'.format(self.image_pool))
+        print(f'{self.image_pool}')
         print("------------------")
         sys.stdout.flush()
 
     def parse_all(self) -> int:
-        # Create file structure as needed based on known images
+        """Create file structure as needed based on known images"""
+
         images = self.image_pool.get_images_found()
         for image in images:
             # Make sure the product exists
@@ -123,16 +121,17 @@ class UpdateParser:
             print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
 
             # Write .json files for each variation
-            with open(os.path.join(product, arch, version, variant,
-                                   '{}.json'.format(buildid)), 'w') as file:
+            with open(os.path.join(product, arch, version, variant, f'{buildid}.json'),
+                      'w', encoding='utf-8') as file:
                 file.write(jsonresult)
 
             # Now check if buildid is old/invalid to write variant.json up one level
             values['buildid'] = '19000101'
             jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
-            print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
+            print(f"--- Jsonresult for {json.dumps(values)} is {jsonresult} ---")
 
-            with open(os.path.join(product, arch, version, '{}.json'.format(variant)), 'w') as file:
+            with open(os.path.join(product, arch, version, f'{variant}.json'),
+                      'w', encoding='utf-8') as file:
                 file.write(jsonresult)
 
         return 0
@@ -141,6 +140,7 @@ class UpdateParser:
 
 
 def main(args=None):
+    """"Creates the image pool with static update JSON files"""
     server = UpdateParser(args)
     exit_code = server.parse_all()
     return exit_code

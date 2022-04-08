@@ -104,8 +104,8 @@ class UpdatePath:
         """Export an UpdatePath to a dictionary"""
 
         array = []
-        for c in self.candidates:
-            cdata = c.to_dict()
+        for candidate in self.candidates:
+            cdata = candidate.to_dict()
             array.append(cdata)
 
         return {'release': self.release, 'candidates': array}

@@ -94,15 +94,15 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> l
     latest = None
     checkpoints = []
 
-    for c in candidates:
-        if c.image <= image:
+    for candidate in candidates:
+        if candidate.image <= image:
             continue
 
-        if c.image.checkpoint:
-            checkpoints.append(c)
+        if candidate.image.checkpoint:
+            checkpoints.append(candidate)
 
-        if not latest or c.image > latest.image:
-            latest = c
+        if not latest or candidate.image > latest.image:
+            latest = candidate
 
     winners = checkpoints
     if latest and latest not in winners:
@@ -151,17 +151,15 @@ class ImagePool:
 
     @classmethod
     def validate_config(cls, config: ConfigParser) -> None:
-        try:
-            images_dir = config['Images']['PoolDir']
-            snapshots = config['Images'].getboolean('Snapshots')
-            unstable = config['Images'].getboolean('Unstable')
-            products = config['Images']['Products'].split()
-            releases = config['Images']['Releases'].split()
-            variants = config['Images']['Variants'].split()
-            archs = config['Images']['Archs'].split()
-        except KeyError:
-            log.error("Please provide a valid configuration file")
-            sys.exit(1)
+        """Validate a ConfigParser.
+
+        The execution will stop if the validation fails."""
+
+        options = ['PoolDir', 'Snapshots', 'Unstable', 'Products', 'Releases', 'Variants', 'Archs']
+        for option in options:
+            if not config.has_option('Images', option):
+                log.error("Please provide a valid configuration file")
+                sys.exit(1)
 
         # We strongly expect releases to be an ordered list. We could sort
         # it ourselves, but we can also just refuse an unsorted list, and
@@ -169,6 +167,7 @@ class ImagePool:
         # ordered (because we might use release names to compare to image,
         # and a clockwerk image (3.x) is below a doom (4.x) image).
 
+        releases = config['Images']['Releases'].split()
         if sorted(releases) != releases:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
@@ -204,23 +203,23 @@ class ImagePool:
 
         # Create the hierarchy to store images
         data = {}
-        for p in supported_products:
-            data[p] = {}
-            for a in supported_archs:
-                data[p][a] = {}
-                for r in supported_releases:
-                    data[p][a][r] = {}
-                    for v in supported_variants:
-                        data[p][a][r][v] = []
+        for product in supported_products:
+            data[product] = {}
+            for arch in supported_archs:
+                data[product][arch] = {}
+                for release in supported_releases:
+                    data[product][arch][release] = {}
+                    for variant in supported_variants:
+                        data[product][arch][release][variant] = []
         self.candidates = data
 
         # Populate the candidates dict
-        log.debug("Walking the image tree: {}".format(images_dir))
+        log.debug("Walking the image tree: %s", images_dir)
         for root, dirs, files in os.walk(images_dir):
             # Sort dirs and files to get the same order on all systems.
             dirs.sort()
             files.sort()
-            [dirs.remove(d) for d in list(dirs) if d.endswith(".castr")]
+            dirs[:] = [d for d in dirs if not d.endswith(".castr")]
             for f in files:
                 # We're looking for manifest files
                 if not f.endswith(IMAGE_MANIFEST_EXT):
@@ -232,7 +231,7 @@ class ImagePool:
                 try:
                     manifest = Manifest.from_file(manifest_path)
                 except Exception as e:
-                    log.error("Failed to create image from manifest {}: {}".format(f, e))
+                    log.error("Failed to create image from manifest %s: %s", f, e)
                     continue
 
                 image = manifest.image
@@ -241,20 +240,20 @@ class ImagePool:
                 try:
                     update_path = _get_rauc_update_path(images_dir, manifest_path)
                 except Exception as e:
-                    log.debug("Failed to get update path for manifest {}: {}".format(f, e))
+                    log.debug("Failed to get update path for manifest %s: %s", f, e)
                     continue
 
                 # Get the list where this image belongs
                 try:
                     candidates = self._get_candidate_list(image)
                 except Exception as e:
-                    log.debug("Discarded unsupported image {}: {}".format(f, e))
+                    log.debug("Discarded unsupported image %s: %s", f, e)
                     continue
 
                 # Discard unstable images if we don't want them
                 # TODO check the code to see if it's worth introducing image.is_unstable() for readability
                 if not want_unstable_images and not image.is_stable():
-                    log.debug("Discarded unstable image {}".format(f))
+                    log.debug("Discarded unstable image %s", f)
                     continue
 
                 # Only add it as an image found if it's valid, etc.
@@ -263,7 +262,7 @@ class ImagePool:
                 # Add image as an update candidate
                 candidate = UpdateCandidate(image, update_path)
                 candidates.append(candidate)
-                log.debug("Update candidate added from manifest: {}".format(f))
+                log.debug("Update candidate added from manifest: %s", f)
 
     def __str__(self) -> str:
         return '\n'.join([
@@ -278,10 +277,10 @@ class ImagePool:
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
-    def _get_candidate_list(self, image: Image, release='') -> list[UpdateCandidate]:
+    def _get_candidate_list(self, image: Image, override_release='') -> list[UpdateCandidate]:
         """Return the list of update candidates that an image belong to
 
-        The optional 'release' field is used to override the image release.
+        The optional 'override_release' field is used to override the image release.
 
         This method also does sanity check, to ensure the image is supported.
         We might raise exceptions if the image is not supported.
@@ -295,17 +294,14 @@ class ImagePool:
 
         # Get the image list according to image details
         try:
-            p = image.product
-            if release:
-                r = release
-            else:
-                r = image.release
-            v = image.variant
-            a = image.arch
-            candidates = self.candidates[p][a][r][v]
+            product = image.product
+            release = override_release if override_release else image.release
+            variant = image.variant
+            arch = image.arch
+            candidates = self.candidates[product][arch][release][variant]
         except KeyError as e:
             # None with that variant, so don't suggest anything
-            raise ValueError("Image is not supported: {}".format(e))
+            raise ValueError("Image is not supported") from e
 
         return candidates
 
@@ -316,7 +312,7 @@ class ImagePool:
         """
 
         try:
-            all_candidates = self._get_candidate_list(image, release=release)
+            all_candidates = self._get_candidate_list(image, release)
         except ValueError:
             return None
 
@@ -345,8 +341,8 @@ class ImagePool:
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
-        else:
-            return None
+
+        return None
 
     def get_images_found(self) -> list[Image]:
         """ Get list of images found

@@ -35,7 +35,7 @@ class Manifest:
         Raise exceptions if needed
         """
 
-        with open(filename, 'r') as f:
+        with open(filename, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         image = Image.from_dict(data)
