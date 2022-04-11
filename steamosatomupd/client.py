@@ -497,7 +497,6 @@ class UpdateClient:
 
     def __init__(self, args=None):
         self.args = args
-        pass
 
     def run(self):
         """Execute the requested operations"""
