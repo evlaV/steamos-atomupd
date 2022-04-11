@@ -121,7 +121,7 @@ def initialize_http_authentication(url: str):
         if auth:
             login, _, password = auth
             manager = urllib.request.HTTPPasswordMgrWithDefaultRealm()
-            manager.add_password(None, host, login, password)
+            manager.add_password(None, host, login, password if password else '')
             handler = urllib.request.HTTPBasicAuthHandler(manager)
             opener = urllib.request.build_opener(handler)
             urllib.request.install_opener(opener)
