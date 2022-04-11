@@ -533,7 +533,8 @@ class UpdateClient:
         manifest_group = parser.add_mutually_exclusive_group()
         manifest_group.add_argument('--manifest-file',
                                     metavar='FILE',  # can't use default= here, see below
-                                    help="manifest file (default: {})".format(DEFAULT_MANIFEST_FILE))
+                                    help="manifest file (default: {})".format(
+                                        DEFAULT_MANIFEST_FILE))
         manifest_group.add_argument('--mk-manifest-file', action='store_true',
                                     help="don't use existing manifest file, make one instead")
 
