@@ -57,6 +57,8 @@ progress_process = multiprocessing.Process()
 
 
 def sig_handler(_signum, _frame):
+    """Handle SIGTERM and SIGINT"""
+
     if progress_process.is_alive():
         progress_process.kill()
     sys.exit(1)
@@ -496,12 +498,14 @@ def is_desync_in_use() -> bool:
 
 
 class UpdateClient:
+    """Class used to search and apply system updates"""
 
     def __init__(self, args=None):
         self.args = args
         pass
 
     def run(self):
+        """Execute the requested operations"""
 
         # Arguments
 
@@ -750,6 +754,8 @@ class UpdateClient:
 
 
 def main(args=None):
+    """Search and/or apply system updates"""
+
     signal.signal(signal.SIGTERM, sig_handler)
     signal.signal(signal.SIGINT, sig_handler)
 
