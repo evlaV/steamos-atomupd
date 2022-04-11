@@ -1,0 +1,46 @@
+[MESSAGES CONTROL]
+
+disable=raw-checker-failed,
+        bad-inline-option,
+        locally-disabled,
+        file-ignored,
+        suppressed-message,
+        useless-suppression,
+        deprecated-pragma,
+        use-symbolic-message-instead,
+        missing-module-docstring,
+        consider-using-f-string,
+        too-many-instance-attributes,
+        too-many-arguments,
+        fixme,
+        too-many-locals,
+        broad-except,
+        too-many-branches,
+        too-many-statements,
+        consider-using-with,
+        invalid-name,
+        global-statement,
+        too-many-return-statements,
+        too-few-public-methods,
+        duplicate-code,
+
+
+[BASIC]
+
+# Good variable names which should always be accepted, separated by a comma.
+good-names=e,
+           f,
+           i,
+           j,
+           k,
+           p,
+           ex,
+           Run,
+           _
+
+[FORMAT]
+
+# Maximum number of characters on a single line.
+max-line-length=120
+
+

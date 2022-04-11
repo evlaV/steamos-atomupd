@@ -1,4 +1,4 @@
-# Copyright 2021 Collabora Ltd
+# Copyright 2021-2022 Collabora Ltd
 # SPDX-License-Identifier: MIT
 
 workflow:
@@ -7,6 +7,7 @@ workflow:
         - if: $CI_COMMIT_BRANCH
 
 stages:
+    - lint
     - test
     - docker-prepare
     - docker-build
@@ -62,6 +63,27 @@ test:debian-11:
 test:archlinux:
     extends: .test_archlinux_template
     image: archlinux:base-devel
+
+.lint_template:
+    stage: lint
+    needs: [ ]
+    image: archlinux:base-devel
+    before_script:
+        - |
+            set -eux
+
+            pacman -Syu --needed --noconfirm --noprogressbar \
+            python-flask python-semantic-version python-pylint mypy
+
+lint:pylint:
+    extends: .lint_template
+    script:
+        - pylint steamosatomupd
+
+lint:mypy:
+    extends: .lint_template
+    script:
+        - mypy steamosatomupd
 
 # We can't do this in the docker step because the kaniko executor
 # doesn't have git, therefore no `git describe`
