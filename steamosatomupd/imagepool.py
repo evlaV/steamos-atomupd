@@ -202,7 +202,7 @@ class ImagePool:
         self.images_found = []
 
         # Create the hierarchy to store images
-        data = {}
+        data: dict[str, dict] = {}
         for product in supported_products:
             data[product] = {}
             for arch in supported_archs:

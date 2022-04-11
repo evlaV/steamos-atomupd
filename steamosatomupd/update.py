@@ -17,12 +17,12 @@
 # <http://www.gnu.org/licenses/>.
 
 # Needed to support list annotation for Python 3.7, without using the
-# deprecated "typing".
+# deprecated "typing.List".
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import Union
+from typing import Union, Any
 
 from steamosatomupd.image import Image
 
@@ -38,7 +38,7 @@ class UpdateCandidate:
     update_path: str
 
     @classmethod
-    def from_dict(cls, data: dict[str, ...]) -> UpdateCandidate:
+    def from_dict(cls, data: dict[str, Any]) -> UpdateCandidate:
         """Create an UpdateCandidate from a dictionary
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -49,7 +49,7 @@ class UpdateCandidate:
         update_path = data['update_path']
         return cls(image, update_path)
 
-    def to_dict(self) -> dict[str, ...]:
+    def to_dict(self) -> dict[str, Any]:
         """Export an UpdateCandidate to a dictionary"""
 
         return {'image': self.image.to_dict(), 'update_path': self.update_path}
@@ -84,7 +84,7 @@ class UpdatePath:
         self.candidates = sorted(candidates, key=lambda c: c.image)
 
     @classmethod
-    def from_dict(cls, data: dict[str, ...]) -> UpdatePath:
+    def from_dict(cls, data: dict[str, Any]) -> UpdatePath:
         """Create an UpdatePath from a dictionary
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -100,7 +100,7 @@ class UpdatePath:
 
         return cls(release, candidates)
 
-    def to_dict(self) -> dict[str, ...]:
+    def to_dict(self) -> dict[str, Any]:
         """Export an UpdatePath to a dictionary"""
 
         array = []
@@ -139,17 +139,17 @@ class Update:
         or if values are not valid.
         """
 
-        minor = {}
+        minor: UpdatePath | None = None
         if 'minor' in data:
             minor = UpdatePath.from_dict(data['minor'])
 
-        major = {}
+        major: UpdatePath | None = None
         if 'major' in data:
             major = UpdatePath.from_dict(data['major'])
 
         return cls(minor, major)
 
-    def to_dict(self) -> dict[str, ...]:
+    def to_dict(self) -> dict[str, Any]:
         """Export an Update to a dictionary"""
 
         data = {}

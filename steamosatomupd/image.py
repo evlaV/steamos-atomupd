@@ -25,6 +25,7 @@ import platform
 import re
 import urllib.parse
 from dataclasses import dataclass, asdict
+from typing import Any
 
 import semantic_version
 
@@ -49,7 +50,7 @@ class BuildId:
 
     """A build ID"""
 
-    date: datetime
+    date: datetime.date
     incr: int
 
     @classmethod
@@ -77,10 +78,14 @@ class BuildId:
 
         return cls(date, incr)
 
-    def __eq__(self, other: BuildId) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, BuildId):
+            return NotImplemented
         return (self.date, self.incr) == (other.date, other.incr)
 
-    def __ne__(self, other: BuildId) -> bool:
+    def __ne__(self, other: object) -> bool:
+        if not isinstance(other, BuildId):
+            return NotImplemented
         return not self == other
 
     def __lt__(self, other: BuildId) -> bool:
@@ -144,7 +149,7 @@ class Image:
         return cls(product, release, variant, arch, version, buildid, checkpoint, estimated_size)
 
     @classmethod
-    def from_dict(cls, data: dict[str, ...]) -> Image:
+    def from_dict(cls, data: dict[str, Any]) -> Image:
         """Create an Image from a dictionary.
 
         Raise exceptions if the dictionary doesn't contain the expected keys,
@@ -217,7 +222,7 @@ class Image:
                                version_str, buildid_str, checkpoint,
                                estimated_size)
 
-    def to_dict(self) -> dict[str, ...]:
+    def to_dict(self) -> dict[str, Any]:
         """Export an Image to a dictionary"""
 
         data = asdict(self)
@@ -278,7 +283,9 @@ class Image:
     # such comparison shouldn't happen anyway, the calling code should take
     # care of never letting this situation happen.
 
-    def __eq__(self, other: Image) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Image):
+            return NotImplemented
         if self.version and other.version:
             return (self.version, self.release, self.buildid) == (
                 other.version, other.release, other.buildid)
@@ -286,7 +293,9 @@ class Image:
             return (self.release, self.buildid) == (other.release, other.buildid)
         raise RuntimeError("Can't compare snapshot with versioned image")
 
-    def __ne__(self, other: Image) -> bool:
+    def __ne__(self, other: object) -> bool:
+        if not isinstance(other, Image):
+            return NotImplemented
         return not self == other
 
     def __lt__(self, other: Image) -> bool:

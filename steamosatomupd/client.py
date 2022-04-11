@@ -34,6 +34,7 @@ import urllib.request
 import multiprocessing
 from functools import cache
 from pathlib import Path
+from typing import Union
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
@@ -395,7 +396,7 @@ def ensure_estimated_download_size(update_path: UpdatePath,
 
 
 def prevent_update_loop(update_path: UpdatePath,
-                        current_image: Image) -> UpdatePath:
+                        current_image: Image) -> Union[UpdatePath, None]:
     """Remove the current image from the list of update candidates
 
     If the server included the current image as the first update candidate, we
