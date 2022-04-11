@@ -136,7 +136,7 @@ def write_json_to_file(json_str: str) -> str:
     try:
         update_data = json.loads(json_str)
     except json.JSONDecodeError as e:
-        log.warning("Unable to parse JSON from server: {}".format(e))
+        log.warning("Unable to parse JSON from server: %s", e)
         return ""
 
     update = Update.from_dict(update_data)
@@ -160,7 +160,7 @@ def download_update_from_rest_url(url: str) -> str:
     An empty string will be returned if an error occurs.
     """
 
-    log.debug("Downloading update file {}".format(url))
+    log.debug("Downloading update file %s", url)
 
     initialize_http_authentication(url)
 
@@ -181,7 +181,7 @@ def download_update_from_rest_url(url: str) -> str:
         tries += 1
 
         try:
-            log.debug("Trying url: {}".format(url))
+            log.debug("Trying url: %s", url)
             with urllib.request.urlopen(url) as response:
                 jsonstr = response.read()
 
@@ -199,7 +199,7 @@ def download_update_from_rest_url(url: str) -> str:
                 nextpath += '.json'
                 url = urlparts._replace(path=nextpath).geturl()
             else:
-                log.warning("Unable to get JSON from server: {}".format(e))
+                log.warning("Unable to get JSON from server: %s", e)
                 return ""
 
     return write_json_to_file(jsonstr)
@@ -219,7 +219,7 @@ def download_update_from_query_url(url: str) -> str:
     an empty reply or if an error occurs.
     """
 
-    log.debug("Downloading update file {}".format(url))
+    log.debug("Downloading update file %s", url)
 
     initialize_http_authentication(url)
 
@@ -228,7 +228,7 @@ def download_update_from_query_url(url: str) -> str:
             json_str = response.read()
 
     except (urllib.error.HTTPError, urllib.error.URLError) as e:
-        log.warning("Unable to get JSON from server: {}".format(e))
+        log.warning("Unable to get JSON from server: %s", e)
         return ""
 
     return write_json_to_file(json_str)
@@ -285,7 +285,7 @@ def do_update(url: str, quiet: bool) -> None:
                        universal_newlines=True)
 
     if c.returncode != 0:
-        log.warning("Failed to remount /tmp: {}: {}".format(c.returncode, c.stdout))
+        log.warning("Failed to remount /tmp: %i: %s", c.returncode, c.stdout)
         # Let's keep going and hope that /tmp can handle the load
 
     # Let's update now
@@ -331,7 +331,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
         if c.returncode != 0:
             # Estimating the download size is not a critical operation.
             # If it fails we try to continue anyway.
-            log.warning("Failed to extract bundle: {}: {}".format(c.returncode, c.stdout))
+            log.warning("Failed to extract bundle: %i: %s", c.returncode, c.stdout)
             return 0
 
     update_index = destination / 'rootfs.img.caibx'
@@ -357,10 +357,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
 
     if c.returncode != 0:
         log.warning(
-            "Failed to gather information about the update: {}: {}".format(
-                c.returncode,
-                c.stdout
-            )
+            "Failed to gather information about the update: %i: %s", c.returncode, c.stdout
         )
         return 0
 
@@ -481,7 +478,7 @@ def get_active_slot_index() -> Path:
     if not install_args.seed:
         raise RuntimeError('Failed to parse the seed index path from RAUC config')
 
-    log.debug('The active slot seed index is located in: {}'.format(install_args.seed))
+    log.debug('The active slot seed index is located in: %s', install_args.seed)
 
     return Path(install_args.seed)
 
@@ -551,7 +548,7 @@ class UpdateClient:
 
         # Config file
 
-        log.debug("Parsing config from file: {}".format(args.config))
+        log.debug("Parsing config from file: %s", args.config)
 
         config = configparser.ConfigParser()
 
@@ -580,13 +577,13 @@ class UpdateClient:
         runtime_dir = config.get('Host', 'RuntimeDir',
                                  fallback=DEFAULT_RUNTIME_DIR)
         if not os.path.isdir(runtime_dir):
-            log.debug("Creating runtime dir {}".format(runtime_dir))
+            log.debug("Creating runtime dir %s", runtime_dir)
             os.makedirs(runtime_dir)
 
         if is_desync_in_use():
             seed_index = get_active_slot_index()
             if not seed_index.parent.is_dir():
-                log.debug("Creating active slot index dir {}".format(seed_index.parent))
+                log.debug("Creating active slot index dir %s", seed_index.parent)
                 os.makedirs(seed_index.parent)
 
         if args.update_from_url:
@@ -594,7 +591,7 @@ class UpdateClient:
             try:
                 do_update(args.update_from_url, args.quiet)
             except Exception as e:
-                log.error("Failed to install update from URL: {}".format(e))
+                log.error("Failed to install update from URL: %s", e)
                 return -1
             return 0
 
@@ -610,7 +607,7 @@ class UpdateClient:
                 manifest_file = config['Host']['Manifest']
             else:
                 manifest_file = DEFAULT_MANIFEST_FILE
-            log.debug("Using manifest file '{}'".format(manifest_file))
+            log.debug("Using manifest file '%s'", manifest_file)
 
         # Get details about the current image
         if manifest_file:
@@ -654,7 +651,7 @@ class UpdateClient:
 
         # Parse update file
 
-        log.debug("Parsing update file: {}".format(update_file))
+        log.debug("Parsing update file: %s", update_file)
 
         with open(update_file, 'r') as f:
             update_data = json.load(f)
@@ -668,7 +665,7 @@ class UpdateClient:
 
         if not update:
             log.debug("No update candidate, even though the server returned something")
-            log.debug("This is very unexpected, please inspect '{}'".format(update_file))
+            log.debug("This is very unexpected, please inspect '%s'", update_file)
             return -1
 
         update.minor = prevent_update_loop(update.minor, current_image)
@@ -677,18 +674,18 @@ class UpdateClient:
         # Log a bit
 
         def log_update(upd):
-            log.debug("An update is available for release '{}'".format(upd.release))
+            log.debug("An update is available for release '%s'", upd.release)
             n_imgs = len(upd.candidates)
             if n_imgs > 0:
                 cand = upd.candidates[0]
                 img = cand.image
-                log.debug("> going to version: {} ({})".format(img.version, img.buildid))
-                log.debug("> update path: {}".format(cand.update_path))
+                log.debug("> going to version: %s (%s)", img.version, img.buildid)
+                log.debug("> update path: %s", cand.update_path)
             if n_imgs > 1:
                 cand = upd.candidates[-1]
                 img = cand.image
-                log.debug("> final destination: {} ({})".format(img.version, img.buildid))
-                log.debug("> total number of updates: {}".format(n_imgs))
+                log.debug("> final destination: %s (%s)", img.version, img.buildid)
+                log.debug("> total number of updates: %i", n_imgs)
 
         if update.minor:
             log_update(update.minor)
@@ -748,7 +745,7 @@ class UpdateClient:
             update_url = urllib.parse.urljoin(images_url, update_path)
             do_update(update_url, args.quiet)
         except Exception as e:
-            log.error("Failed to install update file: {}".format(e))
+            log.error("Failed to install update file: %s", e)
             return -1
 
         return 0
