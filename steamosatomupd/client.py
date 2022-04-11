@@ -244,15 +244,12 @@ def create_index(replace: bool) -> None:
     seed_index.unlink(missing_ok=True)
 
     rootfs_dir = get_rootfs_device()
-    c = subprocess.run(['desync', 'make', seed_index, rootfs_dir],
-                       stderr=subprocess.STDOUT,
-                       stdout=subprocess.PIPE,
-                       universal_newlines=True)
-
-    if c.returncode != 0:
-        raise RuntimeError(
-            "Failed to create the index file for the active partition rootfs: {}: {}".format(
-                c.returncode, c.stdout))
+    log.debug('Creating the index file for the active rootfs %s', rootfs_dir)
+    subprocess.run(['desync', 'make', seed_index, rootfs_dir],
+                   check=True,
+                   stderr=subprocess.STDOUT,
+                   stdout=subprocess.PIPE,
+                   universal_newlines=True)
 
     # Create a symlink next to the index as required by `desync extract`.
     # We can pass only the index filename to the command.
@@ -277,9 +274,11 @@ def do_update(url: str, quiet: bool) -> None:
     # It needs enough memory to store the chunks it downloads, and it
     # also needs A LOT of inodes.
 
+    log.debug('Remounting /tmp with max memory and inodes number')
     c = subprocess.run(['mount',
                         '-o', 'remount,size=100%,nr_inodes=1g',
                         '/tmp', '/tmp'],
+                       check=False,
                        stderr=subprocess.STDOUT,
                        stdout=subprocess.PIPE,
                        universal_newlines=True)
@@ -293,17 +292,16 @@ def do_update(url: str, quiet: bool) -> None:
     if not quiet:
         progress_process = multiprocessing.Process(target=do_progress)
         progress_process.start()
-    c = subprocess.run(['rauc', 'install', url],
-                       stderr=subprocess.STDOUT,
-                       stdout=subprocess.PIPE,
-                       universal_newlines=True)
+    log.debug('Installing the bundle')
+    subprocess.run(['rauc', 'install', url],
+                   check=True,
+                   stderr=subprocess.STDOUT,
+                   stdout=subprocess.PIPE,
+                   universal_newlines=True)
     if not quiet and progress_process.is_alive():
         progress_process.join(5)
         if progress_process.is_alive():
             progress_process.terminate()
-
-    if c.returncode != 0:
-        raise RuntimeError("Failed to install bundle: {}: {}".format(c.returncode, c.stdout))
 
 
 def estimate_download_size(runtime_dir: Path, update_url: str,
@@ -324,6 +322,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     # If we already extracted this update bundle, don't do it again
     if not destination.exists():
         c = subprocess.run(['rauc', 'extract', update_url, destination],
+                           check=False,
                            stderr=subprocess.STDOUT,
                            stdout=subprocess.PIPE,
                            text=True)
@@ -352,6 +351,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
         seed = get_active_slot_index()
 
     c = subprocess.run(['desync', 'info', '--seed', seed, update_index],
+                       check=False,
                        capture_output=True,
                        text=True)
 
@@ -428,14 +428,11 @@ def prevent_update_loop(update_path: UpdatePath,
 def get_rootfs_device() -> Path:
     """ Get the rootfs device path from RAUC """
 
+    log.debug('Getting the rootfs device by parsing the RAUC status')
     c = subprocess.run(['rauc', 'status', '--output-format=json'],
+                       check=True,
                        capture_output=True,
                        text=True)
-
-    if c.returncode != 0:
-        raise RuntimeError(
-            'Failed to get RAUC status output: {}: {}'.format(c.returncode,
-                                                              c.stdout))
 
     status = json.loads(c.stdout)
     for s in status['slots']:
