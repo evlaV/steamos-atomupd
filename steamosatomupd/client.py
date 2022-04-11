@@ -389,7 +389,7 @@ def ensure_estimated_download_size(update_path: UpdatePath,
             str(candidate.image.buildid),
             required_buildid
         )
-        required_buildid = candidate.image.buildid
+        required_buildid = str(candidate.image.buildid)
 
     return update_path
 
