@@ -67,16 +67,16 @@ def sig_handler(_signum, _frame):
 def do_progress():
     """Print the progression using a journald"""
 
-    c = subprocess.Popen(['journalctl', '--unit=rauc.service', '--since=now',
-                          '--output=cat', '--follow'],
-                         stderr=subprocess.STDOUT,
-                         stdout=subprocess.PIPE,
-                         universal_newlines=True)
+    journal = subprocess.Popen(['journalctl', '--unit=rauc.service', '--since=now',
+                                '--output=cat', '--follow'],
+                               stderr=subprocess.STDOUT,
+                               stdout=subprocess.PIPE,
+                               universal_newlines=True)
 
     using_desync = is_desync_in_use()
     slot = ""
-    while c.poll() is None:
-        line = c.stdout.readline().rstrip()
+    while journal.poll() is None:
+        line = journal.stdout.readline().rstrip()
         log.debug(line)
 
         words = line.split()
@@ -107,7 +107,7 @@ def do_progress():
                 print("%d%%" % 95)
         sys.stdout.flush()
 
-    c.terminate()
+    journal.terminate()
 
 
 def initialize_http_authentication(url: str):
