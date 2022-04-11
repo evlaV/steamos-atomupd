@@ -548,7 +548,7 @@ class UpdateClient:
 
         config = configparser.ConfigParser()
 
-        with open(args.config, 'r') as f:
+        with open(args.config, 'r', encoding='utf-8') as f:
             config.read_file(f)
 
         query_url = config.get('Server', 'QueryUrl', fallback="")
@@ -649,7 +649,7 @@ class UpdateClient:
 
         log.debug("Parsing update file: %s", update_file)
 
-        with open(update_file, 'r') as f:
+        with open(update_file, 'r', encoding='utf-8') as f:
             update_data = json.load(f)
 
         if not update_data:
