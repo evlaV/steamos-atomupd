@@ -732,9 +732,9 @@ class UpdateClient:
             if args.update_version:
                 log.error("The requested update version is not a valid option")
                 return -1
-            else:
-                log.debug("No update")
-                return 0
+
+            log.debug("No update")
+            return 0
 
         log.debug("Applying update NOW")
 
