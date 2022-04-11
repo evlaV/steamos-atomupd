@@ -82,7 +82,8 @@ def do_progress():
         words = line.split()
         if len(words) == 0:
             continue
-        elif words[0] == "installing" and words[2] == "started":
+
+        if words[0] == "installing" and words[2] == "started":
             print("%d%%" % 0)
         elif words[0] == "installing" and words[2] == "finished":
             print("%d%%" % 100)
