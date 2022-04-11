@@ -186,7 +186,7 @@ def download_update_from_rest_url(url: str) -> str:
                 jsonstr = response.read()
 
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            if type(e) == urllib.error.HTTPError and e.code == 404:
+            if isinstance(e, urllib.error.HTTPError) and e.code == 404:
                 log.debug("Got 404 from server, trying again with less arguments")
                 # Try the next level up in the url until we get a json string.
                 urlparts = urllib.parse.urlparse(url)
