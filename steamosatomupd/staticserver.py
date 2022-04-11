@@ -136,8 +136,6 @@ class UpdateParser:
 
         return 0
 
-    image_pool = None
-
 
 def main(args=None):
     """"Creates the image pool with static update JSON files"""
