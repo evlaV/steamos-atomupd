@@ -57,7 +57,6 @@ progress_process = multiprocessing.Process()
 
 
 def sig_handler(_signum, _frame):
-    global progress_process
     if progress_process.is_alive():
         progress_process.kill()
     sys.exit(1)
