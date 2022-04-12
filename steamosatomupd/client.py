@@ -64,6 +64,108 @@ def sig_handler(_signum, _frame):
     sys.exit(1)
 
 
+# From real world testings, we assume that the validation and the chunking
+# take about 5% of the total installation time, each.
+VALIDATING_PERCENTAGE = 5
+CHUNKING_PERCENTAGE = 5
+ATTEMPT_PERCENTAGE = VALIDATING_PERCENTAGE + CHUNKING_PERCENTAGE
+
+
+def parse_desync_progress(line: str) -> None:
+    """Parse the Desync progress updates and print in output a unified progress
+    percentage and the estimated remaining time
+
+    The Desync progress is split in different phases, each with a percentage
+    that goes from 0% to 100%. In this function we will unify all those steps
+    in a single progress percentage for the whole installation process.
+
+    The estimated remaining time is only printed for the actual "Assembling"
+    phase, because we are only interested in that one. The previous phases
+    are usually fast enough that we don't need the estimated time.
+    """
+    remaining_time = ''
+    words = line.split()
+
+    if words[0].endswith('%') and len(words) < 3:
+        # This is the legacy Desync progress. Once we ensure to be
+        # running a new enough version, we can remove this.
+        # In this case the output is just composed of a progress percentage
+        # followed by the estimated remaining time.
+        print(line.strip())
+        return
+
+    # An example of the expected output is:
+    # Attempt 1: Validating        0.00%
+    # Attempt 1: Validating       23.07% 00m06s
+    # Attempt 1: Chunking Seed 1   0.00%
+    # Attempt 1: Chunking Seed 1 100.00% 12s
+    # Attempt 2: Validating        0.00%
+    # Attempt 2: Validating      100.00% 4s
+    # Attempt 2: Assembling        0.00%
+    # Attempt 2: Assembling       50.22% 00m09s
+    # Attempt 2: Assembling      100.00% 02m34s
+    # In typical scenarios, Desync will go through: Validating -> Assembling.
+    # Instead, if the seed we provided is corrupted, it will go through:
+    # Validating -> Chunking (i.e. recreating the invalid seed) ->
+    # (attempt 2) Validating -> Assembling
+
+    attempt_info: str
+    phase_info: str
+    try:
+        attempt_info, phase_info = line.split(':', 1)
+    except ValueError:
+        return
+
+    if not attempt_info.startswith('Attempt '):
+        return
+
+    attempt = int(attempt_info.removeprefix('Attempt '))
+
+    phase_info_words = phase_info.split()
+
+    if len(phase_info_words) < 2:
+        return
+
+    phase = phase_info_words[0]
+    if phase_info_words[-1].endswith('%'):
+        parsed_progress = float(phase_info_words.pop().removesuffix('%'))
+    elif phase_info[-2].endswith('%'):
+        parsed_time = phase_info_words.pop()
+        parsed_progress = float(phase_info_words.pop().removesuffix('%'))
+        if phase == 'Assembling':
+            remaining_time = parsed_time
+    else:
+        return
+
+    past_attempts = attempt - 1
+    past_attempts_percentage = past_attempts * ATTEMPT_PERCENTAGE
+    if phase == 'Validating':
+        # The validation phase is either at the beginning or after N
+        # failed attempts
+        prior_progress = past_attempts_percentage
+        percentage_base = VALIDATING_PERCENTAGE
+    elif phase == 'Chunking':
+        # The chunking phase is after the validation phase, plus the eventual
+        # N failed attempts. We are using a single seed, so expect always just
+        # one 'Chunking Seed X'.
+        prior_progress = past_attempts_percentage + VALIDATING_PERCENTAGE
+        percentage_base = CHUNKING_PERCENTAGE
+    elif phase == 'Assembling':
+        # The assembling phase is after the validation phase,
+        # plus the eventual N failed attempts
+        prior_progress = past_attempts_percentage + VALIDATING_PERCENTAGE
+        percentage_base = 100 - prior_progress
+    else:
+        return
+
+    progress = (parsed_progress * percentage_base / 100) + prior_progress
+
+    if remaining_time:
+        print(f'{progress:.2f}% {remaining_time}')
+    else:
+        print(f'{progress:.2f}%')
+
+
 def do_progress():
     """Print the progression using a journald"""
 
@@ -94,8 +196,7 @@ def do_progress():
         elif line == "stopping service" or line.startswith("Got exit signal"):
             break
         elif using_desync:
-            if words[0].endswith('%') and len(words) < 3:
-                print(line.strip())
+            parse_desync_progress(line)
         else:
             if words[0] == "Slot":
                 slot = os.path.basename(os.path.splitext(words[6])[0])
