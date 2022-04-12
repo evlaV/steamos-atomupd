@@ -91,7 +91,13 @@ def parse_desync_progress(line: str) -> None:
         # running a new enough version, we can remove this.
         # In this case the output is just composed of a progress percentage
         # followed by the estimated remaining time.
-        print(line.strip())
+        if float(words[0].removesuffix('%')) == 100:
+            # When the progress percentage reaches 100%, the value next to it
+            # is no more the estimated remaining time, instead it is how much
+            # time the whole operation took.
+            print(words[0])
+        else:
+            print(line.strip())
         return
 
     # An example of the expected output is:
@@ -132,7 +138,10 @@ def parse_desync_progress(line: str) -> None:
     elif phase_info[-2].endswith('%'):
         parsed_time = phase_info_words.pop()
         parsed_progress = float(phase_info_words.pop().removesuffix('%'))
-        if phase == 'Assembling':
+        if phase == 'Assembling' and parsed_progress != 100:
+            # When the progress percentage reaches 100%, the value next to it
+            # is no more the estimated remaining time, instead it is how much
+            # time the whole operation took.
             remaining_time = parsed_time
     else:
         return
