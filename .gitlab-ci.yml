@@ -46,11 +46,8 @@ default:
 .test_archlinux_template:
     extends: .test_template
     before_script:
-    - |
-        set -eux
-
-        pacman -Syu --needed --noconfirm --noprogressbar \
-        meson python-flask python-semantic-version
+        - pacman -Syu --needed --noconfirm --noprogressbar
+          meson python-flask python-semantic-version
 
 test:debian-10:
     extends: .test_debian_template
@@ -69,11 +66,8 @@ test:archlinux:
     needs: [ ]
     image: archlinux:base-devel
     before_script:
-        - |
-            set -eux
-
-            pacman -Syu --needed --noconfirm --noprogressbar \
-            python-flask python-semantic-version python-pylint mypy
+        - pacman -Syu --needed --noconfirm --noprogressbar
+          python-flask python-semantic-version python-pylint mypy
 
 lint:pylint:
     extends: .lint_template
