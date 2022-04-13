@@ -344,16 +344,30 @@ def download_update_from_query_url(url: str) -> str:
     return write_json_to_file(json_str)
 
 
-def create_index(replace: bool) -> None:
-    """ Re-create index file, and its symlink, for the rootfs """
+def ensure_index_exists(regenerate: bool) -> None:
+    """ Ensure that the index file, and its symlink, are available
+
+    If RAUC is configured to use the new `--regenerate-invalid-seeds` Desync
+    argument, we don't need to regenerate the index ourselves.
+    """
 
     seed_index = get_active_slot_index()
-    if seed_index.exists() and not replace:
-        return
+    rootfs_dir = get_rootfs_device()
+
+    # Create a symlink next to the index as required by `desync extract`.
+    # We can pass only the index filename to the command.
+    # Always recreates the symlink to ensure that it is available and that
+    # it points to the correct path.
+    rootfs_symlink = seed_index.with_suffix('')
+    rootfs_symlink.unlink(missing_ok=True)
+    os.symlink(rootfs_dir, rootfs_symlink)
+
+    if seed_index.exists():
+        if not regenerate or desync_has_regenerate_argument():
+            return
 
     seed_index.unlink(missing_ok=True)
 
-    rootfs_dir = get_rootfs_device()
     log.debug('Creating the index file for the active rootfs %s', rootfs_dir)
     subprocess.run(['desync', 'make', seed_index, rootfs_dir],
                    check=True,
@@ -361,21 +375,13 @@ def create_index(replace: bool) -> None:
                    stdout=subprocess.PIPE,
                    universal_newlines=True)
 
-    # Create a symlink next to the index as required by `desync extract`.
-    # We can pass only the index filename to the command.
-    rootfs_symlink = seed_index.with_suffix('')
-    rootfs_symlink.unlink(missing_ok=True)
-    os.symlink(rootfs_dir, rootfs_symlink)
-
 
 def do_update(url: str, quiet: bool) -> None:
     """Update the system"""
 
     global progress_process
     if is_desync_in_use():
-        # TODO if we skip invalid seeds in Desync we can avoid recreating
-        # the seed index
-        create_index(replace=True)
+        ensure_index_exists(regenerate=True)
 
     # Remount /tmp with max memory and inodes number
     #
@@ -457,7 +463,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     else:
         # This image can be installed directly, use the current active
         # partition as a seed
-        create_index(replace=False)
+        ensure_index_exists(regenerate=False)
         seed = get_active_slot_index()
 
     c = subprocess.run(['desync', 'info', '--seed', seed, update_index],
@@ -567,7 +573,8 @@ def get_rauc_config() -> configparser.ConfigParser:
 def parse_rauc_install_args() -> argparse.Namespace:
     """ Parse all the RAUC install args that we are interested in
 
-    Currently, the only argument we are parsing is '--seed'.
+    Currently, the only arguments we are parsing are '--seed' and
+    '--regenerate-invalid-seeds'.
     """
 
     config = get_rauc_config()
@@ -579,6 +586,7 @@ def parse_rauc_install_args() -> argparse.Namespace:
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed')
+    parser.add_argument('--regenerate-invalid-seeds', action='store_true')
     install_args, _ = parser.parse_known_args(shlex.split(install_args_values))
 
     return install_args
@@ -612,6 +620,19 @@ def is_desync_in_use() -> bool:
         return False
 
     return config['casync'].getboolean('use-desync', fallback=False)
+
+
+@cache
+def desync_has_regenerate_argument() -> bool:
+    """ Check if RAUC is configured to use the new Desync
+    '--regenerate-invalid-seeds' option.
+
+    After including this in all our releases, we could even drop this
+    check and just assume that this option is present.
+    """
+    install_args = parse_rauc_install_args()
+
+    return install_args.regenerate_invalid_seeds
 
 
 class UpdateClient:
