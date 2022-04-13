@@ -564,11 +564,10 @@ def get_rauc_config() -> configparser.ConfigParser:
 
 
 @cache
-def get_active_slot_index() -> Path:
-    """ Get the active slot seed index path from the RAUC configuration
+def parse_rauc_install_args() -> argparse.Namespace:
+    """ Parse all the RAUC install args that we are interested in
 
-    An error will be raised if the RAUC config doesn't have the expected
-    seed path listed in the install-args casync section
+    Currently, the only argument we are parsing is '--seed'.
     """
 
     config = get_rauc_config()
@@ -581,6 +580,19 @@ def get_active_slot_index() -> Path:
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed')
     install_args, _ = parser.parse_known_args(shlex.split(install_args_values))
+
+    return install_args
+
+
+@cache
+def get_active_slot_index() -> Path:
+    """ Get the active slot seed index path from the RAUC configuration
+
+    An error will be raised if the RAUC config doesn't have the expected
+    seed path listed in the install-args casync section
+    """
+
+    install_args = parse_rauc_install_args()
 
     if not install_args.seed:
         raise RuntimeError('Failed to parse the seed index path from RAUC config')

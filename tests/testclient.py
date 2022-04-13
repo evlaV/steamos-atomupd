@@ -202,6 +202,7 @@ class RaucConfigParsing(unittest.TestCase):
                 config.read(data.rauc_config)
                 get_rauc_config.return_value = config
 
+                client.parse_rauc_install_args.cache_clear()
                 client.is_desync_in_use.cache_clear()
                 client.get_active_slot_index.cache_clear()
 
