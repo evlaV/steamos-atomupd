@@ -32,6 +32,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import multiprocessing
+from enum import Enum, auto
 from functools import cache
 from pathlib import Path
 from typing import Union
@@ -56,11 +57,67 @@ DEFAULT_RUNTIME_DIR = '/run/steamos-atomupd'
 progress_process = multiprocessing.Process()
 
 
+class FsPermissions(Enum):
+    """Represent the available permissions for a particular filesystem"""
+    READ_ONLY = auto()
+    READ_WRITE = auto()
+
+
+def get_rootfs_permissions() -> FsPermissions:
+    """Return with which permissions the rootfs is currently mounted
+
+    When unsure, e.g. if steamos-readonly fails to check the status or returns
+    something unexpected, READ_ONLY will be assumed by default.
+    """
+
+    try:
+        status = subprocess.run(['steamos-readonly', 'status'],
+                                check=False,
+                                capture_output=True,
+                                text=True)
+    except FileNotFoundError:
+        log.warning('steamos-readonly helper is not available, assuming the rootfs is read-only')
+        return FsPermissions.READ_ONLY
+
+    if status.stdout.strip() == 'disabled':
+        return FsPermissions.READ_WRITE
+
+    return FsPermissions.READ_ONLY
+
+
+initial_rootfs_permissions = get_rootfs_permissions()
+
+
+def set_rootfs_permissions(permissions: FsPermissions) -> None:
+    """Re-mount the rootfs with either read-only or read-write permissions"""
+
+    if permissions == FsPermissions.READ_ONLY:
+        mode = 'enable'
+    elif permissions == FsPermissions.READ_WRITE:
+        mode = 'disable'
+    else:
+        raise Exception('Received an unexpected FsPermissions')
+
+    # If the rootfs is already in the desired mode, this is a no-op
+    status = subprocess.run(['steamos-readonly', mode],
+                            check=False,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            text=True)
+
+    if status.returncode != 0:
+        log.warning('An error occurred while trying to change the rootfs permissions: %s',
+                    status.stdout)
+
+
 def sig_handler(_signum, _frame):
     """Handle SIGTERM and SIGINT"""
 
     if progress_process.is_alive():
         progress_process.kill()
+    if initial_rootfs_permissions == FsPermissions.READ_WRITE:
+        # Restore the RW mode, if necessary
+        set_rootfs_permissions(FsPermissions.READ_WRITE)
     sys.exit(1)
 
 
@@ -287,6 +344,12 @@ def do_update(url: str, quiet: bool) -> None:
         log.warning("Failed to remount /tmp: %i: %s", c.returncode, c.stdout)
         # Let's keep going and hope that /tmp can handle the load
 
+    if initial_rootfs_permissions == FsPermissions.READ_WRITE:
+        # Ensure that the rootfs is mounted in read-only mode. We use the rootfs
+        # as a seed for the update, and having the guarantee that the rootfs is not
+        # changing while we are using it, makes the whole update process more reliable
+        set_rootfs_permissions(FsPermissions.READ_ONLY)
+
     # Let's update now
 
     if not quiet:
@@ -302,6 +365,10 @@ def do_update(url: str, quiet: bool) -> None:
         progress_process.join(5)
         if progress_process.is_alive():
             progress_process.terminate()
+
+    if initial_rootfs_permissions == FsPermissions.READ_WRITE:
+        # Restore the RW mode to leave the rootfs in the same state we initially found it
+        set_rootfs_permissions(FsPermissions.READ_WRITE)
 
 
 def estimate_download_size(runtime_dir: Path, update_url: str,
