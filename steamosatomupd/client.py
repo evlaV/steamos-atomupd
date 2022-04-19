@@ -714,8 +714,8 @@ class UpdateClient:
                 'Either one of "QueryUrl" or "MetaUrl" must be provided and '
                 'not with an empty value')
 
-        runtime_dir = config.get('Host', 'RuntimeDir',
-                                 fallback=DEFAULT_RUNTIME_DIR)
+        runtime_dir = Path(config.get('Host', 'RuntimeDir',
+                                      fallback=DEFAULT_RUNTIME_DIR))
         if not os.path.isdir(runtime_dir):
             log.debug("Creating runtime dir %s", runtime_dir)
             os.makedirs(runtime_dir)
@@ -836,10 +836,10 @@ class UpdateClient:
         if args.estimate_download_size:
             update.minor = ensure_estimated_download_size(update.minor,
                                                           images_url,
-                                                          Path(runtime_dir))
+                                                          runtime_dir)
             update.major = ensure_estimated_download_size(update.major,
                                                           images_url,
-                                                          Path(runtime_dir))
+                                                          runtime_dir)
 
         # Bail out if needed
 
