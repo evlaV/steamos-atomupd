@@ -105,9 +105,12 @@ update_data = [
 
 
 class LoopPrevention(unittest.TestCase):
-    def test_updates(self):
+    @patch('steamosatomupd.client.set_rauc_conf')
+    def test_updates(self, set_rauc_conf):
         for data in update_data:
             with self.subTest(msg=data.msg):
+                set_rauc_conf.return_value = None
+
                 # Create a tmp copy of the update file because, before
                 # returning, the client main will delete the file
                 tmp = tempfile.NamedTemporaryFile(delete=False)
@@ -193,7 +196,8 @@ rauc_conf_data = [
 
 class RaucConfigParsing(unittest.TestCase):
     @patch('steamosatomupd.client.get_rauc_config')
-    def test_parsing_rauc_conf(self, get_rauc_config):
+    @patch('steamosatomupd.client.set_rauc_conf')
+    def test_parsing_rauc_conf(self, set_rauc_conf, get_rauc_config):
         for data in rauc_conf_data:
             with self.subTest(msg=data.msg):
                 # Instead of the hard-coded '/etc/rauc/system.conf', we patch
@@ -201,6 +205,7 @@ class RaucConfigParsing(unittest.TestCase):
                 config = configparser.ConfigParser()
                 config.read(data.rauc_config)
                 get_rauc_config.return_value = config
+                set_rauc_conf.return_value = None
 
                 client.parse_rauc_install_args.cache_clear()
                 client.is_desync_in_use.cache_clear()

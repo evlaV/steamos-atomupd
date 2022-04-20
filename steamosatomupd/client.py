@@ -18,6 +18,7 @@
 
 import argparse
 import configparser
+import datetime
 import json
 import logging
 import os
@@ -45,6 +46,8 @@ log = logging.getLogger(__name__)
 
 # Hard-coded defaults
 UPDATE_FILENAME = 'update.json'
+FAILED_ATTEMPTS_FILENAME = 'failed_attempts.log'
+FAILED_UPDATE_LOG_ENTRY = 'FAILED UPDATE'
 
 # Default args
 DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
@@ -52,6 +55,11 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 # Default config
 DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR = '/run/steamos-atomupd'
+
+DEFAULT_RAUC_CONF = Path('/etc/rauc/system.conf')
+FALLBACK_RAUC_CONF = Path('/etc/rauc/fallback-system.conf')
+
+rauc_conf_path = DEFAULT_RAUC_CONF
 
 progress_process = multiprocessing.Process()
 
@@ -376,7 +384,7 @@ def ensure_index_exists(regenerate: bool) -> None:
                    universal_newlines=True)
 
 
-def do_update(url: str, quiet: bool) -> None:
+def do_update(attempts_log: Path, url: str, quiet: bool) -> None:
     """Update the system"""
 
     global progress_process
@@ -409,15 +417,21 @@ def do_update(url: str, quiet: bool) -> None:
         progress_process = multiprocessing.Process(target=do_progress)
         progress_process.start()
     log.debug('Installing the bundle')
-    subprocess.run(['rauc', 'install', url],
-                   check=True,
-                   stderr=subprocess.STDOUT,
-                   stdout=subprocess.PIPE,
-                   universal_newlines=True)
+    c = subprocess.run(['rauc', 'install', url],
+                       check=False,
+                       stderr=subprocess.STDOUT,
+                       stdout=subprocess.PIPE,
+                       universal_newlines=True)
     if not quiet and progress_process.is_alive():
         progress_process.join(5)
         if progress_process.is_alive():
             progress_process.terminate()
+
+    if c.returncode != 0:
+        with open(attempts_log, 'a+', encoding='utf-8') as attempts:
+            attempts.write(f'{FAILED_UPDATE_LOG_ENTRY}: {datetime.datetime.now()}: {c.stdout}')
+
+        raise RuntimeError(f'Failed to install bundle: {c.returncode}: {c.stdout}')
 
 
 def estimate_download_size(runtime_dir: Path, update_url: str,
@@ -560,11 +574,43 @@ def get_rootfs_device() -> Path:
     raise RuntimeError('Failed to parse the RAUC status output')
 
 
+@cache
+def get_rauc_config_path(attempts_log: Path, max_failed_attempts: int) -> Path:
+    """Return the RAUC config path that should be used
+
+    Usually this function will return the default RAUC conf path.
+    However, if an update failed multiple times, it will return the
+    fallback rauc conf path, if available.
+    """
+    failed_attempts = 0
+
+    if max_failed_attempts == 0:
+        return DEFAULT_RAUC_CONF
+
+    try:
+        with open(attempts_log, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.startswith(FAILED_UPDATE_LOG_ENTRY):
+                    failed_attempts += 1
+    except FileNotFoundError:
+        log.debug('The attempts log is missing, assuming no previous failed update attempts')
+
+    if failed_attempts > max_failed_attempts:
+        log.debug('The update process already failed %i times', failed_attempts)
+        if FALLBACK_RAUC_CONF.is_file():
+            log.debug('Falling back to the RAUC config "%s"', FALLBACK_RAUC_CONF)
+            return FALLBACK_RAUC_CONF
+
+        log.debug('There is no fallback RAUC config, continuing with the default one')
+
+    return DEFAULT_RAUC_CONF
+
+
 def get_rauc_config() -> configparser.ConfigParser:
     """ Return the RAUC system configuration """
 
     config = configparser.ConfigParser()
-    config.read('/etc/rauc/system.conf')
+    config.read(rauc_conf_path)
 
     return config
 
@@ -635,6 +681,23 @@ def desync_has_regenerate_argument() -> bool:
     return install_args.regenerate_invalid_seeds
 
 
+def set_rauc_conf():
+    """Set the RAUC configuration path and restart the service"""
+
+    # Set, or unset, the 'STEAMOS_CUSTOM_RAUC_CONF' environment variable to
+    # ensure that the RAUC service will be restarted with the correct configuration
+    if rauc_conf_path == DEFAULT_RAUC_CONF:
+        subprocess.run(['systemctl', 'unset-environment', 'STEAMOS_CUSTOM_RAUC_CONF'],
+                       check=True)
+    else:
+        subprocess.run(['systemctl', 'set-environment',
+                        f'STEAMOS_CUSTOM_RAUC_CONF={rauc_conf_path}'],
+                       check=True)
+
+    # The service needs to be restarted to pick up the eventual new configuration
+    subprocess.run(['systemctl', 'restart', 'rauc'], check=True)
+
+
 class UpdateClient:
     """Class used to search and apply system updates"""
 
@@ -672,6 +735,10 @@ class UpdateClient:
         parser.add_argument('--variant',
                             help="use this 'variant' value instead of the one parsed "
                                  "from the manifest file")
+        parser.add_argument('--fallback-after-failed-attempts', type=int, default=3,
+                            help="Number of previously failed attempts after which the RAUC "
+                                 "conf will be switched to the fallback one, if available. "
+                                 "Set to 0 to disable the fallback")
 
         manifest_group = parser.add_mutually_exclusive_group()
         manifest_group.add_argument('--manifest-file',
@@ -720,6 +787,12 @@ class UpdateClient:
             log.debug("Creating runtime dir %s", runtime_dir)
             os.makedirs(runtime_dir)
 
+        global rauc_conf_path
+        attempts_log = runtime_dir / FAILED_ATTEMPTS_FILENAME
+        rauc_conf_path = get_rauc_config_path(attempts_log, args.fallback_after_failed_attempts)
+        # Apply this configuration to the RAUC service
+        set_rauc_conf()
+
         if is_desync_in_use():
             seed_index = get_active_slot_index()
             if not seed_index.parent.is_dir():
@@ -729,7 +802,7 @@ class UpdateClient:
         if args.update_from_url:
             log.debug("Installing an update from the given URL")
             try:
-                do_update(args.update_from_url, args.quiet)
+                do_update(attempts_log, args.update_from_url, args.quiet)
             except Exception as e:
                 log.error("Failed to install update from URL: %s", e)
                 return -1
@@ -883,7 +956,7 @@ class UpdateClient:
 
         try:
             update_url = urllib.parse.urljoin(images_url, update_path)
-            do_update(update_url, args.quiet)
+            do_update(attempts_log, update_url, args.quiet)
         except Exception as e:
             log.error("Failed to install update file: %s", e)
             return -1
