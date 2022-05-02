@@ -39,7 +39,7 @@ DEFAULT_SERVE_UNSTABLE = False
 class UpdateParser:
     """Image pool with static update JSON files"""
 
-    def get_update(self, data: dict) -> dict:
+    def get_update(self, data: dict, force_update: bool) -> dict:
         """Get the update candidates from the provided image dictionary"""
 
         # Make an image out of the request arguments. An exception might be
@@ -49,7 +49,7 @@ class UpdateParser:
             return {}
 
         # Get update candidates
-        update = self.image_pool.get_updates(image)
+        update = self.image_pool.get_updates(image, force_update)
         if not update:
             return {}
 
@@ -116,9 +116,10 @@ class UpdateParser:
 
             os.makedirs(os.path.join(product, arch, version, variant), exist_ok=True)
 
-            jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
+            jsonresult = json.dumps(self.get_update(values, force_update=False),
+                                    sort_keys=True, indent=4)
 
-            print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
+            # print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
 
             # Write .json files for each variation
             with open(os.path.join(product, arch, version, variant, f'{buildid}.json'),
@@ -127,12 +128,38 @@ class UpdateParser:
 
             # Now check if buildid is old/invalid to write variant.json up one level
             values['buildid'] = '19000101'
-            jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
-            print(f"--- Jsonresult for {json.dumps(values)} is {jsonresult} ---")
+            jsonresult = json.dumps(self.get_update(values, force_update=False),
+                                    sort_keys=True, indent=4)
+            # print(f"--- Jsonresult for {json.dumps(values)} is {jsonresult} ---")
 
             with open(os.path.join(product, arch, version, f'{variant}.json'),
                       'w', encoding='utf-8') as file:
                 file.write(jsonresult)
+
+            # Restore the correct buildid value
+            values['buildid'] = buildid
+
+            # TODO: Do all the variant combinations, because from this image you could decide
+            # to go to one of the other variants
+            # For the real variant, propose an update only if it's really available.
+            # For all the other combinations, always propose an upgrade/downgrade
+
+            # TODO: This is just to ease the automated tests for this PoC
+            if version != 'snapshot':
+                continue
+
+            supported_variants = self.image_pool.get_supported_variants()
+            for supported_variant in supported_variants:
+                if supported_variant == variant:
+                    continue
+                values['variant'] = supported_variant
+                os.makedirs(os.path.join(product, arch, version, supported_variant), exist_ok=True)
+                jsonresult = json.dumps(self.get_update(values, force_update=True),
+                                        sort_keys=True, indent=4)
+                # print(f"--- Jsonresult for {json.dumps(values)} is {jsonresult} ---")
+                with open(os.path.join(product, arch, version, supported_variant, f'{buildid}.json'),
+                          'w', encoding='utf-8') as file:
+                    file.write(jsonresult)
 
         return 0
 

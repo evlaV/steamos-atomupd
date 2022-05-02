@@ -82,7 +82,8 @@ def _get_next_release(release: str, releases: list[str]) -> str:
     return next_release
 
 
-def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> list[UpdateCandidate]:
+def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
+                           force_update: bool) -> list[UpdateCandidate]:
     """Get possible update candidates within a list.
 
     This is where we decide who are the valid update candidates for a
@@ -91,10 +92,16 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> l
     - images that are either a checkpoint, either the latest image
     """
 
+    # TODO Add an option to force always an update, even if it ends up being a downgrade
+
     latest = None
     checkpoints = []
 
     for candidate in candidates:
+        if force_update:
+            if not latest or candidate.image > latest.image:
+                latest = candidate
+
         if candidate.image <= image:
             continue
 
@@ -305,7 +312,8 @@ class ImagePool:
 
         return candidates
 
-    def get_updates_for_release(self, image: Image, release: str) -> Union[UpdatePath, None]:
+    def get_updates_for_release(self, image: Image, release: str,
+                                force_update: bool) -> Union[UpdatePath, None]:
         """Get a list of update candidates for a given release
 
         Return an UpdatePath object, or None if no updates available.
@@ -316,13 +324,13 @@ class ImagePool:
         except ValueError:
             return None
 
-        candidates = _get_update_candidates(all_candidates, image)
+        candidates = _get_update_candidates(all_candidates, image, force_update)
         if not candidates:
             return None
 
         return UpdatePath(release, candidates)
 
-    def get_updates(self, image: Image) -> Union[Update, None]:
+    def get_updates(self, image: Image, force_update) -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
@@ -332,14 +340,18 @@ class ImagePool:
         """
 
         curr_release = image.release
-        minor_update = self.get_updates_for_release(image, curr_release)
+        minor_update = self.get_updates_for_release(image, curr_release, force_update=False)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
-            major_update = self.get_updates_for_release(image, next_release)
+            major_update = self.get_updates_for_release(image, next_release, force_update=False)
 
         if minor_update or major_update:
+            return Update(minor_update, major_update)
+
+        if force_update:
+            minor_update = self.get_updates_for_release(image, curr_release, force_update)
             return Update(minor_update, major_update)
 
         return None
@@ -352,3 +364,7 @@ class ImagePool:
         Return a list of Image objects.
         """
         return self.images_found
+
+    def get_supported_variants(self) -> list[str]:
+        """ Get list of supported variants"""
+        return self.supported_variants

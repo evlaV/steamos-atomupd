@@ -71,17 +71,17 @@ mkdir -p snapshots
 (
   cd snapshots
 
-  fake_image steamos holo steamdeck amd64 snapshot 20181102.1 0
-  fake_image steamos holo steamdeck-beta amd64 snapshot 20181102.1 0
-  fake_image steamos holo steamdeck-rc amd64 snapshot 20220215.0 0
-  fake_image steamos holo atomic amd64 snapshot 20181102.1 0
+  fake_image steamos holo steamdeck amd64 snapshot 20220201.1 0
+  fake_image steamos holo steamdeck amd64 snapshot 20220225.1 1
+  fake_image steamos holo steamdeck amd64 snapshot 20220303.1 0
 
-  fake_image steamos holo steamdeck amd64 snapshot 20181102.2 0
-  fake_image steamos holo atomic amd64 snapshot 20181102.2 0
+  fake_image steamos holo steamdeck-beta amd64 snapshot 20220202.100 0
+  fake_image steamos holo steamdeck-beta amd64 snapshot 20220225.1 1
+  fake_image steamos holo steamdeck-beta amd64 snapshot 20220228.100 0
 
-  fake_image steamos holo steamdeck amd64 snapshot 20181108.1 0
-  fake_image steamos holo steamdeck-beta amd64 snapshot 20181108.1 0
-  fake_image steamos holo atomic amd64 snapshot 20181108.1 0
+  fake_image steamos holo steamdeck-main amd64 snapshot 20220223.1000 0
+  fake_image steamos holo steamdeck-main amd64 snapshot 20220225.1 1
+  fake_image steamos holo steamdeck-main amd64 snapshot 20220311.1000 0
 )
 
 mkdir -p releases

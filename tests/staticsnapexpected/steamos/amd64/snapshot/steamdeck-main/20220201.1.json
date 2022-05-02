@@ -9,23 +9,23 @@
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
-                    "variant": "steamdeck-beta",
+                    "variant": "steamdeck-main",
                     "version": "snapshot"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20220225.1-snapshot-amd64-steamdeck-beta.raucb"
+                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20220225.1-snapshot-amd64-steamdeck-main.raucb"
             },
             {
                 "image": {
                     "arch": "amd64",
-                    "buildid": "20220228.100",
+                    "buildid": "20220311.1000",
                     "checkpoint": false,
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
-                    "variant": "steamdeck-beta",
+                    "variant": "steamdeck-main",
                     "version": "snapshot"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20220228.100-snapshot-amd64-steamdeck-beta.raucb"
+                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20220311.1000-snapshot-amd64-steamdeck-main.raucb"
             }
         ],
         "release": "holo"
