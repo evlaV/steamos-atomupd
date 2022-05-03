@@ -18,7 +18,7 @@
 
 import os
 from dataclasses import dataclass
-from subprocess import run
+import subprocess
 import sys
 import unittest
 
@@ -49,9 +49,17 @@ server_data = [
 
 class StaticServerTestCase(unittest.TestCase):
 
+    maxDiff = None
+
     def test_static_server(self):
         # First build example files
-        p = run(['./examples/build-image-hierarchy.sh'])
+        p = subprocess.run(['./examples/build-image-hierarchy.sh'],
+                           check=False,
+                           stderr=subprocess.STDOUT,
+                           stdout=subprocess.PIPE,
+                           text=True)
+        self.assertEqual(p.stdout, "Hierarchy created under 'examples-data/images'\n")
+        self.assertEqual(p.returncode, 0)
 
         # First import staticserver
         try:
@@ -66,13 +74,18 @@ class StaticServerTestCase(unittest.TestCase):
 
         for data in server_data:
             with self.subTest(msg=data.msg):
-                run(['rm', '-fR', './steamos'])
+                subprocess.run(['rm', '-fR', './steamos'])
                 args = ['--config', data.config]
                 staticserver.main(args)
 
                 # Then compare result with expected result
-                p = run(['diff', '-rq', './steamos', data.expectation])
-                self.assertTrue(p.returncode == 0)
+                p = subprocess.run(['diff', '-rq', './steamos', data.expectation],
+                                   check=False,
+                                   stderr=subprocess.STDOUT,
+                                   stdout=subprocess.PIPE,
+                                   text=True)
+                self.assertEqual(p.stdout, '')
+                self.assertEqual(p.returncode, 0)
 
 
 if __name__ == '__main__':
