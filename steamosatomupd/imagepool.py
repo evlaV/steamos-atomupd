@@ -92,10 +92,14 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> l
     """
 
     latest = None
-    checkpoints = []
+    checkpoints: list[UpdateCandidate] = []
 
     for candidate in candidates:
         if candidate.image <= image:
+            continue
+
+        if latest and candidate.image <= latest.image:
+            # Avoid a downgrade cycle
             continue
 
         if candidate.image.checkpoint:
@@ -147,7 +151,8 @@ class ImagePool:
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
-                          config['Images']['Archs'].split())
+                          config['Images']['Archs'].split(),
+                          config['Images'].getboolean('ConsiderMoreStableVariants', fallback=False))
 
     @classmethod
     def validate_config(cls, config: ConfigParser) -> None:
@@ -173,9 +178,10 @@ class ImagePool:
             sys.exit(1)
 
     def _create_pool(self, images_dir: str, work_with_snapshots: bool,
-                     want_unstable_images: bool, supported_products: list[str],
+                     want_unstable_images: bool,
+                     supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str],
-                     supported_archs: list[str]) -> None:
+                     supported_archs: list[str], consider_stabler_variants: bool) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -199,6 +205,7 @@ class ImagePool:
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
         self.supported_archs = supported_archs
+        self.consider_stabler_variants = consider_stabler_variants
         self.images_found = []
 
         # Create the hierarchy to store images
@@ -273,14 +280,17 @@ class ImagePool:
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
             'Archs     : {}'.format(self.supported_archs),
+            'Consider stabler variants: {}'.format(self.consider_stabler_variants),
             'Candidates: (see below)',
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
-    def _get_candidate_list(self, image: Image, override_release='') -> list[UpdateCandidate]:
+    def _get_candidate_list(self, image: Image, override_release='',
+                            override_variant='') -> list[UpdateCandidate]:
         """Return the list of update candidates that an image belong to
 
-        The optional 'override_release' field is used to override the image release.
+        The optional 'override_release' and 'override_variant' fields are used to respectively
+        override the image release and the image variant.
 
         This method also does sanity check, to ensure the image is supported.
         We might raise exceptions if the image is not supported.
@@ -296,7 +306,7 @@ class ImagePool:
         try:
             product = image.product
             release = override_release if override_release else image.release
-            variant = image.variant
+            variant = override_variant if override_variant else image.variant
             arch = image.arch
             candidates = self.candidates[product][arch][release][variant]
         except KeyError as e:
@@ -311,10 +321,25 @@ class ImagePool:
         Return an UpdatePath object, or None if no updates available.
         """
 
+        all_candidates: list[UpdateCandidate] = []
+        additional_variants: list[str] = []
+
+        if self.consider_stabler_variants:
+            if image.variant not in self.supported_variants:
+                return None
+            variant_index = self.supported_variants.index(image.variant)
+            additional_variants = self.supported_variants[:variant_index]
+
         try:
-            all_candidates = self._get_candidate_list(image, release)
+            all_candidates.extend(self._get_candidate_list(image, release))
         except ValueError:
-            return None
+            pass
+
+        for variant in additional_variants:
+            try:
+                all_candidates.extend(self._get_candidate_list(image, release, variant))
+            except ValueError:
+                pass
 
         candidates = _get_update_candidates(all_candidates, image)
         if not candidates:

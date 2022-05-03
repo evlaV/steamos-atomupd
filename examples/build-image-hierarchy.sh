@@ -90,17 +90,17 @@ mkdir -p releases
   cd releases
 
   fake_image steamos holo steamdeck amd64 3.0 20190211 0
-  fake_image steamos holo steamdeck-beta  amd64 3.0 20190211 0
-  fake_image steamos holo atomic amd64 3.0 20190211 0
+  fake_image steamos holo steamdeck-rc amd64 3.0 20190211 0
+  fake_image steamos holo steamdeck-beta amd64 3.0 20190211 0
 
   # Add a checkpoint after 3.0 but before 3.1 regular release
   fake_image steamos holo steamdeck amd64 3.1 20190101 1
+  fake_image steamos holo steamdeck-rc amd64 3.1 20190101 1
   fake_image steamos holo steamdeck-beta amd64 3.1 20190101 1
-  fake_image steamos holo atomic amd64 3.1 20190101 1
 
   fake_image steamos holo steamdeck amd64 3.1 20190201 0
-  fake_image steamos holo steamdeck-beta  amd64 3.1 20190201 0
-  fake_image steamos holo atomic amd64 3.1 20190201 0
+  fake_image steamos holo steamdeck-rc amd64 3.1 20190201 0
+  fake_image steamos holo steamdeck-beta amd64 3.1 20190201 0
 
   fake_image steamos holo steamdeck amd64 3.1 20190312 0
 )
