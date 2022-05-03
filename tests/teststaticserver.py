@@ -25,6 +25,7 @@ import unittest
 # Always add cwd to the sys path
 sys.path.insert(1, os.getcwd())
 
+
 class StaticServerTestCase(unittest.TestCase):
 
     def test_static_server(self):
@@ -43,6 +44,7 @@ class StaticServerTestCase(unittest.TestCase):
             sys.exit(1)
 
         # Then run staticserver with example file
+        run(['rm', '-fR', './steamos'])
         args = ["--config", "./examples/server-releases.conf"]
         staticserver.main(args)
 
@@ -54,13 +56,14 @@ class StaticServerTestCase(unittest.TestCase):
         self.assertTrue(p.returncode == 0)
 
         # Now test snapshots
-        p = run(['rm', '-fR', './steamos'])
+        run(['rm', '-fR', './steamos'])
         args = ["--config", "./examples/server-snapshots.conf"]
         staticserver.main(args)
 
         p = run(['diff', '-rq', './steamos', './tests/staticsnapexpected/steamos'])
 
         self.assertTrue(p.returncode == 0)
+
 
 if __name__ == '__main__':
     # Run static server on test config
