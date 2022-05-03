@@ -17,13 +17,34 @@
 # <http://www.gnu.org/licenses/>.
 
 import os
+from dataclasses import dataclass
 from subprocess import run
 import sys
-import time
 import unittest
 
 # Always add cwd to the sys path
 sys.path.insert(1, os.getcwd())
+
+
+@dataclass
+class ServerData:
+    msg: str
+    config: str
+    expectation: str
+
+
+server_data = [
+    ServerData(
+        msg='Static server with release images',
+        config='./examples/server-releases.conf',
+        expectation='./tests/staticexpected/steamos',
+    ),
+    ServerData(
+        msg='Static server with snapshot images',
+        config='./examples/server-snapshots.conf',
+        expectation='./tests/staticsnapexpected/steamos',
+    ),
+]
 
 
 class StaticServerTestCase(unittest.TestCase):
@@ -43,26 +64,15 @@ class StaticServerTestCase(unittest.TestCase):
             ]), file=sys.stderr)
             sys.exit(1)
 
-        # Then run staticserver with example file
-        run(['rm', '-fR', './steamos'])
-        args = ["--config", "./examples/server-releases.conf"]
-        staticserver.main(args)
+        for data in server_data:
+            with self.subTest(msg=data.msg):
+                run(['rm', '-fR', './steamos'])
+                args = ['--config', data.config]
+                staticserver.main(args)
 
-        # time.sleep(1)
-
-        # Then compare result with expected result
-        p = run(['diff', '-rq', './steamos', './tests/staticexpected/steamos'])
-
-        self.assertTrue(p.returncode == 0)
-
-        # Now test snapshots
-        run(['rm', '-fR', './steamos'])
-        args = ["--config", "./examples/server-snapshots.conf"]
-        staticserver.main(args)
-
-        p = run(['diff', '-rq', './steamos', './tests/staticsnapexpected/steamos'])
-
-        self.assertTrue(p.returncode == 0)
+                # Then compare result with expected result
+                p = run(['diff', '-rq', './steamos', data.expectation])
+                self.assertTrue(p.returncode == 0)
 
 
 if __name__ == '__main__':
