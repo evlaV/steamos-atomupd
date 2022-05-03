@@ -44,6 +44,11 @@ server_data = [
         config='./examples/server-snapshots.conf',
         expectation='./tests/staticsnapexpected/steamos',
     ),
+    ServerData(
+        msg='Consider more stable variants with snapshot images',
+        config='./examples/server-snapshots-stabler-consider.conf',
+        expectation='./tests/snap_consider_stabler_expected/steamos',
+    ),
 ]
 
 
