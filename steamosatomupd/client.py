@@ -753,6 +753,10 @@ class UpdateClient:
         if args.debug:
             logging.getLogger().setLevel(logging.DEBUG)
 
+        if os.geteuid() != 0:
+            log.error("This script can only be executed with root privileges.")
+            return -1
+
         # Config file
 
         log.debug("Parsing config from file: %s", args.config)

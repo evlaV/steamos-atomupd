@@ -106,9 +106,11 @@ update_data = [
 
 class LoopPrevention(unittest.TestCase):
     @patch('steamosatomupd.client.set_rauc_conf')
-    def test_updates(self, set_rauc_conf):
+    @patch('os.geteuid')
+    def test_updates(self, geteuid, set_rauc_conf):
         for data in update_data:
             with self.subTest(msg=data.msg):
+                geteuid.return_value = 0
                 set_rauc_conf.return_value = None
 
                 # Create a tmp copy of the update file because, before
@@ -197,9 +199,11 @@ rauc_conf_data = [
 class RaucConfigParsing(unittest.TestCase):
     @patch('steamosatomupd.client.get_rauc_config')
     @patch('steamosatomupd.client.set_rauc_conf')
-    def test_parsing_rauc_conf(self, set_rauc_conf, get_rauc_config):
+    @patch('os.geteuid')
+    def test_parsing_rauc_conf(self, geteuid, set_rauc_conf, get_rauc_config):
         for data in rauc_conf_data:
             with self.subTest(msg=data.msg):
+                geteuid.return_value = 0
                 # Instead of the hard-coded '/etc/rauc/system.conf', we patch
                 # get_rauc_config() to use the config specified in the tests
                 config = configparser.ConfigParser()
