@@ -794,8 +794,11 @@ class UpdateClient:
         global rauc_conf_path
         attempts_log = runtime_dir / FAILED_ATTEMPTS_FILENAME
         rauc_conf_path = get_rauc_config_path(attempts_log, args.fallback_after_failed_attempts)
-        # Apply this configuration to the RAUC service
-        set_rauc_conf()
+        if not args.query_only:
+            # Apply this configuration to the RAUC service. If we are just querying for updates,
+            # we don't need to restart the RAUC service because we don't have to launch a RAUC
+            # install operation.
+            set_rauc_conf()
 
         if is_desync_in_use():
             seed_index = get_active_slot_index()
