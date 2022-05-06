@@ -53,17 +53,17 @@ fake_image() {
     imgdir=$product/$release/$version/$arch
     imgname=$product-$release-$buildid-$version-$arch-$variant
 
-    mkdir -p $imgdir
+    mkdir -p "$imgdir"
     if [ "$checkpoint" == "1" ]; then
-        make_checkpoint $product $release $variant $arch $version $buildid > \
-            $imgdir/$imgname.manifest.json
+        make_checkpoint "$product" "$release" "$variant" "$arch" "$version" "$buildid" > \
+            "$imgdir/$imgname.manifest.json"
     else
-        make_manifest $product $release $variant $arch $version $buildid > \
-            $imgdir/$imgname.manifest.json
+        make_manifest "$product" "$release" "$variant" "$arch" "$version" "$buildid" > \
+            "$imgdir/$imgname.manifest.json"
     fi
 
-    touch $imgdir/$imgname.raucb
-    mkdir $imgdir/$imgname.castr
+    touch "$imgdir/$imgname.raucb"
+    mkdir "$imgdir/$imgname.castr"
 }
 
 mkdir -p snapshots
