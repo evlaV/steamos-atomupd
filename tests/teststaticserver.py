@@ -49,6 +49,11 @@ server_data = [
         config='server-snapshots.conf',
         expectation='staticsnapexpected',
     ),
+    ServerData(
+        msg='Static server with snapshot and release images',
+        config='server-releases-and-snaps.conf',
+        expectation='static_rel_and_snap_expected',
+    ),
 ]
 
 

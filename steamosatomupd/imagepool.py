@@ -142,7 +142,7 @@ class ImagePool:
 
     def __init__(self, config):
         self._create_pool(config['Images']['PoolDir'],
-                          config['Images'].getboolean('Snapshots'),
+                          config['Images'].getboolean('Snapshots', fallback=False),
                           config['Images'].getboolean('Unstable'),
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
@@ -155,7 +155,7 @@ class ImagePool:
 
         The execution will stop if the validation fails."""
 
-        options = ['PoolDir', 'Snapshots', 'Unstable', 'Products', 'Releases', 'Variants', 'Archs']
+        options = ['PoolDir', 'Unstable', 'Products', 'Releases', 'Variants', 'Archs']
         for option in options:
             if not config.has_option('Images', option):
                 log.error("Please provide a valid configuration file")
@@ -189,11 +189,11 @@ class ImagePool:
         # If we work with snapshots, then obviously we want to consider unstable images
         # (as snapshots are treated as unstable images)
         if work_with_snapshots:
+            log.warning('"Snapshots" property is deprecated, use "Unstable" instead')
             want_unstable_images = True
 
         # Our variables
         self.images_dir = images_dir
-        self.work_with_snapshots = work_with_snapshots
         self.want_unstable_images = want_unstable_images
         self.supported_products = supported_products
         self.supported_releases = supported_releases
@@ -267,7 +267,6 @@ class ImagePool:
     def __str__(self) -> str:
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),
-            'Snapshots : {}'.format(self.work_with_snapshots),
             'Unstable  : {}'.format(self.want_unstable_images),
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
@@ -285,12 +284,6 @@ class ImagePool:
         This method also does sanity check, to ensure the image is supported.
         We might raise exceptions if the image is not supported.
         """
-
-        # Mixing snapshot and non-snapshot images is not allowed
-        if image.version and self.work_with_snapshots:
-            raise ValueError("Image has a version, however we support only snapshots")
-        if not image.version and not self.work_with_snapshots:
-            raise ValueError("Image is a snapshot, however we support only versions")
 
         # Get the image list according to image details
         try:

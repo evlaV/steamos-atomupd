@@ -105,4 +105,22 @@ mkdir -p releases
   fake_image steamos holo steamdeck amd64 3.1 20190312 0
 )
 
+mkdir -p releases-and-snaps
+
+(
+  cd releases-and-snaps
+
+  fake_image steamos holo steamdeck amd64 snapshot 20220201.1 0
+  fake_image steamos holo steamdeck amd64 snapshot 20220225.1 0
+  fake_image steamos holo steamdeck amd64 3.0 20220303.2 0
+
+  fake_image steamos holo steamdeck-rc amd64 3.0 20220303.1 0
+
+  fake_image steamos holo steamdeck-beta amd64 snapshot 20220221.100 0
+  fake_image steamos holo steamdeck-beta amd64 3.1 20220301.100 0
+
+  fake_image steamos holo steamdeck-main amd64 3.1 20220302.1005 0
+  fake_image steamos holo steamdeck-main amd64 3.2 20220304.1000 0
+)
+
 echo "Hierarchy created under '$OUTDIR/images'"

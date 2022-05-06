@@ -63,8 +63,14 @@ class BuildIdTestCase(unittest.TestCase):
         self.assertTrue(Image.from_dict(d1) <= Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d1) >= Image.from_dict(d2))
 
+        d2['version'] = 'snapshot'
+        self.assertTrue(Image.from_dict(d1) == Image.from_dict(d2))
+        self.assertTrue(Image.from_dict(d1) <= Image.from_dict(d2))
+        self.assertTrue(Image.from_dict(d1) >= Image.from_dict(d2))
+
         d1['buildid'] = '20190214'
         d2['buildid'] = '20190214.1'
+        d2['version'] = '3.0'
         self.assertTrue(Image.from_dict(d1) != Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d1) <  Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d2) >  Image.from_dict(d1))
