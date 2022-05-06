@@ -21,6 +21,11 @@ from dataclasses import dataclass
 import subprocess
 import sys
 import unittest
+from pathlib import Path
+
+CONFIG_PARENT = Path('./examples')
+EXPECTATION_PARENT = Path('./tests')
+EXPECTATION_SUB_DIR = Path('steamos')
 
 # Always add cwd to the sys path
 sys.path.insert(1, os.getcwd())
@@ -36,13 +41,13 @@ class ServerData:
 server_data = [
     ServerData(
         msg='Static server with release images',
-        config='./examples/server-releases.conf',
-        expectation='./tests/staticexpected/steamos',
+        config='server-releases.conf',
+        expectation='staticexpected',
     ),
     ServerData(
         msg='Static server with snapshot images',
-        config='./examples/server-snapshots.conf',
-        expectation='./tests/staticsnapexpected/steamos',
+        config='server-snapshots.conf',
+        expectation='staticsnapexpected',
     ),
 ]
 
@@ -76,11 +81,12 @@ class StaticServerTestCase(unittest.TestCase):
         for data in server_data:
             with self.subTest(msg=data.msg):
                 subprocess.run(['rm', '-fR', './steamos'])
-                args = ['--config', data.config]
+                args = ['--config', str(CONFIG_PARENT / data.config)]
                 staticserver.main(args)
 
                 # Then compare result with expected result
-                p = subprocess.run(['diff', '-rq', './steamos', data.expectation],
+                p = subprocess.run(['diff', '-rq', './steamos',
+                                    str(EXPECTATION_PARENT / data.expectation / EXPECTATION_SUB_DIR)],
                                    check=False,
                                    stderr=subprocess.STDOUT,
                                    stdout=subprocess.PIPE,
