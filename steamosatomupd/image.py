@@ -226,14 +226,17 @@ class Image:
         """Export an Image to a dictionary"""
 
         data = asdict(self)
-
-        if self.version:
-            data['version'] = str(self.version)
-        else:
-            data['version'] = 'snapshot'
+        data['version'] = self.get_version_str()
         data['buildid'] = str(self.buildid)
 
         return data
+
+    def get_version_str(self) -> str:
+        """Get the image version as a string"""
+        if self.version:
+            return str(self.version)
+
+        return 'snapshot'
 
     @staticmethod
     def quote(string: str) -> str:
