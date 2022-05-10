@@ -92,10 +92,14 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> l
     """
 
     latest = None
-    checkpoints = []
+    checkpoints: list[UpdateCandidate] = []
 
     for candidate in candidates:
         if candidate.image <= image:
+            continue
+
+        if latest and candidate.image <= latest.image:
+            # Avoid a downgrade cycle
             continue
 
         if candidate.image.checkpoint:
@@ -147,6 +151,7 @@ class ImagePool:
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
+                          config.get('Images', 'VariantsOrder', fallback='').split(),
                           config['Images']['Archs'].split())
 
     @classmethod
@@ -175,7 +180,7 @@ class ImagePool:
     def _create_pool(self, images_dir: str, work_with_snapshots: bool,
                      want_unstable_images: bool, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str],
-                     supported_archs: list[str]) -> None:
+                     variants_order: list[str], supported_archs: list[str]) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -198,6 +203,7 @@ class ImagePool:
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
+        self.variants_order = variants_order
         self.supported_archs = supported_archs
         self.images_found = []
 
@@ -271,15 +277,18 @@ class ImagePool:
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
+            'Variants order: {}'.format(self.variants_order),
             'Archs     : {}'.format(self.supported_archs),
             'Candidates: (see below)',
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
-    def _get_candidate_list(self, image: Image, override_release='') -> list[UpdateCandidate]:
+    def _get_candidate_list(self, image: Image, override_release='',
+                            override_variant='') -> list[UpdateCandidate]:
         """Return the list of update candidates that an image belong to
 
-        The optional 'override_release' field is used to override the image release.
+        The optional 'override_release' and 'override_variant' fields are used to respectively
+        override the image release and the image variant.
 
         This method also does sanity check, to ensure the image is supported.
         We might raise exceptions if the image is not supported.
@@ -289,7 +298,7 @@ class ImagePool:
         try:
             product = image.product
             release = override_release if override_release else image.release
-            variant = image.variant
+            variant = override_variant if override_variant else image.variant
             arch = image.arch
             candidates = self.candidates[product][arch][release][variant]
         except KeyError as e:
@@ -304,14 +313,34 @@ class ImagePool:
         Return an UpdatePath object, or None if no updates available.
         """
 
+        all_candidates: list[UpdateCandidate] = []
+        additional_variants: list[str] = []
+
+        if image.variant in self.variants_order:
+            # Take into consideration all the more stable variants too
+            variant_index = self.variants_order.index(image.variant)
+            additional_variants = self.variants_order[:variant_index]
+
         try:
-            all_candidates = self._get_candidate_list(image, release)
-        except ValueError:
-            return None
+            all_candidates.extend(self._get_candidate_list(image, release))
+        except ValueError as err:
+            # Continue to check the additional variants, if any
+            log.debug(err)
+
+        for variant in additional_variants:
+            try:
+                all_candidates.extend(self._get_candidate_list(image, release, variant))
+            except ValueError as err:
+                # If the image with that variant is not supported try the next one
+                log.debug(err)
 
         candidates = _get_update_candidates(all_candidates, image)
         if not candidates:
             return None
+
+        if candidates[-1].image.variant != image.variant:
+            log.info("Selected image from variant '%s', instead of '%s', because is newer",
+                     candidates[-1].image.variant, image.variant)
 
         return UpdatePath(release, candidates)
 
