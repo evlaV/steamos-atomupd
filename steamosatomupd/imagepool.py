@@ -82,7 +82,8 @@ def _get_next_release(release: str, releases: list[str]) -> str:
     return next_release
 
 
-def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> list[UpdateCandidate]:
+def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
+                           force_update=False) -> list[UpdateCandidate]:
     """Get possible update candidates within a list.
 
     This is where we decide who are the valid update candidates for a
@@ -95,6 +96,11 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> l
     checkpoints: list[UpdateCandidate] = []
 
     for candidate in candidates:
+        if force_update:
+            # We want to force at least an update, even if that may be a downgrade
+            if not latest or candidate.image > latest.image:
+                latest = candidate
+
         if candidate.image <= image:
             continue
 
@@ -111,6 +117,16 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image) -> l
     winners = checkpoints
     if latest and latest not in winners:
         winners.append(latest)
+
+    for update in winners:
+        if update.image == image:
+            # If the same image version, release and buildid is available in multiple
+            # variants, we assume that they are exactly the same image and do not
+            # offer an update. Given that we don't know if a request is for an update,
+            # or for a branch switch, this could otherwise introduce an unexpected cycle.
+            log.info("Cycle detected, an update for %s/%s/%s can't be safely forced",
+                     image.version, image.release, image.buildid)
+            return []
 
     return winners
 
@@ -307,7 +323,8 @@ class ImagePool:
 
         return candidates
 
-    def get_updates_for_release(self, image: Image, release: str) -> Union[UpdatePath, None]:
+    def get_updates_for_release(self, image: Image, release: str, requested_variant='',
+                                force_update=False) -> Union[UpdatePath, None]:
         """Get a list of update candidates for a given release
 
         Return an UpdatePath object, or None if no updates available.
@@ -315,26 +332,27 @@ class ImagePool:
 
         all_candidates: list[UpdateCandidate] = []
         additional_variants: list[str] = []
+        variant = requested_variant if requested_variant else image.variant
 
-        if image.variant in self.variants_order:
+        if variant in self.variants_order:
             # Take into consideration all the more stable variants too
-            variant_index = self.variants_order.index(image.variant)
+            variant_index = self.variants_order.index(variant)
             additional_variants = self.variants_order[:variant_index]
 
         try:
-            all_candidates.extend(self._get_candidate_list(image, release))
+            all_candidates.extend(self._get_candidate_list(image, release, variant))
         except ValueError as err:
             # Continue to check the additional variants, if any
             log.debug(err)
 
-        for variant in additional_variants:
+        for additional_variant in additional_variants:
             try:
-                all_candidates.extend(self._get_candidate_list(image, release, variant))
+                all_candidates.extend(self._get_candidate_list(image, release, additional_variant))
             except ValueError as err:
                 # If the image with that variant is not supported try the next one
                 log.debug(err)
 
-        candidates = _get_update_candidates(all_candidates, image)
+        candidates = _get_update_candidates(all_candidates, image, force_update)
         if not candidates:
             return None
 
@@ -344,25 +362,52 @@ class ImagePool:
 
         return UpdatePath(release, candidates)
 
-    def get_updates(self, image: Image) -> Union[Update, None]:
+    def get_updates(self, image: Image, requested_variant='') -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
         and in the next release (if any).
+        The optional "requested_variant" can be used to request updates for a
+        different variant.
 
         Return an Update object, or None if no updates available.
         """
 
+        force_update = False
         curr_release = image.release
-        minor_update = self.get_updates_for_release(image, curr_release)
+        minor_update = self.get_updates_for_release(image, curr_release, requested_variant)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
-            major_update = self.get_updates_for_release(image, next_release)
+            major_update = self.get_updates_for_release(image, next_release, requested_variant)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
+
+        if requested_variant != image.variant:
+            try:
+                # Force an update if we are in an unstable variant, and we want to switch back to a
+                # more stable variant. By reaching this point it means that there isn't a proper
+                # update because our current version is already newer. For this reason we force the
+                # update, that will effectively be a downgrade.
+                force_update = self.variants_order.index(
+                    requested_variant) < self.variants_order.index(image.variant)
+            except ValueError:
+                # At least one of those images is not ordered, there is
+                # no way of knowing which one is more stable.
+                force_update = True
+
+        if force_update:
+            # Force only a minor update. We don't propose a downgrade from a major update because
+            # that is not supported and will likely cause unexpected issues.
+            minor_update = self.get_updates_for_release(image, curr_release, requested_variant,
+                                                        force_update)
+            if minor_update:
+                return Update(minor_update, major_update)
+
+            log.warning("Failed to force an update from '%s' (%s) to '%s'",
+                        image.variant, image.buildid, requested_variant)
 
         return None
 
@@ -374,3 +419,7 @@ class ImagePool:
         Return a list of Image objects.
         """
         return self.images_found
+
+    def get_supported_variants(self) -> list[str]:
+        """ Get list of supported variants"""
+        return self.supported_variants

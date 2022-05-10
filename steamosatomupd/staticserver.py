@@ -23,10 +23,11 @@ import argparse
 import configparser
 import json
 import logging
-import os
 import sys
+from copy import deepcopy
+from pathlib import Path
 
-from steamosatomupd.image import Image
+from steamosatomupd.image import Image, BuildId
 from steamosatomupd.imagepool import ImagePool
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
@@ -39,17 +40,11 @@ DEFAULT_SERVE_UNSTABLE = False
 class UpdateParser:
     """Image pool with static update JSON files"""
 
-    def get_update(self, data: dict) -> dict:
-        """Get the update candidates from the provided image dictionary"""
-
-        # Make an image out of the request arguments. An exception might be
-        # raised, which results in returning 400 to the client.
-        image = Image.from_dict(data)
-        if not image:
-            return {}
+    def get_update(self, image: Image, requested_variant='') -> dict:
+        """Get the update candidates from the provided image"""
 
         # Get update candidates
-        update = self.image_pool.get_updates(image)
+        update = self.image_pool.get_updates(image, requested_variant)
         if not update:
             return {}
 
@@ -100,39 +95,43 @@ class UpdateParser:
         print("------------------")
         sys.stdout.flush()
 
+    def _write_update_json(self, image: Image, requested_variant: str) -> None:
+        """Get the available updates and write them in a JSON
+
+        The updates will also be checked against an image that has an
+        old/invalid/unknown buildid and the variant.json will be written up one level.
+        """
+
+        out_valid = Path(image.product, image.arch, image.get_version_str(), requested_variant,
+                         f'{image.buildid}.json')
+        out_invalid = Path(image.product, image.arch, image.get_version_str(),
+                           f'{requested_variant}.json')
+        # Create a copy because we don't want to change the caller's image
+        image_invalid = deepcopy(image)
+        image_invalid.buildid = BuildId.from_string('19000101')
+
+        for img, out in [(image, out_valid), (image_invalid, out_invalid)]:
+            if out.is_file():
+                log.debug('"%s" has been already written, skipping...', out)
+                return
+
+            out.parent.mkdir(parents=True, exist_ok=True)
+
+            jsonresult = json.dumps(self.get_update(img, requested_variant),
+                                    sort_keys=True, indent=4)
+            print(f"--- Jsonresult for {json.dumps(img.to_dict())} with variant "
+                  f"{requested_variant} is {jsonresult} ---")
+            with open(out, 'w', encoding='utf-8') as file:
+                file.write(jsonresult)
+
     def parse_all(self) -> int:
         """Create file structure as needed based on known images"""
 
         images = self.image_pool.get_images_found()
+        supported_variants = self.image_pool.get_supported_variants()
         for image in images:
-            # Make sure the product exists
-            values = image.to_dict()
-
-            product = values['product']
-            variant = values['variant']
-            arch = values['arch']
-            buildid = values['buildid']
-            version = values['version']
-
-            os.makedirs(os.path.join(product, arch, version, variant), exist_ok=True)
-
-            jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
-
-            print("--- Jsonresult for {} is {} ---".format(json.dumps(values), jsonresult))
-
-            # Write .json files for each variation
-            with open(os.path.join(product, arch, version, variant, f'{buildid}.json'),
-                      'w', encoding='utf-8') as file:
-                file.write(jsonresult)
-
-            # Now check if buildid is old/invalid to write variant.json up one level
-            values['buildid'] = '19000101'
-            jsonresult = json.dumps(self.get_update(values), sort_keys=True, indent=4)
-            print(f"--- Jsonresult for {json.dumps(values)} is {jsonresult} ---")
-
-            with open(os.path.join(product, arch, version, f'{variant}.json'),
-                      'w', encoding='utf-8') as file:
-                file.write(jsonresult)
+            for requested_variant in supported_variants:
+                self._write_update_json(image, requested_variant)
 
         return 0
 
