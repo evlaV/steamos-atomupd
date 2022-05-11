@@ -89,20 +89,21 @@ mkdir -p releases
 (
   cd releases
 
-  fake_image steamos holo steamdeck amd64 3.0 20190211 0
-  fake_image steamos holo steamdeck-beta  amd64 3.0 20190211 0
-  fake_image steamos holo atomic amd64 3.0 20190211 0
+  fake_image steamos holo steamdeck amd64 3.1 20220401.1 0
+  fake_image steamos holo steamdeck amd64 3.1 20220402.3 1
+  fake_image steamos holo steamdeck amd64 3.2 20220411.1 0
+  fake_image steamos holo steamdeck amd64 3.3 20220423.1 1
 
-  # Add a checkpoint after 3.0 but before 3.1 regular release
-  fake_image steamos holo steamdeck amd64 3.1 20190101 1
-  fake_image steamos holo steamdeck-beta amd64 3.1 20190101 1
-  fake_image steamos holo atomic amd64 3.1 20190101 1
+  fake_image steamos holo steamdeck-rc amd64 3.1 20220401.5 0
 
-  fake_image steamos holo steamdeck amd64 3.1 20190201 0
-  fake_image steamos holo steamdeck-beta  amd64 3.1 20190201 0
-  fake_image steamos holo atomic amd64 3.1 20190201 0
-
-  fake_image steamos holo steamdeck amd64 3.1 20190312 0
+  # Same checkpoint as in 'steamdeck'
+  fake_image steamos holo steamdeck-beta amd64 3.1 20220402.3 1
+  fake_image steamos holo steamdeck-beta amd64 3.1 20220405.100 0
+  # The buildid of a checkpoint can be different, as long as they are
+  # conceptually the same (i.e. introduce the same breaking changes)
+  fake_image steamos holo steamdeck-beta amd64 3.3 20220423.100 1
+  # Testing a new checkpoint that still hasn't been promoted to 'steamdeck'
+  fake_image steamos holo steamdeck-beta amd64 3.4 20220501.100 1
 )
 
 mkdir -p releases-and-snaps

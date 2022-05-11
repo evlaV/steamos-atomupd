@@ -4,28 +4,28 @@
             {
                 "image": {
                     "arch": "amd64",
-                    "buildid": "20190101.0",
+                    "buildid": "20220402.3",
                     "checkpoint": true,
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
-                    "variant": "steamdeck-beta",
+                    "variant": "steamdeck",
                     "version": "3.1.0"
                 },
-                "update_path": "steamos/holo/3.1/amd64/steamos-holo-20190101-3.1-amd64-steamdeck-beta.raucb"
+                "update_path": "steamos/holo/3.1/amd64/steamos-holo-20220402.3-3.1-amd64-steamdeck.raucb"
             },
             {
                 "image": {
                     "arch": "amd64",
-                    "buildid": "20190201.0",
-                    "checkpoint": false,
+                    "buildid": "20220423.1",
+                    "checkpoint": true,
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
-                    "variant": "steamdeck-beta",
-                    "version": "3.1.0"
+                    "variant": "steamdeck",
+                    "version": "3.3.0"
                 },
-                "update_path": "steamos/holo/3.1/amd64/steamos-holo-20190201-3.1-amd64-steamdeck-beta.raucb"
+                "update_path": "steamos/holo/3.3/amd64/steamos-holo-20220423.1-3.3-amd64-steamdeck.raucb"
             }
         ],
         "release": "holo"
