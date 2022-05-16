@@ -444,6 +444,8 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     Returns the estimated size in Bytes or zero if we were not able to estimate
     the download size.
     """
+    rootfs_index = 'rootfs.img.caibx'
+
     if not is_desync_in_use():
         return 0
 
@@ -463,13 +465,13 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
             log.warning("Failed to extract bundle: %i: %s", c.returncode, c.stdout)
             return 0
 
-    update_index = destination / 'rootfs.img.caibx'
+    update_index = destination / rootfs_index
     if not update_index.exists():
-        log.warning("The extracted bundle doesn't have the expected 'rootfs.img.caibx' file")
+        log.warning("The extracted bundle doesn't have the expected '%s' file", rootfs_index)
         return 0
 
     if required_buildid:
-        seed = runtime_dir / required_buildid
+        seed = runtime_dir / required_buildid / rootfs_index
         if not seed.exists():
             log.debug("Unable to estimate the download size because the "
                       "required base image bundle is missing")
