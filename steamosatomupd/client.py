@@ -40,6 +40,7 @@ from typing import Union
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import Update, UpdatePath
+from steamosatomupd.utils import get_update_size
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -482,19 +483,7 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
         ensure_index_exists(regenerate=False)
         seed = get_active_slot_index()
 
-    c = subprocess.run(['desync', 'info', '--seed', seed, update_index],
-                       check=False,
-                       capture_output=True,
-                       text=True)
-
-    if c.returncode != 0:
-        log.warning(
-            "Failed to gather information about the update: %i: %s", c.returncode, c.stdout
-        )
-        return 0
-
-    index_info = json.loads(c.stdout)
-    return index_info.get("dedup-size-not-in-seed", 0)
+    return get_update_size(seed, update_index)
 
 
 def ensure_estimated_download_size(update_path: UpdatePath,
