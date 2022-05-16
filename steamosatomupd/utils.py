@@ -20,9 +20,11 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-
+from typing import Union
 
 log = logging.getLogger(__name__)
+
+ROOTFS_INDEX = Path('rootfs.img.caibx')
 
 
 def get_update_size(seed_index: Path, update_index: Path) -> int:
@@ -44,3 +46,36 @@ def get_update_size(seed_index: Path, update_index: Path) -> int:
 
     index_info = json.loads(info.stdout)
     return index_info.get("dedup-size-not-in-seed", 0)
+
+
+def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: Path,
+                             unique_dir_name: str) -> Union[Path, None]:
+    """Extract the rootfs index file from a rauc bundle.
+
+    The provided raucb location can be either a path or a URL.
+
+    Returns the image rootfs index path or None if an error occurred.
+    """
+
+    extract_path = extract_prefix / unique_dir_name
+    image_index = extract_path / ROOTFS_INDEX
+
+    if extract_path.exists():
+        log.debug("Image '%s' has already been extracted", raucb_location)
+    else:
+        extract = subprocess.run(['rauc', 'extract', str(raucb_location), str(extract_path)],
+                                 check=False,
+                                 stderr=subprocess.STDOUT,
+                                 stdout=subprocess.PIPE,
+                                 text=True)
+
+        if extract.returncode != 0:
+            log.warning("Failed to extract bundle: %i: %s", extract.returncode, extract.stdout)
+            return None
+
+    if not image_index.exists():
+        log.warning("The extracted bundle '%s' doesn't have the expected '%s' file",
+                    raucb_location, ROOTFS_INDEX)
+        return None
+
+    return image_index

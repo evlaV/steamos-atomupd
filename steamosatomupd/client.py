@@ -40,7 +40,8 @@ from typing import Union
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import Update, UpdatePath
-from steamosatomupd.utils import get_update_size
+from steamosatomupd.utils import get_update_size, extract_index_from_raucb
+from steamosatomupd.utils import ROOTFS_INDEX
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -445,34 +446,19 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     Returns the estimated size in Bytes or zero if we were not able to estimate
     the download size.
     """
-    rootfs_index = 'rootfs.img.caibx'
 
     if not is_desync_in_use():
         return 0
 
-    destination = runtime_dir / buildid
-
-    # If we already extracted this update bundle, don't do it again
-    if not destination.exists():
-        c = subprocess.run(['rauc', 'extract', update_url, destination],
-                           check=False,
-                           stderr=subprocess.STDOUT,
-                           stdout=subprocess.PIPE,
-                           text=True)
-
-        if c.returncode != 0:
-            # Estimating the download size is not a critical operation.
-            # If it fails we try to continue anyway.
-            log.warning("Failed to extract bundle: %i: %s", c.returncode, c.stdout)
-            return 0
-
-    update_index = destination / rootfs_index
-    if not update_index.exists():
-        log.warning("The extracted bundle doesn't have the expected '%s' file", rootfs_index)
+    update_index = extract_index_from_raucb(update_url, runtime_dir, buildid)
+    if not update_index:
+        # Estimating the download size is not a critical operation.
+        # If it fails we try to continue anyway.
+        log.debug("Unable to estimate the download size, continuing...")
         return 0
 
     if required_buildid:
-        seed = runtime_dir / required_buildid / rootfs_index
+        seed = runtime_dir / required_buildid / ROOTFS_INDEX
         if not seed.exists():
             log.debug("Unable to estimate the download size because the "
                       "required base image bundle is missing")
