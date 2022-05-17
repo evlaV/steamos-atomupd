@@ -53,9 +53,13 @@ test:debian-11:
     extends: .test_debian_template
     image: debian:bullseye-slim
 
-test:archlinux:
+test:jupiter:
     extends: .test_archlinux_template
-    image: archlinux:base-devel
+    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter/base-devel:latest
+
+test:holo:
+    extends: .test_archlinux_template
+    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/holo/base-devel:latest
 
 .lint_template:
     stage: lint
