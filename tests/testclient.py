@@ -19,7 +19,6 @@ import configparser
 import io
 import json
 import shutil
-import sys
 import tempfile
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
@@ -30,13 +29,7 @@ from unittest.mock import patch
 
 from steamosatomupd.image import BuildId
 from steamosatomupd.update import Update
-try:
-    from steamosatomupd import client
-except ImportError as e:
-    if sys.version_info < (3, 9, 0):
-        raise unittest.SkipTest("We need at least Python 3.9 to execute the client part")
-    else:
-        raise e
+from steamosatomupd import client
 
 data_path = Path(__file__).parent.resolve() / 'client_data'
 rauc_conf_dir = Path(__file__).parent.resolve() / 'rauc_conf_dir'

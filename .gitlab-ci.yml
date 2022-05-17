@@ -49,10 +49,6 @@ default:
         - pacman -Syu --needed --noconfirm --noprogressbar
           meson python-flask python-semantic-version
 
-test:debian-10:
-    extends: .test_debian_template
-    image: debian:buster-slim
-
 test:debian-11:
     extends: .test_debian_template
     image: debian:bullseye-slim
