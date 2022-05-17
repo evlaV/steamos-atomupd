@@ -24,6 +24,8 @@ from typing import Union
 
 log = logging.getLogger(__name__)
 
+DEFAULT_RAUC_CONF = Path('/etc/rauc/system.conf')
+FALLBACK_RAUC_CONF = Path('/etc/rauc/fallback-system.conf')
 ROOTFS_INDEX = Path('rootfs.img.caibx')
 
 
@@ -63,7 +65,9 @@ def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: P
     if extract_path.exists():
         log.debug("Image '%s' has already been extracted", raucb_location)
     else:
-        extract = subprocess.run(['rauc', 'extract', str(raucb_location), str(extract_path)],
+        extract = subprocess.run(['rauc', 'extract',
+                                  '--conf', str(DEFAULT_RAUC_CONF),
+                                  str(raucb_location), str(extract_path)],
                                  check=False,
                                  stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE,

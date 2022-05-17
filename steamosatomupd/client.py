@@ -41,7 +41,7 @@ from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import Update, UpdatePath
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb
-from steamosatomupd.utils import ROOTFS_INDEX
+from steamosatomupd.utils import DEFAULT_RAUC_CONF, FALLBACK_RAUC_CONF, ROOTFS_INDEX
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -57,9 +57,6 @@ DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 # Default config
 DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR = '/run/steamos-atomupd'
-
-DEFAULT_RAUC_CONF = Path('/etc/rauc/system.conf')
-FALLBACK_RAUC_CONF = Path('/etc/rauc/fallback-system.conf')
 
 rauc_conf_path = DEFAULT_RAUC_CONF
 
