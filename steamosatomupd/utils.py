@@ -65,9 +65,12 @@ def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: P
     if extract_path.exists():
         log.debug("Image '%s' has already been extracted", raucb_location)
     else:
+        # Trust the environment because if we are inside a Docker image, we are unable to check
+        # the ownership of a bundle. However, the bundle signature is still validated, and the
+        # result is only used for estimating the download size.
         extract = subprocess.run(['rauc', 'extract',
                                   '--conf', str(DEFAULT_RAUC_CONF),
-                                  str(raucb_location), str(extract_path)],
+                                  '--trust-environment', str(raucb_location), str(extract_path)],
                                  check=False,
                                  stderr=subprocess.STDOUT,
                                  stdout=subprocess.PIPE,
