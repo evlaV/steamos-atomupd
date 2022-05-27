@@ -36,18 +36,19 @@ default:
 .test_debian_template:
     extends: .test_template
     before_script:
-    - |
-        set -eux
-
-        apt-get update
-        apt-get install -y \
-        meson python3-flask python3-semantic-version
+    - sed -n '/^deb\s/s//deb-src /p' /etc/apt/sources.list > /etc/apt/sources.list.d/deb-src.list
+    - apt-get update
+    - apt-get install -y meson python3-flask python3-semantic-version
+    - apt-get install -y git golang
+    - apt-get build-dep -y rauc
+    - ./build/build-deps.sh
 
 .test_archlinux_template:
     extends: .test_template
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
-          meson python-flask python-semantic-version
+          desync git json-glib meson python-flask
+          python-semantic-version rauc squashfs-tools
 
 test:debian-11:
     extends: .test_debian_template

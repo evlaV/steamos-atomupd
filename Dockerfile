@@ -57,15 +57,22 @@ ARG IMAGE_ID="steamos-atomupd"
 ARG IMAGE_NAME="steamos-atomupd"
 ARG IMAGE_VERSION=""
 
+RUN sed -n '/^deb\s/s//deb-src /p' /etc/apt/sources.list > /etc/apt/sources.list.d/deb-src.list
 RUN apt-get update \
     && apt-get install -y \
        meson python3-flask python3-semantic-version \
+    && apt-get install -y \
+       git golang \
+    && apt-get install -y \
+       devscripts \
+    && mk-build-deps -irt'apt -y' \
+       rauc \
     && rm -rf /var/lib/apt/lists/*
 
 # Import working directory to /src/, build to /build/, install to /
 # ... and clean after ourselves.
-
 COPY ./ /src/
+RUN /src/build/build-deps.sh
 RUN \
 set -eu; \
 cd /src; \
@@ -73,6 +80,9 @@ meson setup /build; \
 meson install -C /build; \
 rm -rf /src /build; \
 apt-get purge -y meson; \
+apt-get purge -y git golang; \
+apt-get purge -y rauc-build-deps; \
+apt-get purge -y devscripts; \
 :
 
 # Use the non-standard pythonpath we install to
