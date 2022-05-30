@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2020 Collabora Ltd
+# Copyright © 2018-2022 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -221,7 +221,7 @@ class ImagePool:
         self.supported_variants = supported_variants
         self.variants_order = variants_order
         self.supported_archs = supported_archs
-        self.images_found = []
+        self.image_updates_found: list[UpdateCandidate] = []
 
         # Create the hierarchy to store images
         data: dict[str, dict] = {}
@@ -278,11 +278,9 @@ class ImagePool:
                     log.debug("Discarded unstable image %s", f)
                     continue
 
-                # Only add it as an image found if it's valid, etc.
-                self.images_found.append(image)
-
                 # Add image as an update candidate
                 candidate = UpdateCandidate(image, update_path)
+                self.image_updates_found.append(candidate)
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: %s", f)
 
@@ -411,14 +409,14 @@ class ImagePool:
 
         return None
 
-    def get_images_found(self) -> list[Image]:
-        """ Get list of images found
+    def get_image_updates_found(self) -> list[UpdateCandidate]:
+        """ Get list of image updates found
 
         To iterate over the list of known images we need a list of known images
 
-        Return a list of Image objects.
+        Return a list of UpdateCandidate objects.
         """
-        return self.images_found
+        return self.image_updates_found
 
     def get_supported_variants(self) -> list[str]:
         """ Get list of supported variants"""

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2021 Collabora Ltd
+# Copyright © 2018-2022 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -29,6 +29,7 @@ from pathlib import Path
 
 from steamosatomupd.image import Image, BuildId
 from steamosatomupd.imagepool import ImagePool
+from steamosatomupd.update import UpdateCandidate
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -95,13 +96,15 @@ class UpdateParser:
         print("------------------")
         sys.stdout.flush()
 
-    def _write_update_json(self, image: Image, requested_variant: str) -> None:
+    def _write_update_json(self, image_update: UpdateCandidate,
+                           requested_variant: str) -> None:
         """Get the available updates and write them in a JSON
 
         The updates will also be checked against an image that has an
         old/invalid/unknown buildid and the variant.json will be written up one level.
         """
 
+        image = image_update.image
         out_valid = Path(image.product, image.arch, image.get_version_str(), requested_variant,
                          f'{image.buildid}.json')
         out_invalid = Path(image.product, image.arch, image.get_version_str(),
@@ -127,11 +130,11 @@ class UpdateParser:
     def parse_all(self) -> int:
         """Create file structure as needed based on known images"""
 
-        images = self.image_pool.get_images_found()
+        image_updates = self.image_pool.get_image_updates_found()
         supported_variants = self.image_pool.get_supported_variants()
-        for image in images:
+        for image_update in image_updates:
             for requested_variant in supported_variants:
-                self._write_update_json(image, requested_variant)
+                self._write_update_json(image_update, requested_variant)
 
         return 0
 
