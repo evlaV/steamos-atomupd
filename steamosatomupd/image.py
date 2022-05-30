@@ -269,6 +269,11 @@ class Image:
 
         return False
 
+    def get_unique_name(self) -> str:
+        """Generates a string that is unique for this image"""
+
+        return f"{self.get_version_str()}_{self.release}_{self.buildid}"
+
     # A note regarding comparison operators.
     #
     # When comparing images, we care about version, release and buildid.

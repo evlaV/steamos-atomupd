@@ -24,13 +24,19 @@ import errno
 import logging
 import os
 import pprint
+import shutil
 import sys
+import tempfile
+import weakref
 from configparser import ConfigParser
+from copy import deepcopy
+from pathlib import Path
 from typing import Union
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import UpdateCandidate, UpdatePath, Update
+from steamosatomupd.utils import get_update_size, extract_index_from_raucb
 
 log = logging.getLogger(__name__)
 
@@ -222,6 +228,9 @@ class ImagePool:
         self.variants_order = variants_order
         self.supported_archs = supported_archs
         self.image_updates_found: list[UpdateCandidate] = []
+        self.extract_dir = tempfile.mkdtemp()
+
+        self._finalizer = weakref.finalize(self, shutil.rmtree, self.extract_dir)
 
         # Create the hierarchy to store images
         data: dict[str, dict] = {}
@@ -321,7 +330,8 @@ class ImagePool:
 
         return candidates
 
-    def get_updates_for_release(self, image: Image, release: str, requested_variant='',
+    def get_updates_for_release(self, image: Image, relative_update_path: Union[Path, None],
+                                release: str, requested_variant='',
                                 force_update=False) -> Union[UpdatePath, None]:
         """Get a list of update candidates for a given release
 
@@ -358,27 +368,38 @@ class ImagePool:
             log.info("Selected image from variant '%s', instead of '%s', because is newer",
                      candidates[-1].image.variant, image.variant)
 
+        # Only estimate the size of the first update for now. Once we'll have the first
+        # checkpoint we can also begin to estimate the subsequent updates, if needed.
+        if relative_update_path:
+            candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
+
         return UpdatePath(release, candidates)
 
-    def get_updates(self, image: Image, requested_variant='') -> Union[Update, None]:
+    def get_updates(self, image: Image, relative_update_path: Union[Path, None],
+                    requested_variant='') -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
         and in the next release (if any).
         The optional "requested_variant" can be used to request updates for a
         different variant.
+        "relative_update_path" is used to estimate the download size of the updates. The path
+        needs to be relative to the pool images directory. If set to None, the download size
+        will not be estimated.
 
         Return an Update object, or None if no updates available.
         """
 
         force_update = False
         curr_release = image.release
-        minor_update = self.get_updates_for_release(image, curr_release, requested_variant)
+        minor_update = self.get_updates_for_release(image, relative_update_path, curr_release,
+                                                    requested_variant)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
-            major_update = self.get_updates_for_release(image, next_release, requested_variant)
+            major_update = self.get_updates_for_release(image, relative_update_path, next_release,
+                                                        requested_variant)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
@@ -399,8 +420,8 @@ class ImagePool:
         if force_update:
             # Force only a minor update. We don't propose a downgrade from a major update because
             # that is not supported and will likely cause unexpected issues.
-            minor_update = self.get_updates_for_release(image, curr_release, requested_variant,
-                                                        force_update)
+            minor_update = self.get_updates_for_release(image, relative_update_path, curr_release,
+                                                        requested_variant, force_update)
             if minor_update:
                 return Update(minor_update, major_update)
 
@@ -408,6 +429,34 @@ class ImagePool:
                         image.variant, image.buildid, requested_variant)
 
         return None
+
+    def estimate_download_size(self, initial_image: Image, image_relative_path: Path,
+                               update: UpdateCandidate) -> UpdateCandidate:
+        """Estimate the download size for the update candidate image
+
+        Returns an "update" copy that includes the estimated download size.
+        If the operation fails, the estimation will be equal to zero.
+        """
+
+        update_copy = deepcopy(update)
+
+        initial_image_raucb = Path(self.images_dir) / image_relative_path
+        initial_image_index = extract_index_from_raucb(initial_image_raucb, Path(self.extract_dir),
+                                                       initial_image.get_unique_name())
+
+        update_raucb = Path(self.images_dir) / update_copy.update_path
+        update_index = extract_index_from_raucb(update_raucb, Path(self.extract_dir),
+                                                update_copy.image.get_unique_name())
+
+        if initial_image_index and update_index:
+            update_copy.image.estimated_size = get_update_size(initial_image_index, update_index)
+        else:
+            # Estimating the download size is not a critical operation.
+            # If it fails we try to continue anyway.
+            log.debug("Unable to estimate the download size, continuing...")
+            update_copy.image.estimated_size = 0
+
+        return update_copy
 
     def get_image_updates_found(self) -> list[UpdateCandidate]:
         """ Get list of image updates found

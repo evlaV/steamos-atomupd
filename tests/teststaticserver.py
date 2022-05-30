@@ -22,6 +22,7 @@ import subprocess
 import sys
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 CONFIG_PARENT = Path('./examples')
 EXPECTATION_PARENT = Path('./tests')
@@ -62,6 +63,7 @@ class StaticServerTestCase(unittest.TestCase):
     # Do not cut out the assertion error diff messages
     maxDiff = None
 
+    @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path('./examples/rauc/system.conf'))
     def test_static_server(self):
         # First build example files
         p = subprocess.run(['./examples/build-image-hierarchy.sh'],

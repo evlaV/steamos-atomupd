@@ -26,6 +26,7 @@ import logging
 import sys
 from copy import deepcopy
 from pathlib import Path
+from typing import Union
 
 from steamosatomupd.image import Image, BuildId
 from steamosatomupd.imagepool import ImagePool
@@ -41,11 +42,12 @@ DEFAULT_SERVE_UNSTABLE = False
 class UpdateParser:
     """Image pool with static update JSON files"""
 
-    def get_update(self, image: Image, requested_variant='') -> dict:
+    def get_update(self, image: Image, update_path: Union[Path, None],
+                   requested_variant='') -> dict:
         """Get the update candidates from the provided image"""
 
         # Get update candidates
-        update = self.image_pool.get_updates(image, requested_variant)
+        update = self.image_pool.get_updates(image, update_path, requested_variant)
         if not update:
             return {}
 
@@ -96,8 +98,7 @@ class UpdateParser:
         print("------------------")
         sys.stdout.flush()
 
-    def _write_update_json(self, image_update: UpdateCandidate,
-                           requested_variant: str) -> None:
+    def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str) -> None:
         """Get the available updates and write them in a JSON
 
         The updates will also be checked against an image that has an
@@ -113,14 +114,15 @@ class UpdateParser:
         image_invalid = deepcopy(image)
         image_invalid.buildid = BuildId.from_string('19000101')
 
-        for img, out in [(image, out_valid), (image_invalid, out_invalid)]:
+        for img, update_path, out in [(image, Path(image_update.update_path), out_valid),
+                                      (image_invalid, None, out_invalid)]:
             if out.is_file():
                 log.debug('"%s" has been already written, skipping...', out)
                 return
 
             out.parent.mkdir(parents=True, exist_ok=True)
 
-            jsonresult = json.dumps(self.get_update(img, requested_variant),
+            jsonresult = json.dumps(self.get_update(img, update_path, requested_variant),
                                     sort_keys=True, indent=4)
             print(f"--- Jsonresult for {json.dumps(img.to_dict())} with variant "
                   f"{requested_variant} is {jsonresult} ---")

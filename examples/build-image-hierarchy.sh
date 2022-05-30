@@ -6,6 +6,7 @@ set -u
 
 OUTDIR=examples-data
 
+OWD=$(pwd)
 rm -fr $OUTDIR
 mkdir -p $OUTDIR/images
 cd $OUTDIR/images
@@ -62,7 +63,13 @@ fake_image() {
             "$imgdir/$imgname.manifest.json"
     fi
 
-    touch "$imgdir/$imgname.raucb"
+    if [ -f "${OWD}/examples/rauc/$imgname.raucb" ]; then
+      # Use the mock raucb, if available
+      ln -s "${OWD}/examples/rauc/$imgname.raucb" "$imgdir/$imgname.raucb"
+    else
+      touch "$imgdir/$imgname.raucb"
+    fi
+
     mkdir "$imgdir/$imgname.castr"
 }
 
