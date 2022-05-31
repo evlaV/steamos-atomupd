@@ -17,11 +17,13 @@
 # <http://www.gnu.org/licenses/>.
 
 import os
+import shutil
 from dataclasses import dataclass
 import subprocess
 import sys
 import unittest
 from pathlib import Path
+from typing import Union
 from unittest.mock import patch
 
 CONFIG_PARENT = Path('./examples')
@@ -37,6 +39,7 @@ class ServerData:
     msg: str
     config: str
     expectation: str
+    mock_leftovers: Union[Path, None] = None
 
 
 server_data = [
@@ -44,6 +47,7 @@ server_data = [
         msg='Static server with release images',
         config='server-releases.conf',
         expectation='staticexpected',
+        mock_leftovers=Path('staticexpected_mock_leftover'),
     ),
     ServerData(
         msg='Static server with snapshot images',
@@ -54,6 +58,7 @@ server_data = [
         msg='Static server with snapshot and release images',
         config='server-releases-and-snaps.conf',
         expectation='static_rel_and_snap_expected',
+        mock_leftovers=Path('static_rel_and_snap_mock_leftover'),
     ),
 ]
 
@@ -88,6 +93,11 @@ class StaticServerTestCase(unittest.TestCase):
         for data in server_data:
             with self.subTest(msg=data.msg):
                 subprocess.run(['rm', '-fR', META_OUTPUT_DIR])
+
+                if data.mock_leftovers:
+                    shutil.copytree(EXPECTATION_PARENT / data.mock_leftovers / META_OUTPUT_DIR,
+                                    META_OUTPUT_DIR)
+
                 args = ['--config', str(CONFIG_PARENT / data.config)]
                 staticserver.main(args)
 

@@ -98,7 +98,8 @@ class UpdateParser:
         print("------------------")
         sys.stdout.flush()
 
-    def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str) -> None:
+    def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
+                           update_jsons: set[Path]) -> None:
         """Get the available updates and write them in a JSON
 
         The updates will also be checked against an image that has an
@@ -116,9 +117,11 @@ class UpdateParser:
 
         for img, update_path, out in [(image, Path(image_update.update_path), out_valid),
                                       (image_invalid, None, out_invalid)]:
-            if out.is_file():
+            if out in update_jsons:
                 log.debug('"%s" has been already written, skipping...', out)
-                return
+                continue
+
+            update_jsons.add(out)
 
             out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -134,9 +137,10 @@ class UpdateParser:
 
         image_updates = self.image_pool.get_image_updates_found()
         supported_variants = self.image_pool.get_supported_variants()
+        update_jsons: set[Path] = set()
         for image_update in image_updates:
             for requested_variant in supported_variants:
-                self._write_update_json(image_update, requested_variant)
+                self._write_update_json(image_update, requested_variant, update_jsons)
 
         return 0
 
