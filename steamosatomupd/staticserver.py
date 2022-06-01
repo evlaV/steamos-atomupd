@@ -63,13 +63,17 @@ class UpdateParser:
         parser = argparse.ArgumentParser(description="SteamOS Update Server")
         parser.add_argument('-c', '--config', metavar='FILE', required=True,
                             help="configuration file")
-        parser.add_argument('-d', '--debug', action='store_true',
-                            help="show debug messages")
+
+        log_group = parser.add_mutually_exclusive_group()
+        log_group.add_argument('-d', '--debug', action='store_const', dest='loglevel',
+                               const=logging.DEBUG, default=logging.WARNING,
+                               help="show debug messages")
+        log_group.add_argument('-v', '--verbose', action='store_const', dest='loglevel',
+                               const=logging.INFO,
+                               help="be more verbose")
 
         args = parser.parse_args(args)
-
-        if args.debug:
-            logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(args.loglevel)
 
         # Config file
 
