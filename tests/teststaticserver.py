@@ -26,7 +26,7 @@ from unittest.mock import patch
 
 CONFIG_PARENT = Path('./examples')
 EXPECTATION_PARENT = Path('./tests')
-EXPECTATION_SUB_DIR = Path('steamos')
+META_OUTPUT_DIR = Path('steamos')
 
 # Always add cwd to the sys path
 sys.path.insert(1, os.getcwd())
@@ -87,13 +87,13 @@ class StaticServerTestCase(unittest.TestCase):
 
         for data in server_data:
             with self.subTest(msg=data.msg):
-                subprocess.run(['rm', '-fR', './steamos'])
+                subprocess.run(['rm', '-fR', META_OUTPUT_DIR])
                 args = ['--config', str(CONFIG_PARENT / data.config)]
                 staticserver.main(args)
 
                 # Then compare result with expected result
-                p = subprocess.run(['diff', '-rq', './steamos',
-                                    str(EXPECTATION_PARENT / data.expectation / EXPECTATION_SUB_DIR)],
+                p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
+                                    str(EXPECTATION_PARENT / data.expectation / META_OUTPUT_DIR)],
                                    check=False,
                                    stderr=subprocess.STDOUT,
                                    stdout=subprocess.PIPE,
