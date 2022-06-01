@@ -98,7 +98,7 @@ class StaticServerTestCase(unittest.TestCase):
                     shutil.copytree(EXPECTATION_PARENT / data.mock_leftovers / META_OUTPUT_DIR,
                                     META_OUTPUT_DIR)
 
-                args = ['--config', str(CONFIG_PARENT / data.config)]
+                args = ['--debug', '--config', str(CONFIG_PARENT / data.config)]
                 staticserver.main(args)
 
                 # Then compare result with expected result

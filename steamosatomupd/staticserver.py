@@ -23,7 +23,6 @@ import argparse
 import configparser
 import json
 import logging
-import sys
 from copy import deepcopy
 from pathlib import Path
 from typing import Union
@@ -97,10 +96,9 @@ class UpdateParser:
         self.config = config
         image_pool = ImagePool(config)
         self.image_pool = image_pool
-        print("--- Image Pool ---")
-        print(f'{self.image_pool}')
-        print("------------------")
-        sys.stdout.flush()
+        log.info("--- Image Pool ---")
+        log.info(self.image_pool)
+        log.info("------------------")
 
     def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
                            update_jsons: set[Path]) -> None:
@@ -131,8 +129,8 @@ class UpdateParser:
 
             jsonresult = json.dumps(self.get_update(img, update_path, requested_variant),
                                     sort_keys=True, indent=4)
-            print(f"--- Jsonresult for {json.dumps(img.to_dict())} with variant "
-                  f"{requested_variant} is {jsonresult} ---")
+            log.debug("--- Jsonresult for %s with variant %s is %s",
+                      json.dumps(img.to_dict()), requested_variant, jsonresult)
             with open(out, 'w', encoding='utf-8') as file:
                 file.write(jsonresult)
 
