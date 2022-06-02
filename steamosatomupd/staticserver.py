@@ -24,6 +24,7 @@ import configparser
 import json
 import logging
 from copy import deepcopy
+from difflib import ndiff
 from pathlib import Path
 from typing import Union
 
@@ -131,6 +132,19 @@ class UpdateParser:
                                     sort_keys=True, indent=4)
             log.debug("--- Jsonresult for %s with variant %s is %s",
                       json.dumps(img.to_dict()), requested_variant, jsonresult)
+
+            if out.is_file():
+                with open(out, 'r', encoding='utf-8') as old:
+                    old_lines = old.readlines()
+                    new_lines = jsonresult.splitlines(keepends=True)
+                    if old_lines == new_lines:
+                        log.debug('"%s" has not changed, skipping...', out)
+                        continue
+                    if log.level <= logging.INFO:
+                        ndiff_out = ndiff(old_lines, new_lines)
+                        differences = [li for li in ndiff_out if li[0] != ' ']
+                        log.info('Replacing "%s":\n%s', out, ''.join(differences))
+
             with open(out, 'w', encoding='utf-8') as file:
                 file.write(jsonresult)
 

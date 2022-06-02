@@ -16,6 +16,7 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+import logging
 import os
 import shutil
 from dataclasses import dataclass
@@ -40,6 +41,8 @@ class ServerData:
     config: str
     expectation: str
     mock_leftovers: Union[Path, None] = None
+    replaced_leftovers: bool = False
+    unchanged_lefovers: bool = False
 
 
 server_data = [
@@ -48,6 +51,7 @@ server_data = [
         config='server-releases.conf',
         expectation='staticexpected',
         mock_leftovers=Path('staticexpected_mock_leftover'),
+        unchanged_lefovers=True,
     ),
     ServerData(
         msg='Static server with snapshot images',
@@ -59,6 +63,8 @@ server_data = [
         config='server-releases-and-snaps.conf',
         expectation='static_rel_and_snap_expected',
         mock_leftovers=Path('static_rel_and_snap_mock_leftover'),
+        replaced_leftovers=True,
+        unchanged_lefovers=True,
     ),
 ]
 
@@ -99,7 +105,16 @@ class StaticServerTestCase(unittest.TestCase):
                                     META_OUTPUT_DIR)
 
                 args = ['--debug', '--config', str(CONFIG_PARENT / data.config)]
-                staticserver.main(args)
+                with self.assertLogs('steamosatomupd.staticserver', level=logging.DEBUG) as lo:
+                    staticserver.main(args)
+
+                print('\n'.join(lo.output))
+
+                replaced_files = any(line for line in lo.output if 'Replacing' in line)
+                self.assertEqual(replaced_files, data.replaced_leftovers, replaced_files)
+
+                unchanged_files = any(line.endswith('has not changed, skipping...') for line in lo.output)
+                self.assertEqual(unchanged_files, data.unchanged_lefovers, unchanged_files)
 
                 # Then compare result with expected result
                 p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
