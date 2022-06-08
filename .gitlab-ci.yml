@@ -48,7 +48,12 @@ default:
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-flask
-          python-semantic-version rauc squashfs-tools
+          python-semantic-version squashfs-tools
+
+        # FIXME RAUC in the repositories is currently too old. Build it from
+        # source until https://gitlab.steamos.cloud/holo/rauc/-/merge_requests/5
+        # lands in Holo and Jupiter
+        - STEAMOS_ATOMUPD_SKIP_DESYNC=1 ./build/build-deps.sh
 
 test:debian-11:
     extends: .test_debian_template

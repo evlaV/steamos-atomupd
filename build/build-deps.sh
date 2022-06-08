@@ -20,24 +20,32 @@
 
 set -eu
 
-export GOPATH=/go
-git clone https://github.com/folbricht/desync.git /tmp/desync
-cd /tmp/desync/cmd/desync
-# Latest commit on master, bump if necessary
-git checkout b54576813acfc9718fce77a30eb05f878a157f89
-go install
-cp /go/bin/desync /usr/bin/desync
-cd -
-rm -rf /tmp/desync
+if [ "${STEAMOS_ATOMUPD_SKIP_DESYNC-}" = 1 ]; then
+    echo "skipping building desync"
+else
+    export GOPATH=/go
+    git clone https://github.com/folbricht/desync.git /tmp/desync
+    cd /tmp/desync/cmd/desync
+    # Latest commit on master, bump if necessary
+    git checkout b54576813acfc9718fce77a30eb05f878a157f89
+    go install
+    cp /go/bin/desync /usr/bin/desync
+    cd -
+    rm -rf /tmp/desync
+fi
 
-# We need at least RAUC 1.7
-# Once it hits the Debian repositories, just install that instead
-git clone https://github.com/rauc/rauc.git /tmp/rauc
-cd /tmp/rauc
-git checkout v1.7
-./autogen.sh
-./configure --prefix=/usr
-make
-make install
-cd -
-rm -rf /tmp/rauc
+if [ "${STEAMOS_ATOMUPD_SKIP_RAUC-}" = 1 ]; then
+    echo "skipping building rauc"
+else
+    # We need at least RAUC 1.7
+    # Once it hits the Debian repositories, just install that instead
+    git clone https://github.com/rauc/rauc.git /tmp/rauc
+    cd /tmp/rauc
+    git checkout v1.7
+    ./autogen.sh
+    ./configure --prefix=/usr
+    make
+    make install
+    cd -
+    rm -rf /tmp/rauc
+fi
