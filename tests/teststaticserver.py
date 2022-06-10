@@ -23,6 +23,7 @@ from dataclasses import dataclass
 import subprocess
 import sys
 import unittest
+from difflib import ndiff
 from pathlib import Path
 from typing import Union
 from unittest.mock import patch
@@ -41,6 +42,7 @@ class ServerData:
     config: str
     expectation: str
     mock_leftovers: Union[Path, None] = None
+    mock_ndiff: Union[Path, None] = None
     replaced_leftovers: bool = False
     unchanged_lefovers: bool = False
 
@@ -50,7 +52,8 @@ server_data = [
         msg='Static server with release images',
         config='server-releases.conf',
         expectation='staticexpected',
-        mock_leftovers=Path('staticexpected_mock_leftover'),
+        mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
+        mock_ndiff=EXPECTATION_PARENT / 'staticexpected_mock_ndiff',
         unchanged_lefovers=True,
     ),
     ServerData(
@@ -62,7 +65,8 @@ server_data = [
         msg='Static server with snapshot and release images',
         config='server-releases-and-snaps.conf',
         expectation='static_rel_and_snap_expected',
-        mock_leftovers=Path('static_rel_and_snap_mock_leftover'),
+        mock_leftovers=EXPECTATION_PARENT / 'static_rel_and_snap_mock_leftover',
+        mock_ndiff=EXPECTATION_PARENT / 'static_rel_and_snap_mock_ndiff',
         replaced_leftovers=True,
         unchanged_lefovers=True,
     ),
@@ -85,7 +89,6 @@ class StaticServerTestCase(unittest.TestCase):
         self.assertEqual(p.stdout, "Hierarchy created under 'examples-data/images'\n")
         self.assertEqual(p.returncode, 0)
 
-        # First import staticserver
         try:
             from steamosatomupd import staticserver
         except ModuleNotFoundError as e:
@@ -101,8 +104,7 @@ class StaticServerTestCase(unittest.TestCase):
                 subprocess.run(['rm', '-fR', META_OUTPUT_DIR])
 
                 if data.mock_leftovers:
-                    shutil.copytree(EXPECTATION_PARENT / data.mock_leftovers / META_OUTPUT_DIR,
-                                    META_OUTPUT_DIR)
+                    shutil.copytree(data.mock_leftovers / META_OUTPUT_DIR, META_OUTPUT_DIR)
 
                 args = ['--debug', '--config', str(CONFIG_PARENT / data.config)]
                 with self.assertLogs('steamosatomupd.staticserver', level=logging.DEBUG) as lo:
@@ -115,6 +117,16 @@ class StaticServerTestCase(unittest.TestCase):
 
                 unchanged_files = any(line.endswith('has not changed, skipping...') for line in lo.output)
                 self.assertEqual(unchanged_files, data.unchanged_lefovers, unchanged_files)
+
+                if data.mock_ndiff:
+                    # Assert that the diff between the new files and the leftovers is correctly
+                    # printed in output
+                    output_string = ''.join(lo.output)
+                    for file in data.mock_ndiff.rglob('*.json'):
+                        with open(file, 'r', encoding='utf-8') as expected:
+                            expected_lines = expected.readlines()
+                            differences = ''.join([li.lstrip() for li in expected_lines if not li.startswith('  ')])
+                            self.assertIn(differences, output_string)
 
                 # Then compare result with expected result
                 p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
