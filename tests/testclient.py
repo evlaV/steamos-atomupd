@@ -217,5 +217,38 @@ class RaucConfigParsing(unittest.TestCase):
                     self.assertEqual(client.get_active_slot_index(), data.seed_index)
 
 
+progress_data = {
+    # The expected usual progress output
+    "Attempt 1: Validating   13.40% 00m06s": "0.67%",
+    "Attempt 1: Validating   35.55% 00m04s": "1.78%",
+    "Attempt 1: Validating   100.00% 6s": "5.00%",
+    "Attempt 1: Assembling   4.00% 01m33s": "8.80% 01m33s",
+    "Attempt 1: Assembling   34.22% 01m02s": "37.51% 01m02s",
+    "Attempt 1: Assembling   85.45% 00m13s": "86.18% 00m13s",
+    "Attempt 1: Assembling   100.00% 01m38s": "100.00%",
+
+    # This is instead the output when the seed is invalid
+    "Attempt 1: Validating   22.44% 00m05s": "1.12%",
+    "Attempt 1: Chunking Seed 1   0.00%": "5.00%",
+    "Attempt 1: Chunking Seed 1   10.20% 00m15s": "5.51%",
+    "Attempt 1: Chunking Seed 1   100.00% 12s": "10.00%",
+    "Attempt 2: Validating   19.38% 00m05s": "10.97%",
+    "Attempt 2: Validating   100.00% 4s": "15.00%",
+    "Attempt 2: Assembling   7.00% 01m29s": "20.95% 01m29s",
+    "Attempt 2: Assembling   30.22% 01m02s": "40.69% 01m02s",
+    "Attempt 2: Assembling   75.45% 00m13s": "79.13% 00m13s",
+    "Attempt 2: Assembling   97.88% 00m01s": "98.20% 00m01s",
+    "Attempt 2: Assembling   100.00% 01m30s": "100.00%",
+}
+
+
+class RaucProgressParsing(unittest.TestCase):
+    def test_parsing_rauc_desync_progress(self):
+        for line, parsed in progress_data.items():
+            with redirect_stdout(io.StringIO()) as f:
+                client.parse_desync_progress(line)
+            self.assertEqual(f.getvalue().strip(), parsed)
+
+
 if __name__ == '__main__':
     unittest.main()
