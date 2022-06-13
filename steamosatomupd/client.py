@@ -142,7 +142,7 @@ def parse_desync_progress(line: str) -> None:
     phase = phase_info_words[0]
     if phase_info_words[-1].endswith('%'):
         parsed_progress = float(phase_info_words.pop().removesuffix('%'))
-    elif phase_info[-2].endswith('%'):
+    elif phase_info_words[-2].endswith('%'):
         parsed_time = phase_info_words.pop()
         parsed_progress = float(phase_info_words.pop().removesuffix('%'))
         if phase == 'Assembling' and parsed_progress != 100:
