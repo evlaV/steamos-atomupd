@@ -192,7 +192,6 @@ def do_progress():
                                universal_newlines=True)
 
     using_desync = is_desync_in_use()
-    slot = ""
     while journal.poll() is None:
         line = journal.stdout.readline().rstrip()
         log.debug(line)
@@ -214,12 +213,9 @@ def do_progress():
         elif using_desync:
             parse_desync_progress(line)
         else:
-            if words[0] == "Slot":
-                slot = os.path.basename(os.path.splitext(words[6])[0])
-                slot = os.path.splitext(slot)[0]
-            elif slot == "rootfs" and ' '.join(words[0:-1]) == "seeding...":
+            if ' '.join(words[0:-1]) == "seeding...":
                 print("%d%%" % ((float(words[-1][:-1]) * 25 * 0.9 / 100) + 5))
-            elif slot == "rootfs" and ' '.join(words[0:-1]) == "downloading chunks...":
+            elif ' '.join(words[0:-1]) == "downloading chunks...":
                 print("%d%%" % ((float(words[-1][:-1]) * 75 * 0.9 / 100) + 5 + (25 * 0.9)))
             elif words[0] == "installing" and ' '.join(words[2:]) == "All slots updated":
                 print("%d%%" % 95)
