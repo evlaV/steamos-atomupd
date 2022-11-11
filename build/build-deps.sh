@@ -41,7 +41,8 @@ else
     # Once it hits the Debian repositories, just install that instead
     git clone https://github.com/rauc/rauc.git /tmp/rauc
     cd /tmp/rauc
-    git checkout v1.7
+    # RAUC v1.7 tag
+    git checkout a0974f4eda3dd0938587c2b5d6026f2cc45cc361
     ./autogen.sh
     ./configure --prefix=/usr
     make
