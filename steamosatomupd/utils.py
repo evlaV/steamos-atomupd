@@ -63,7 +63,7 @@ def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: P
     image_index = extract_path / ROOTFS_INDEX
 
     if extract_path.exists():
-        log.debug("Image '%s' has already been extracted", raucb_location)
+        log.debug("Already attempted to extract the image '%s'", raucb_location)
     else:
         # Trust the environment because if we are inside a Docker image, we are unable to check
         # the ownership of a bundle. However, the bundle signature is still validated, and the
@@ -78,11 +78,17 @@ def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: P
 
         if extract.returncode != 0:
             log.warning("Failed to extract bundle: %i: %s", extract.returncode, extract.stdout)
+            # If we are unable to extract a bundle there is no point in retrying in the future.
+            # So we create an empty directory for it to signal that we already attempted it.
+            extract_path.mkdir(parents=True, exist_ok=True)
+            return None
+
+        if not image_index.exists():
+            log.warning("The extracted bundle '%s' doesn't have the expected '%s' file",
+                        raucb_location, ROOTFS_INDEX)
             return None
 
     if not image_index.exists():
-        log.warning("The extracted bundle '%s' doesn't have the expected '%s' file",
-                    raucb_location, ROOTFS_INDEX)
         return None
 
     return image_index
