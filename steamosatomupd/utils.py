@@ -27,6 +27,10 @@ log = logging.getLogger(__name__)
 DEFAULT_RAUC_CONF = Path('/etc/rauc/system.conf')
 FALLBACK_RAUC_CONF = Path('/etc/rauc/fallback-system.conf')
 ROOTFS_INDEX = Path('rootfs.img.caibx')
+# The server stores the chunks as compressed archives. The measured
+# compression ratio is usually 1.33-1.50. We use the more conservative
+# 1.33 here because we don't want to overpromise.
+COMPRESSION_RATIO = 1.33
 
 
 def get_update_size(seed_index: Path, update_index: Path) -> int:
@@ -47,7 +51,11 @@ def get_update_size(seed_index: Path, update_index: Path) -> int:
         return 0
 
     index_info = json.loads(info.stdout)
-    return index_info.get("dedup-size-not-in-seed", 0)
+    dedup_size = index_info.get("dedup-size-not-in-seed", 0)
+
+    # Divide the size Desync gave us by the expected compression rate to have a more
+    # realistic estimation
+    return int(dedup_size / COMPRESSION_RATIO)
 
 
 def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: Path,

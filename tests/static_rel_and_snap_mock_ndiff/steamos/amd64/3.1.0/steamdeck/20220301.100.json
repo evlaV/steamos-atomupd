@@ -10,9 +10,9 @@
  ?                                        ^ ^
                        "checkpoint": false,
  -                     "estimated_size": 402734131,
- ?                                       ^ ^  ^^
- +                     "estimated_size": 508732331,
- ?                                       ^ ^  ^^
+ ?                                       ^  ------
+ +                     "estimated_size": 382505512,
+ ?                                       ^^^^ +++
                        "product": "steamos",
                        "release": "holo",
                        "variant": "steamdeck",
