@@ -267,6 +267,14 @@ class ImagePool:
 
                 image = manifest.image
 
+                if image.should_be_skipped():
+                    # This is an image that should not be an update candidate
+                    # Record it and then continue
+                    log.debug("Not considering %s as a valid update candidate", f)
+                    candidate = UpdateCandidate(image, "")
+                    self.image_updates_found.append(candidate)
+                    continue
+
                 # Get an update path for this image
                 try:
                     update_path = _get_rauc_update_path(images_dir, manifest_path)
@@ -404,7 +412,11 @@ class ImagePool:
         if minor_update or major_update:
             return Update(minor_update, major_update)
 
-        if requested_variant != image.variant:
+        if image.should_be_skipped():
+            # If the client is using an image that has been removed, we force a downgrade to
+            # avoid leaving it with its, probably borked, image.
+            force_update = True
+        elif requested_variant != image.variant:
             try:
                 # Force an update if we are in an unstable variant, and we want to switch back to a
                 # more stable variant. By reaching this point it means that there isn't a proper

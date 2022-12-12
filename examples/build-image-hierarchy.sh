@@ -20,7 +20,8 @@ make_manifest() {
   "arch": "$4",
   "version": "$5",
   "buildid": "$6",
-  "checkpoint": $7
+  "checkpoint": $7,
+  "skip": $8
 }
 EOF
 }
@@ -31,6 +32,8 @@ fake_image() {
     local -r version=$2
     local -r buildid=$3
     local -r checkpoint=$4
+    local -r skip=${5:-false}
+    local -r deleted=${6:-false}
     local -r product=steamos
     local -r release=holo
     local -r arch=amd64
@@ -41,8 +44,14 @@ fake_image() {
     imgname=$product-$release-$buildid-$version-$arch-$variant
 
     mkdir -p "$imgdir"
-    make_manifest "$product" "$release" "$variant" "$arch" "$version" "$buildid" "$checkpoint" > \
+    make_manifest "$product" "$release" "$variant" "$arch" "$version" "$buildid" "$checkpoint" "$skip" > \
       "$imgdir/$imgname.manifest.json"
+
+    if [ "$deleted" == true ]; then
+      # Do not create the RAUC bundle file and the directory with the chunks,
+      # as if they were removed to prevent an image to ever be installed
+      return
+    fi
 
     if [ -f "${OWD}/examples/rauc/$imgname.raucb" ]; then
       # Use the mock raucb, if available
@@ -80,6 +89,8 @@ mkdir -p releases
   fake_image steamdeck 3.1 20220401.1 false
   fake_image steamdeck 3.1 20220402.3 true
   fake_image steamdeck 3.2 20220411.1 false
+  # Simulate an update that we don't want to propose anymore
+  fake_image steamdeck 3.2 20220412.1 false true
   fake_image steamdeck 3.3 20220423.1 true
 
   fake_image steamdeck-rc 3.1 20220401.5 false
@@ -102,6 +113,8 @@ mkdir -p releases-and-snaps
   fake_image steamdeck snapshot 20220201.1 false
   fake_image steamdeck snapshot 20220225.1 false
   fake_image steamdeck 3.0 20220303.2 false
+  # Simulate an update that has been removed
+  fake_image steamdeck 3.0 20220303.3 false true true
 
   fake_image steamdeck-rc 3.0 20220303.1 false
 
@@ -113,3 +126,4 @@ mkdir -p releases-and-snaps
 )
 
 echo "Hierarchy created under '$OUTDIR/images'"
+

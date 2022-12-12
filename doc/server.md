@@ -274,3 +274,34 @@ here), I assume that we'll have two infrastructures:
 We could consider that the public infra is just a subset of the private infra,
 and that promoting some images from the private to the public infra will boil
 down to just copying an image from a private to a public machine.
+
+
+How to retire a broken/undesired image
+--------------------------------------
+
+To remove an image from the update candidates pool you should set the **skip**
+option, in its manifest, to `true`. E.g.:
+```
+{
+  "product": "steamos",
+  "release": "holo",
+  "variant": "steamdeck-main",
+  "arch": "amd64",
+  "version": "snapshot",
+  "buildid": "20221202.1000",
+  "checkpoint": false,
+  "estimated_size": 0,
+  "skip": true
+}
+```
+
+With this option, the server will not use the image as an update candidate.
+Additionally, all clients that were using this image, will be prompted to
+either upgrade, whether possible, or downgrade.
+
+When adding the **skip** option it is also possible, if desired, to remove
+both the associated RAUC bundle file and the Casync/Desync chunks.
+
+NOTE: Please keep in mind that unless you really know what you are doing, you
+should NOT delete the image manifest, or alter its other properties.
+This could leave the static server in an unexpected state.

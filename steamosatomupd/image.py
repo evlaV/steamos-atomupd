@@ -119,11 +119,12 @@ class Image:
     buildid: BuildId
     checkpoint: bool
     estimated_size: int
+    skip: bool
 
     @classmethod
     def from_values(cls, product: str, release: str, variant: str, arch: str,
                     version_str: str, buildid_str: str, checkpoint: bool,
-                    estimated_size: int) -> Image:
+                    estimated_size: int, skip: bool) -> Image:
         """Create an Image from mandatory values
 
         This method performs mandatory conversions and sanity checks before
@@ -146,7 +147,7 @@ class Image:
             arch = 'amd64'
 
         # Return an instance
-        return cls(product, release, variant, arch, version, buildid, checkpoint, estimated_size)
+        return cls(product, release, variant, arch, version, buildid, checkpoint, estimated_size, skip)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Image:
@@ -171,15 +172,17 @@ class Image:
 
         estimated_size = data.get('estimated_size', 0)
 
+        skip = data.get('skip', False)
+
         # Return an instance
         return cls.from_values(product, release, variant, arch,
                                version_str, buildid_str, checkpoint,
-                               estimated_size)
+                               estimated_size, skip)
 
     @classmethod
     def from_os(cls, product='', release='', variant='', arch='',
                 version_str='', buildid_str='', checkpoint=False,
-                estimated_size: int = 0) -> Image:
+                estimated_size: int = 0, skip=False) -> Image:
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
@@ -220,7 +223,7 @@ class Image:
         # Return an instance, might raise exceptions
         return cls.from_values(product, release, variant, arch,
                                version_str, buildid_str, checkpoint,
-                               estimated_size)
+                               estimated_size, skip)
 
     def to_dict(self) -> dict[str, Any]:
         """Export an Image to a dictionary"""
@@ -228,6 +231,10 @@ class Image:
         data = asdict(self)
         data['version'] = self.get_version_str()
         data['buildid'] = str(self.buildid)
+
+        # This is an internal flag used to decide if we should propose this image as an
+        # update or not. There is no need to export it in the update dictionary/JSON
+        data.pop('skip')
 
         return data
 
@@ -273,6 +280,11 @@ class Image:
         """Generates a string that is unique for this image"""
 
         return f"{self.get_version_str()}_{self.release}_{self.buildid}"
+
+    def should_be_skipped(self) -> bool:
+        """Whether the image should be skipped and not be considered as a valid update"""
+
+        return self.skip
 
     # A note regarding comparison operators.
     #

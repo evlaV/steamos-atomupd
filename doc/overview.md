@@ -29,7 +29,12 @@ optional `.` and a number called the *build increment*.
 #### Optional fields
 
 - checkpoint: `true` or `false`
+- skip: `true` or `false`
 
+The **skip** option is used to signal an image that should not be taken into
+consideration as a valid update candidate. Also, if a client is using an image
+marked with **skip**, the server will always attempt to propose either an
+upgrade, whether possible, or a downgrade.
 
 
 Checkpoints
