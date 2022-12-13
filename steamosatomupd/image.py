@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 import platform
 import re
 import urllib.parse
@@ -29,6 +30,7 @@ from typing import Any
 
 import semantic_version
 
+log = logging.getLogger(__name__)
 
 def _load_os_release():
     """Load /etc/os-release in a dictionary"""
@@ -157,22 +159,24 @@ class Image:
         or if values are not valid.
         """
 
+        # Create a shallow copy because we don't want to edit the original dictionary
+        data_copy = data.copy()
+
         # Get mandatory fields, raise KeyError if need be
-        product = data['product']
-        release = data['release']
-        variant = data['variant']
-        arch = data['arch']
-        version_str = data['version']
-        buildid_str = data['buildid']
+        product = data_copy.pop('product')
+        release = data_copy.pop('release')
+        variant = data_copy.pop('variant')
+        arch = data_copy.pop('arch')
+        version_str = data_copy.pop('version')
+        buildid_str = data_copy.pop('buildid')
 
         # Get optional fields
-        checkpoint = False
-        if 'checkpoint' in data:
-            checkpoint = data['checkpoint']
+        checkpoint = data_copy.pop('checkpoint', False)
+        estimated_size = data_copy.pop('estimated_size', 0)
+        skip = data_copy.pop('skip', False)
 
-        estimated_size = data.get('estimated_size', 0)
-
-        skip = data.get('skip', False)
+        if len(data_copy) > 0:
+            log.warning('The image manifest has some unknown key-values: %s', data_copy)
 
         # Return an instance
         return cls.from_values(product, release, variant, arch,
