@@ -45,6 +45,7 @@ class ServerData:
     mock_ndiff: Union[Path, None] = None
     replaced_leftovers: bool = False
     unchanged_lefovers: bool = False
+    removed_image_warning: bool = False
 
 
 server_data = [
@@ -55,6 +56,7 @@ server_data = [
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'staticexpected_mock_ndiff',
         unchanged_lefovers=True,
+        removed_image_warning=True,
     ),
     ServerData(
         msg='Static server with snapshot images',
@@ -117,6 +119,9 @@ class StaticServerTestCase(unittest.TestCase):
 
                 unchanged_files = any(line.endswith('has not changed, skipping...') for line in lo.output)
                 self.assertEqual(unchanged_files, data.unchanged_lefovers, unchanged_files)
+
+                deleted_images = any(line.endswith('with the "skip" option set') for line in lo.output)
+                self.assertEqual(deleted_images, data.removed_image_warning, deleted_images)
 
                 if data.mock_ndiff:
                     # Assert that the diff between the new files and the leftovers is correctly

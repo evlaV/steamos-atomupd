@@ -102,7 +102,7 @@ class UpdateParser:
         log.info("------------------")
 
     def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
-                           update_jsons: set[Path]) -> None:
+                           update_jsons: set[Path], fallback_update_jsons: set[Path]) -> None:
         """Get the available updates and write them in a JSON
 
         The updates will also be checked against an image that has an
@@ -120,11 +120,14 @@ class UpdateParser:
 
         for img, update_path, out in [(image, Path(image_update.update_path), out_valid),
                                       (image_invalid, None, out_invalid)]:
-            if out in update_jsons:
+            if out in update_jsons or out in fallback_update_jsons:
                 log.debug('"%s" has been already written, skipping...', out)
                 continue
 
-            update_jsons.add(out)
+            if update_path:
+                update_jsons.add(out)
+            else:
+                fallback_update_jsons.add(out)
 
             out.parent.mkdir(parents=True, exist_ok=True)
 
@@ -148,15 +151,48 @@ class UpdateParser:
             with open(out, 'w', encoding='utf-8') as file:
                 file.write(jsonresult)
 
+    @staticmethod
+    def _warn_json_leftovers(update_jsons: set[Path]) -> None:
+        """Warn about any eventual JSON leftovers from images that are not available anymore
+
+        The leftovers are only checked in the various `/product/arch/version/variant`
+        handled by this static server instance.
+        """
+
+        evaluated_directories: set[Path] = set()
+
+        for update_json in update_jsons:
+            if update_json.parent in evaluated_directories:
+                continue
+
+            evaluated_directories.add(update_json.parent)
+
+            for file in update_json.parent.glob('*.json'):
+                if file in update_jsons:
+                    continue
+                log.warning('"%s" is likely a leftover, probably from a removed image!\n'
+                            'This should be either manually removed (is that what you want?) or the deleted '
+                            'image\'s JSON manifest should be reinstated with the "skip" option set', file)
+
     def parse_all(self) -> int:
         """Create file structure as needed based on known images"""
 
         image_updates = self.image_pool.get_image_updates_found()
         supported_variants = self.image_pool.get_supported_variants()
         update_jsons: set[Path] = set()
+        # This is the list of update JSONs with invalid/unknown buildid, where the variant.json
+        # will be written up one level, compared to the usual directory
+        fallback_update_jsons: set[Path] = set()
+
         for image_update in image_updates:
             for requested_variant in supported_variants:
-                self._write_update_json(image_update, requested_variant, update_jsons)
+                self._write_update_json(image_update, requested_variant, update_jsons,
+                                        fallback_update_jsons)
+
+        # Pass the canonical update JSONs, because we want to check for leftovers only inside
+        # the `/product/arch/version/variant` directories we are actually handling with this
+        # server instance
+        self._warn_json_leftovers(update_jsons)
 
         return 0
 

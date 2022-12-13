@@ -1,0 +1,6 @@
+{
+    "note": [
+        "Simulate another variant, not handled by the Jupiter static server instance (e.g. we have two instances, one for Jupiter and the other for Holo).",
+        "We expect the Jupiter static server to NOT warn about this file"
+    ]
+}
