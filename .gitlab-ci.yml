@@ -61,11 +61,11 @@ test:debian-11:
 
 test:jupiter:
     extends: .test_archlinux_template
-    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter/base-devel:latest
+    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter-main/base-devel:latest
 
 test:holo:
     extends: .test_archlinux_template
-    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/holo/base-devel:latest
+    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/holo-main/base-devel:latest
 
 .lint_template:
     stage: lint
