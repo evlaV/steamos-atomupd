@@ -21,7 +21,9 @@
 
 import argparse
 import configparser
+import contextlib
 from datetime import datetime
+import fcntl
 import json
 import logging
 import os
@@ -44,6 +46,31 @@ wm = pyinotify.WatchManager()
 # Default config
 DEFAULT_SERVE_UNSTABLE = False
 TRIGGER_FILE = "updated.txt"
+
+
+@contextlib.contextmanager
+def lockpathfile(filepath):
+    """ Create a fcntl lock for the given file if possible."""
+    with os.fdopen(
+        os.open(filepath, os.O_RDWR | os.O_CREAT | os.O_TRUNC, mode=0o666),
+        mode="r+",
+        buffering=1,
+        encoding="utf-8",
+        newline="",
+    ) as f:
+        try:
+            fcntl.lockf(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            yield False
+            return
+        pid = os.getpid()
+        f.write(f"{pid}\n")
+        yield True
+        fcntl.lockf(f, fcntl.LOCK_UN)
+        try:
+            os.unlink(filepath)
+        except OSError:
+            pass
 
 
 class UpdateParser(pyinotify.ProcessEvent):
@@ -278,19 +305,29 @@ def main(args=None):
 
     # Run once to parse any new images
     server = UpdateParser(args)
-    exit_code = server.parse_all()
 
-    if exit_code != 0:
-        sys.exit(exit_code)
+    # Lock so we don't ever end up with multiple staticserver.py parsing
+    # a single image pool.
+    lock_path = os.path.join(os.getcwd(), ".lockfile.lock")
+    with lockpathfile(lock_path) as lockstatus:
+        if not lockstatus:
+            log.warning("==== Another instance of staticserver is writing into this meta path, aborting.")
+            sys.exit(1)
+        else:
+            log.info("==== Created lock file at: %s", lock_path)
+            exit_code = server.parse_all()
 
-    if server.daemon:
-        notifier = pyinotify.Notifier(wm, server)
-        mask = pyinotify.IN_CREATE | pyinotify.IN_ATTRIB
-        # Watch each of the subfolders of the PoolDir but none deeper
-        paths = server.paths_to_watch()
-        for path in paths:
-            wm.add_watch(path, mask, rec=False)
+            if exit_code != 0:
+                sys.exit(exit_code)
 
-        notifier.loop()
+            if server.daemon:
+                notifier = pyinotify.Notifier(wm, server)
+                mask = pyinotify.IN_CREATE | pyinotify.IN_ATTRIB
+                # Watch each of the subfolders of the PoolDir but none deeper
+                paths = server.paths_to_watch()
+                for path in paths:
+                    wm.add_watch(path, mask, rec=False)
 
-    return exit_code
+                notifier.loop()
+
+            return exit_code
