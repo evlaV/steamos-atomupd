@@ -262,8 +262,8 @@ class Image:
         """Give an update path in the form of
         <product>/<arch>/<version>/<variant>/<buildid>.json """
 
-        bits = [self.product, self.arch, self.version
-                or 'snapshot', self.variant, str(self.buildid)]
+        bits = [self.product, self.arch, self.get_version_str(),
+                self.variant, str(self.buildid)]
 
         return '/'.join([self.quote(b) for b in bits]) + '.json'
 
