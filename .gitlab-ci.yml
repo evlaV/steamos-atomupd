@@ -56,8 +56,8 @@ test:jupiter:
           python-semantic-version squashfs-tools
 
         # FIXME RAUC in the repositories is currently too old. Build it from
-        # source until https://gitlab.steamos.cloud/holo/rauc/-/merge_requests/5
-        # lands in Jupiter
+        # source until https://gitlab.steamos.cloud/holo/holo/-/merge_requests/195
+        # lands in the main variant of Jupiter
         - STEAMOS_ATOMUPD_SKIP_DESYNC=1 ./build/build-deps.sh
 
 .lint_template:
