@@ -43,8 +43,13 @@ default:
     - apt-get build-dep -y rauc
     - ./build/build-deps.sh
 
-.test_archlinux_template:
+test:debian-11:
+    extends: .test_debian_template
+    image: debian:bullseye-slim
+
+test:jupiter:
     extends: .test_template
+    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter-main/base-devel:latest
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-flask
@@ -52,20 +57,8 @@ default:
 
         # FIXME RAUC in the repositories is currently too old. Build it from
         # source until https://gitlab.steamos.cloud/holo/rauc/-/merge_requests/5
-        # lands in Holo and Jupiter
+        # lands in Jupiter
         - STEAMOS_ATOMUPD_SKIP_DESYNC=1 ./build/build-deps.sh
-
-test:debian-11:
-    extends: .test_debian_template
-    image: debian:bullseye-slim
-
-test:jupiter:
-    extends: .test_archlinux_template
-    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter-main/base-devel:latest
-
-test:holo:
-    extends: .test_archlinux_template
-    image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/holo-main/base-devel:latest
 
 .lint_template:
     stage: lint
