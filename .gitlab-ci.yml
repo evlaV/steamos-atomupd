@@ -51,16 +51,6 @@ test:jupiter:
     extends: .test_template
     image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter-main/base-devel:latest
     before_script:
-        # FIXME Ugly workaround for keys expiring in the keyring during the 3.5 cycle
-        # This is the same workaround that we are currently using in holo/holo/image/disk.yaml.
-        # Please remove it once it is not needed anymore, or once we implemented a
-        # similar workaround directly into the docker images
-        - rm -r /etc/pacman.d/gnupg
-        - mkdir /etc/pacman.d/gnupg
-        - echo "faked-system-time 20230101T000000" > /etc/pacman.d/gnupg/gpg.conf
-        - pacman-key --init
-        - pacman-key --populate
-
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-flask
           python-semantic-version squashfs-tools
