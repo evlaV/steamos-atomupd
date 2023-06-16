@@ -44,3 +44,5 @@ good-names=e,
 max-line-length=120
 
 
+[TYPECHECK]
+generated-members=pyinotify

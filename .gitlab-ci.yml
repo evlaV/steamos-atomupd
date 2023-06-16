@@ -53,7 +53,7 @@ test:jupiter:
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-flask
-          python-semantic-version squashfs-tools
+          python-semantic-version python-pyinotify squashfs-tools
 
         # FIXME RAUC in the repositories is currently too old. Build it from
         # source until https://gitlab.steamos.cloud/holo/holo/-/merge_requests/195
@@ -66,7 +66,7 @@ test:jupiter:
     image: archlinux:base-devel
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
-          python-flask python-semantic-version python-pylint mypy
+          python-flask python-semantic-version python-pyinotify python-pylint mypy
 
 lint:pylint:
     extends: .lint_template

@@ -60,7 +60,7 @@ ARG IMAGE_VERSION=""
 RUN sed -n '/^deb\s/s//deb-src /p' /etc/apt/sources.list > /etc/apt/sources.list.d/deb-src.list
 RUN apt-get update \
     && apt-get install -y \
-       meson python3-flask python3-semantic-version \
+       meson python3-flask python3-semantic-version python3-pyinotify \
     && apt-get install -y \
        git golang \
     && apt-get install -y \
