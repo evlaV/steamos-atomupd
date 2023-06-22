@@ -21,9 +21,11 @@
 
 import argparse
 import configparser
+from datetime import datetime
 import json
 import logging
 import os
+import shutil
 import signal
 import sys
 from copy import deepcopy
@@ -68,8 +70,21 @@ class UpdateParser(pyinotify.ProcessEvent):
             if exit_code != 0:
                 log.warning("Unable to parse image data, got exit code: %d", exit_code)
 
-            # Delete trigger file
-            os.remove(event.pathname)
+            # Copy the trigger file from foo/updated.txt to /meta/<foo>-updated.txt to trigger
+            # the next step
+            dirname = os.path.dirname(event.pathname)
+            type_name = os.path.basename(dirname)
+
+            # We want to copy to cwd/<type_name>-updated.txt
+            targetpath = os.path.join(os.getcwd(), '-'.join([type_name, 'updated.txt']))
+            log.info("Copying updated.txt to %s", targetpath)
+            shutil.copy2(event.pathname, targetpath)
+
+            # Also write timestamp into top level updated.txt file
+            iso_date = datetime.now().astimezone().replace(microsecond=0).isoformat() + "\n"
+            updated_path = os.path.join(os.getcwd(), 'updated.txt')
+            with open(updated_path, "w", encoding='utf-8') as updated_file:
+                updated_file.write(iso_date)
 
     def get_update(self, image: Image, update_path: Union[Path, None],
                    requested_variant='') -> dict:
