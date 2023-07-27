@@ -186,16 +186,16 @@ class UpdateParser(pyinotify.ProcessEvent):
         """
 
         image = image_update.image
-        out_valid = Path(image.product, image.arch, image.get_version_str(), requested_variant,
+        json_path = Path(image.product, image.arch, image.get_version_str(), requested_variant,
                          f'{image.buildid}.json')
-        out_invalid = Path(image.product, image.arch, image.get_version_str(),
-                           f'{requested_variant}.json')
+        json_path_fallback = Path(image.product, image.arch, image.get_version_str(),
+                                  f'{requested_variant}.json')
         # Create a copy because we don't want to change the caller's image
         image_invalid = deepcopy(image)
         image_invalid.buildid = BuildId.from_string('19000101')
 
-        for img, update_path, out in [(image, Path(image_update.update_path), out_valid),
-                                      (image_invalid, None, out_invalid)]:
+        for img, update_path, out in [(image, Path(image_update.update_path), json_path),
+                                      (image_invalid, None, json_path_fallback)]:
             if out in update_jsons or out in fallback_update_jsons:
                 log.debug('"%s" has been already written, skipping...', out)
                 continue
