@@ -28,14 +28,12 @@ import os
 import shutil
 import signal
 import sys
-from copy import deepcopy
 from difflib import ndiff
 from pathlib import Path
-from typing import Union
 
 import pyinotify # type: ignore
 
-from steamosatomupd.image import Image, BuildId
+from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
 from steamosatomupd.update import UpdateCandidate
 
@@ -86,12 +84,12 @@ class UpdateParser(pyinotify.ProcessEvent):
             with open(updated_path, "w", encoding='utf-8') as updated_file:
                 updated_file.write(iso_date)
 
-    def get_update(self, image: Image, update_path: Union[Path, None],
-                   requested_variant='') -> dict:
+    def get_update(self, image: Image, update_path: Path,
+                   requested_variant='', unexpected_buildid=False) -> dict:
         """Get the update candidates from the provided image"""
 
         # Get update candidates
-        update = self.image_pool.get_updates(image, update_path, requested_variant)
+        update = self.image_pool.get_updates(image, update_path, requested_variant, unexpected_buildid)
         if not update:
             return {}
 
@@ -153,11 +151,12 @@ class UpdateParser(pyinotify.ProcessEvent):
         log.info(self.image_pool)
         log.info("------------------")
 
-    def _write_update_for_image(self, img: Image, update_path: Union[Path, None],
-                                requested_variant: str, json_path: Path) -> None:
+    def _write_update_for_image(self, img: Image, update_path: Path, requested_variant: str,
+                                json_path: Path, unexpected_buildid=False) -> None:
         json_path.parent.mkdir(parents=True, exist_ok=True)
 
-        jsonresult = json.dumps(self.get_update(img, update_path, requested_variant),
+        jsonresult = json.dumps(self.get_update(img, update_path, requested_variant,
+                                                unexpected_buildid),
                                 sort_keys=True, indent=4)
         log.debug("--- Jsonresult for %s with variant %s is %s",
                   json.dumps(img.to_dict()), requested_variant, jsonresult)
@@ -186,26 +185,24 @@ class UpdateParser(pyinotify.ProcessEvent):
         """
 
         image = image_update.image
+        update_path = Path(image_update.update_path)
         json_path = Path(image.product, image.arch, image.get_version_str(), requested_variant,
                          f'{image.buildid}.json')
         json_path_fallback = Path(image.product, image.arch, image.get_version_str(),
                                   f'{requested_variant}.json')
-        # Create a copy because we don't want to change the caller's image
-        image_invalid = deepcopy(image)
-        image_invalid.buildid = BuildId.from_string('19000101')
 
-        for img, update_path, out in [(image, Path(image_update.update_path), json_path),
-                                      (image_invalid, None, json_path_fallback)]:
-            if out in update_jsons or out in fallback_update_jsons:
-                log.debug('"%s" has been already written, skipping...', out)
-                continue
+        if json_path in update_jsons:
+            log.debug('"%s" has been already written, skipping...', json_path)
+        else:
+            update_jsons.add(json_path)
+            self._write_update_for_image(image, update_path, requested_variant, json_path)
 
-            if update_path:
-                update_jsons.add(out)
-            else:
-                fallback_update_jsons.add(out)
-
-            self._write_update_for_image(img, update_path, requested_variant, out)
+        if json_path_fallback in fallback_update_jsons:
+            log.debug('The fallback "%s" has been already written, skipping...', json_path_fallback)
+        else:
+            fallback_update_jsons.add(json_path_fallback)
+            self._write_update_for_image(image, update_path, requested_variant,
+                                         json_path_fallback, unexpected_buildid=True)
 
     @staticmethod
     def _warn_json_leftovers(update_jsons: set[Path]) -> None:

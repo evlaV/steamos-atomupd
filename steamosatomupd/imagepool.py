@@ -89,7 +89,7 @@ def _get_next_release(release: str, releases: list[str]) -> str:
 
 
 def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
-                           force_update=False) -> list[UpdateCandidate]:
+                           force_update=False, unexpected_buildid=False) -> list[UpdateCandidate]:
     """Get possible update candidates within a list.
 
     This is where we decide who are the valid update candidates for a
@@ -107,6 +107,26 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
             if not latest or candidate.image > latest.image:
                 latest = candidate
 
+        elif unexpected_buildid:
+            # When the buildid is unexpected/borked, aka fallback updates, we always want to propose
+            # an update to push the client back to a known image
+            if not latest:
+                latest = candidate
+            elif candidate.image > latest.image:
+                # Before picking the new candidate, we need to check if the previous image was a
+                # checkpoint.
+                if latest.image.checkpoint:
+                    # If the base image is a snapshot, we don't have a way of knowing how old that
+                    # is, so we just keep all the checkpoints that have been released for snapshots.
+                    # Instead, for versioned images we can only use their version, because the base
+                    # image buildid is irrelevant for fallback updates (this is the case where the
+                    # buildid is unexpected/borked).
+                    if not image.version or (latest.image.version
+                                             and latest.image.version >= image.version):
+                        checkpoints.append(latest)
+                latest = candidate
+            continue
+
         if candidate.image <= image:
             continue
 
@@ -123,6 +143,12 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     winners = checkpoints
     if latest and latest not in winners:
         winners.append(latest)
+
+    if unexpected_buildid:
+        # If this is a fallback update, there is no need to do additional checks to avoid cycles.
+        # We ALWAYS want to propose an upgrade/downgrade because, if a client requested this file,
+        # it means its original image is unexpected/broken/deprecated.
+        return winners
 
     for update in winners:
         if update.image == image:
@@ -339,8 +365,8 @@ class ImagePool:
         return candidates
 
     def get_updates_for_release(self, image: Image, relative_update_path: Union[Path, None],
-                                release: str, requested_variant='',
-                                force_update=False) -> Union[UpdatePath, None]:
+                                release: str, requested_variant='', force_update=False,
+                                unexpected_buildid=False) -> Union[UpdatePath, None]:
         """Get a list of update candidates for a given release
 
         Return an UpdatePath object, or None if no updates available.
@@ -368,7 +394,7 @@ class ImagePool:
                 # If the image with that variant is not supported try the next one
                 log.debug(err)
 
-        candidates = _get_update_candidates(all_candidates, image, force_update)
+        candidates = _get_update_candidates(all_candidates, image, force_update, unexpected_buildid)
         if not candidates:
             return None
 
@@ -378,13 +404,15 @@ class ImagePool:
 
         # Only estimate the size of the first update for now. Once we'll have the first
         # checkpoint we can also begin to estimate the subsequent updates, if needed.
-        if relative_update_path:
+        # Skip this when the buildid is unexpected, because we have no way of knowing what's the
+        # base image the client is using.
+        if relative_update_path and not unexpected_buildid:
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
         return UpdatePath(release, candidates)
 
-    def get_updates(self, image: Image, relative_update_path: Union[Path, None],
-                    requested_variant='') -> Union[Update, None]:
+    def get_updates(self, image: Image, relative_update_path: Path,
+                    requested_variant='', unexpected_buildid=False) -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
@@ -401,16 +429,23 @@ class ImagePool:
         force_update = False
         curr_release = image.release
         minor_update = self.get_updates_for_release(image, relative_update_path, curr_release,
-                                                    requested_variant)
+                                                    requested_variant,
+                                                    unexpected_buildid=unexpected_buildid)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
             major_update = self.get_updates_for_release(image, relative_update_path, next_release,
-                                                        requested_variant)
+                                                        requested_variant,
+                                                        unexpected_buildid=unexpected_buildid)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
+
+        # If we can't find an update for the case where the buildid is unexpected, this is an
+        # implementation error
+        assert not unexpected_buildid, "Even if we were looking for fallback updates, we didn't" \
+                                       "find a suitable one"
 
         if image.should_be_skipped():
             # If the client is using an image that has been removed, we force a downgrade to
