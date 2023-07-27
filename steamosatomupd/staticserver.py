@@ -153,6 +153,30 @@ class UpdateParser(pyinotify.ProcessEvent):
         log.info(self.image_pool)
         log.info("------------------")
 
+    def _write_update_for_image(self, img: Image, update_path: Union[Path, None],
+                                requested_variant: str, json_path: Path) -> None:
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+
+        jsonresult = json.dumps(self.get_update(img, update_path, requested_variant),
+                                sort_keys=True, indent=4)
+        log.debug("--- Jsonresult for %s with variant %s is %s",
+                  json.dumps(img.to_dict()), requested_variant, jsonresult)
+
+        if json_path.is_file():
+            with open(json_path, 'r', encoding='utf-8') as old:
+                old_lines = old.readlines()
+                new_lines = jsonresult.splitlines(keepends=True)
+                if old_lines == new_lines:
+                    log.debug('"%s" has not changed, skipping...', json_path)
+                    return
+                if log.level <= logging.INFO:
+                    ndiff_out = ndiff(old_lines, new_lines)
+                    differences = [li for li in ndiff_out if li[0] != ' ']
+                    log.info('Replacing "%s":\n%s', json_path, ''.join(differences))
+
+        with open(json_path, 'w', encoding='utf-8') as file:
+            file.write(jsonresult)
+
     def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
                            update_jsons: set[Path], fallback_update_jsons: set[Path]) -> None:
         """Get the available updates and write them in a JSON
@@ -181,27 +205,7 @@ class UpdateParser(pyinotify.ProcessEvent):
             else:
                 fallback_update_jsons.add(out)
 
-            out.parent.mkdir(parents=True, exist_ok=True)
-
-            jsonresult = json.dumps(self.get_update(img, update_path, requested_variant),
-                                    sort_keys=True, indent=4)
-            log.debug("--- Jsonresult for %s with variant %s is %s",
-                      json.dumps(img.to_dict()), requested_variant, jsonresult)
-
-            if out.is_file():
-                with open(out, 'r', encoding='utf-8') as old:
-                    old_lines = old.readlines()
-                    new_lines = jsonresult.splitlines(keepends=True)
-                    if old_lines == new_lines:
-                        log.debug('"%s" has not changed, skipping...', out)
-                        continue
-                    if log.level <= logging.INFO:
-                        ndiff_out = ndiff(old_lines, new_lines)
-                        differences = [li for li in ndiff_out if li[0] != ' ']
-                        log.info('Replacing "%s":\n%s', out, ''.join(differences))
-
-            with open(out, 'w', encoding='utf-8') as file:
-                file.write(jsonresult)
+            self._write_update_for_image(img, update_path, requested_variant, out)
 
     @staticmethod
     def _warn_json_leftovers(update_jsons: set[Path]) -> None:
