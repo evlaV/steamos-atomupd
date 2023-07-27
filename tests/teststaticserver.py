@@ -44,8 +44,8 @@ log = logging.getLogger(__name__)
 class ServerData:
     msg: str
     config: str
-    pooldir: str
     expectation: str
+    pooldir: str = ""
     changed_expectation: str = ""
     mock_leftovers: Union[Path, None] = None
     mock_ndiff: Union[Path, None] = None
@@ -59,7 +59,6 @@ server_data = [
     ServerData(
         msg='Static server with release images',
         config='server-releases.conf',
-        pooldir='releases',
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'staticexpected_mock_ndiff',
@@ -69,13 +68,11 @@ server_data = [
     ServerData(
         msg='Static server with snapshot images',
         config='server-snapshots.conf',
-        pooldir='snapshots',
         expectation='staticsnapexpected',
     ),
     ServerData(
         msg='Static server with snapshot and release images',
         config='server-releases-and-snaps.conf',
-        pooldir='releases-and-snaps',
         expectation='static_rel_and_snap_expected',
         mock_leftovers=EXPECTATION_PARENT / 'static_rel_and_snap_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'static_rel_and_snap_mock_ndiff',
@@ -132,7 +129,6 @@ class StaticServerTestCase(unittest.TestCase):
                 if data.mock_leftovers:
                     shutil.copytree(data.mock_leftovers / META_OUTPUT_DIR, META_OUTPUT_DIR)
 
-                trigger_path = os.path.join(str(IMAGES_PARENT), data.pooldir, "steamos", "updated.txt")
                 updated_path = os.path.join(".", "steamos-updated.txt")
 
                 if data.run_as_daemon:
@@ -144,6 +140,8 @@ class StaticServerTestCase(unittest.TestCase):
                     # Give the static server time to set up it's watch, etc.
                     time.sleep(2)
 
+                    self.assertNotEquals(data.pooldir, "")
+                    trigger_path = os.path.join(str(IMAGES_PARENT), data.pooldir, "steamos", "updated.txt")
                     log.info(f"TEST: Started static server as daemon, triggering file at {trigger_path}")
 
                     lastmtime = 0
@@ -175,6 +173,9 @@ class StaticServerTestCase(unittest.TestCase):
                         if os.path.isfile(updated_path):
                             newmtime = os.path.getmtime(updated_path)
                 else:
+                    # Pooldir is only needed when the tests are executed as a daemon
+                    self.assertEqual(data.pooldir, "")
+
                     args = ['--debug', '--config', str(CONFIG_PARENT / data.config)]
 
                     with self.assertLogs('steamosatomupd.staticserver', level=logging.DEBUG) as lo:
