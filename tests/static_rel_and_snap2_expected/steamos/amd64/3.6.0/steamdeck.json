@@ -1,0 +1,20 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20230303.1",
+                    "checkpoint": true,
+                    "estimated_size": 0,
+                    "product": "steamos",
+                    "release": "holo",
+                    "variant": "steamdeck",
+                    "version": "snapshot"
+                },
+                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20230303.1-snapshot-amd64-steamdeck.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}

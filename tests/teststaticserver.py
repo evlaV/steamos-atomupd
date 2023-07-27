@@ -91,6 +91,11 @@ server_data = [
         removed_image_warning=True,
         run_as_daemon=True,
     ),
+    ServerData(
+        msg='Static server with snapshot images',
+        config='server-releases-and-snaps2.conf',
+        expectation='static_rel_and_snap2_expected',
+    ),
 ]
 
 
