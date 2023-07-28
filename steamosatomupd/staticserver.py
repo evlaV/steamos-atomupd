@@ -288,7 +288,7 @@ def main(args=None):
         # Watch each of the subfolders of the PoolDir but none deeper
         paths = server.paths_to_watch()
         for path in paths:
-            wm.add_watch(path, mask, rec=True)
+            wm.add_watch(path, mask, rec=False)
 
         notifier.loop()
 
