@@ -275,6 +275,18 @@ class StaticServerTestCase(unittest.TestCase):
                     self.assertEqual(p.returncode, 0)
 
                     if daemon:
+                        # Now try to run a second instance and make sure the lockfile prevents it doing anything
+                        my_env = os.environ
+                        my_env["IN_SOURCE_TREE"] = "True"
+                        second_daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', str(CONFIG_PARENT / data.config)],
+                            env=my_env)
+
+                        output = second_daemon.communicate()[0]
+                        return_code = second_daemon.returncode
+
+                        # Now make sure it quit as expected
+                        self.assertEqual(return_code, 1)
+
                         log.info("TEST: daemon is running, so killing it")
                         os.kill(daemon.pid, signal.SIGINT)
                         daemon = None
