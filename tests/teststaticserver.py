@@ -96,6 +96,21 @@ server_data = [
         config='server-releases-and-snaps2.conf',
         expectation='static_rel_and_snap2_expected',
     ),
+    ServerData(
+        msg='Static server with snapshot and release images 3',
+        config='server-releases-and-snaps3.conf',
+        expectation='static_rel_and_snap3_expected',
+    ),
+    ServerData(
+        msg='Static server with snapshot and release images 4',
+        config='server-releases-and-snaps4.conf',
+        expectation='static_rel_and_snap4_expected',
+    ),
+    ServerData(
+        msg='Static server with snapshot and release images 5',
+        config='server-releases-and-snaps5.conf',
+        expectation='static_rel_and_snap5_expected',
+    ),
 ]
 
 

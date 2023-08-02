@@ -389,7 +389,11 @@ class ImagePool:
 
         for additional_variant in additional_variants:
             try:
-                all_candidates.extend(self._get_candidate_list(image, release, additional_variant))
+                additional_candidates = self._get_candidate_list(image, release, additional_variant)
+                # Remove all additional candidates that are still unversioned. We can't reliably
+                # consider additional images for different variants, if they are old snapshot
+                # images (no way to really order them). So we just skip over those.
+                all_candidates.extend([candidate for candidate in additional_candidates if candidate.image.version])
             except ValueError as err:
                 # If the image with that variant is not supported try the next one
                 log.debug(err)
@@ -459,6 +463,12 @@ class ImagePool:
                 # update, that will effectively be a downgrade.
                 force_update = self.variants_order.index(
                     requested_variant) < self.variants_order.index(image.variant)
+
+                # If we reached this point, we had a valid variant order. However, for unversioned
+                # images we can't reliably consider more stable variants. So we force an update
+                # regardless, to allow the requested variant switch.
+                if not force_update and not image.version:
+                    force_update = True
             except ValueError:
                 # At least one of those images is not ordered, there is
                 # no way of knowing which one is more stable.

@@ -93,5 +93,51 @@ mkdir -p releases-and-snaps2
   fake_image steamdeck-beta 3.6 20230727.100 false
 )
 
+mkdir -p releases-and-snaps3
+
+(
+  cd releases-and-snaps3
+
+  fake_image steamdeck snapshot 20230502.1 false
+  # This simulates a new stable hotfix release, still not versioned yet
+  fake_image steamdeck snapshot 20230822.1 false
+
+  fake_image steamdeck-rc snapshot 20230503.1 false
+
+  fake_image steamdeck-beta 3.5 20230715.100 false
+  fake_image steamdeck-beta 3.5 20230806.100 false
+
+  fake_image steamdeck-bc 3.6 20230805.100 false
+
+  fake_image steamdeck-main 3.5 20230714.1005 false
+  fake_image steamdeck-main 3.6 20230804.1000 false
+)
+
+mkdir -p releases-and-snaps4
+
+(
+  cd releases-and-snaps4
+
+  # This simulates the case where versioned images reached rel but we never
+  # released an updated rc
+  fake_image steamdeck 3.5 20230820.1 false
+
+  fake_image steamdeck-rc snapshot 20220303.1 false
+
+  fake_image steamdeck-beta 3.5 20230815.100 false
+)
+
+mkdir -p releases-and-snaps5
+
+(
+  cd releases-and-snaps5
+
+  fake_image steamdeck snapshot 20230801.1 false
+
+  fake_image steamdeck-rc snapshot 20220303.1 false
+
+  fake_image steamdeck-beta 3.5 20230815.100 false
+)
+
 echo "Hierarchy created under '$OUTDIR/images'"
 
