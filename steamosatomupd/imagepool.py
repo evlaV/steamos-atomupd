@@ -446,10 +446,13 @@ class ImagePool:
         if minor_update or major_update:
             return Update(minor_update, major_update)
 
-        # If we can't find an update for the case where the buildid is unexpected, this is an
-        # implementation error
-        assert not unexpected_buildid, "Even if we were looking for fallback updates, we didn't" \
-                                       "find a suitable one"
+        # This can be caused by a configuration error, e.g. we don't have a single image in the
+        # image pool for one of the variants listed in "Variants".
+        # In those cases it's better to exit with an error to avoid ending up producing unexpected
+        # JSON files.
+        if unexpected_buildid:
+            log.error("Even if we were looking for fallback updates, we didn't find a suitable one")
+            sys.exit(1)
 
         if image.should_be_skipped():
             # If the client is using an image that has been removed, we force a downgrade to
