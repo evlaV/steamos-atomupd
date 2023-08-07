@@ -364,14 +364,9 @@ class ImagePool:
 
         return candidates
 
-    def get_updates_for_release(self, image: Image, relative_update_path: Union[Path, None],
-                                release: str, requested_variant='', force_update=False,
-                                unexpected_buildid=False) -> Union[UpdatePath, None]:
-        """Get a list of update candidates for a given release
-
-        Return an UpdatePath object, or None if no updates available.
-        """
-
+    def get_all_allowed_candidates(self, image: Image, release: str,
+                                   requested_variant='') -> list[UpdateCandidate]:
+        """Get a list of UpdateCandidate that are potentially valid updates for the image"""
         all_candidates: list[UpdateCandidate] = []
         additional_variants: list[str] = []
         variant = requested_variant if requested_variant else image.variant
@@ -398,7 +393,16 @@ class ImagePool:
                 # If the image with that variant is not supported try the next one
                 log.debug(err)
 
-        candidates = _get_update_candidates(all_candidates, image, force_update, unexpected_buildid)
+        return all_candidates
+
+    def get_updatepath(self, image: Image, relative_update_path: Union[Path, None],
+                       release: str, candidates: list[UpdateCandidate],
+                       unexpected_buildid=False) -> Union[UpdatePath, None]:
+        """Get an UpdatePath from a given UpdateCandidate list
+
+        Return an UpdatePath object, or None if no updates available.
+        """
+
         if not candidates:
             return None
 
@@ -432,16 +436,21 @@ class ImagePool:
 
         force_update = False
         curr_release = image.release
-        minor_update = self.get_updates_for_release(image, relative_update_path, curr_release,
-                                                    requested_variant,
-                                                    unexpected_buildid=unexpected_buildid)
+        all_candidates = self.get_all_allowed_candidates(image, image.release,
+                                                         requested_variant)
+        candidates = _get_update_candidates(all_candidates, image, force_update, unexpected_buildid)
+        minor_update = self.get_updatepath(image, relative_update_path, curr_release,
+                                           candidates, unexpected_buildid)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
-            major_update = self.get_updates_for_release(image, relative_update_path, next_release,
-                                                        requested_variant,
-                                                        unexpected_buildid=unexpected_buildid)
+            all_candidates_next = self.get_all_allowed_candidates(image, next_release,
+                                                                  requested_variant)
+            candidates_next = _get_update_candidates(all_candidates_next, image, force_update,
+                                                     unexpected_buildid)
+            major_update = self.get_updatepath(image, relative_update_path, next_release,
+                                               candidates_next, unexpected_buildid)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
@@ -480,8 +489,10 @@ class ImagePool:
         if force_update:
             # Force only a minor update. We don't propose a downgrade from a major update because
             # that is not supported and will likely cause unexpected issues.
-            minor_update = self.get_updates_for_release(image, relative_update_path, curr_release,
-                                                        requested_variant, force_update)
+            candidates_forced = _get_update_candidates(all_candidates, image, force_update,
+                                                       unexpected_buildid)
+            minor_update = self.get_updatepath(image, relative_update_path, curr_release,
+                                               candidates_forced, unexpected_buildid)
             if minor_update:
                 return Update(minor_update, major_update)
 
