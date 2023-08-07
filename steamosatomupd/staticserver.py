@@ -35,7 +35,6 @@ from pathlib import Path
 
 import pyinotify # type: ignore
 
-from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
 from steamosatomupd.update import UpdateCandidate
 
@@ -111,20 +110,6 @@ class UpdateParser(pyinotify.ProcessEvent):
             with open(updated_path, "w", encoding='utf-8') as updated_file:
                 updated_file.write(iso_date)
 
-    def get_update(self, image: Image, update_path: Path,
-                   requested_variant='', unexpected_buildid=False) -> dict:
-        """Get the update candidates from the provided image"""
-
-        # Get update candidates
-        update = self.image_pool.get_updates(image, update_path, requested_variant, unexpected_buildid)
-        if not update:
-            return {}
-
-        # Return to client
-        data = update.to_dict()
-
-        return data
-
     def __init__(self, args=None):
         super().__init__()
 
@@ -178,20 +163,14 @@ class UpdateParser(pyinotify.ProcessEvent):
         log.info(self.image_pool)
         log.info("------------------")
 
-    def _write_update_for_image(self, img: Image, update_path: Path, requested_variant: str,
-                                json_path: Path, unexpected_buildid=False) -> None:
+    @staticmethod
+    def _write_update_for_image(update_json: str, json_path: Path):
         json_path.parent.mkdir(parents=True, exist_ok=True)
-
-        jsonresult = json.dumps(self.get_update(img, update_path, requested_variant,
-                                                unexpected_buildid),
-                                sort_keys=True, indent=4)
-        log.debug("--- Jsonresult for %s with variant %s is %s",
-                  json.dumps(img.to_dict()), requested_variant, jsonresult)
 
         if json_path.is_file():
             with open(json_path, 'r', encoding='utf-8') as old:
                 old_lines = old.readlines()
-                new_lines = jsonresult.splitlines(keepends=True)
+                new_lines = update_json.splitlines(keepends=True)
                 if old_lines == new_lines:
                     log.debug('"%s" has not changed, skipping...', json_path)
                     return
@@ -201,7 +180,7 @@ class UpdateParser(pyinotify.ProcessEvent):
                     log.info('Replacing "%s":\n%s', json_path, ''.join(differences))
 
         with open(json_path, 'w', encoding='utf-8') as file:
-            file.write(jsonresult)
+            file.write(update_json)
 
     def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
                            json_path: Path, update_jsons: set[Path],
@@ -217,8 +196,11 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         update_jsons.add(json_path)
 
-        self._write_update_for_image(image, update_path, requested_variant, json_path,
-                                     unexpected_buildid=unexpected_buildid)
+        update = self.image_pool.get_updates(image, update_path, requested_variant,
+                                             unexpected_buildid)
+        update_dict = update.to_dict() if update else {}
+
+        self._write_update_for_image(json.dumps(update_dict, sort_keys=True, indent=4), json_path)
 
     @staticmethod
     def _warn_json_leftovers(update_jsons: set[Path]) -> None:
