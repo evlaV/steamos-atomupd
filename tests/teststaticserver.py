@@ -53,6 +53,7 @@ class ServerData:
     unchanged_lefovers: bool = False
     removed_image_warning: bool = False
     run_as_daemon: bool = False
+    exit_code: int = 0
 
 
 server_data = [
@@ -111,6 +112,20 @@ server_data = [
         config='server-releases-and-snaps5.conf',
         expectation='static_rel_and_snap5_expected',
     ),
+    ServerData(
+        msg='Server with a variant that does not match any of the images in the pool',
+        config='server-releases-and-snaps-missing.conf',
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Server with a variant that does not match any of the images in the pool, as daemon',
+        config='server-releases-and-snaps-missing.conf',
+        pooldir='',
+        expectation='',
+        run_as_daemon=True,
+        exit_code=1,
+    ),
 ]
 
 
@@ -160,6 +175,11 @@ class StaticServerTestCase(unittest.TestCase):
                     # Give the static server time to set up it's watch, etc.
                     time.sleep(2)
 
+                    if data.exit_code != 0:
+                        # Wait for the daemon to terminate with an error
+                        self.assertEqual(daemon.wait(timeout=5), data.exit_code)
+                        continue
+
                     self.assertNotEquals(data.pooldir, "")
                     trigger_path = os.path.join(str(IMAGES_PARENT), data.pooldir, "steamos", "updated.txt")
                     log.info(f"TEST: Started static server as daemon, triggering file at {trigger_path}")
@@ -199,7 +219,13 @@ class StaticServerTestCase(unittest.TestCase):
                     args = ['--debug', '--config', str(CONFIG_PARENT / data.config)]
 
                     with self.assertLogs('steamosatomupd.staticserver', level=logging.DEBUG) as lo:
-                        staticserver.main(args)
+                        if data.exit_code != 0:
+                            with self.assertRaises(SystemExit) as se:
+                                staticserver.main(args)
+                            self.assertEqual(se.exception.code, data.exit_code)
+                            continue
+                        else:
+                            staticserver.main(args)
 
                     print('\n'.join(lo.output))
 
