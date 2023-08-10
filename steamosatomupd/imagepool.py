@@ -460,7 +460,9 @@ class ImagePool:
         # In those cases it's better to exit with an error to avoid ending up producing unexpected
         # JSON files.
         if unexpected_buildid:
-            log.error("Even if we were looking for fallback updates, we didn't find a suitable one")
+            log.error("Even if we were looking for fallback updates for %s, we didn't find a "
+                      "suitable one. This can be caused by having unexpected variants in the "
+                      "server configuration.", requested_variant if requested_variant else image.variant)
             sys.exit(1)
 
         if image.should_be_skipped():
