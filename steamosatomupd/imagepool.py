@@ -395,7 +395,7 @@ class ImagePool:
         return all_candidates
 
     def get_updatepath(self, image: Image, relative_update_path: Union[Path, None],
-                       release: str, candidates: list[UpdateCandidate],
+                       requested_variant: str, release: str, candidates: list[UpdateCandidate],
                        unexpected_buildid=False) -> Union[UpdatePath, None]:
         """Get an UpdatePath from a given UpdateCandidate list
 
@@ -405,9 +405,9 @@ class ImagePool:
         if not candidates:
             return None
 
-        if candidates[-1].image.variant != image.variant:
-            log.info("Selected image from variant '%s', instead of '%s', because is newer",
-                     candidates[-1].image.variant, image.variant)
+        if candidates[-1].image.variant != requested_variant:
+            log.info("Selected image '%s' from variant '%s', instead of '%s', because is newer",
+                     candidates[-1].image.buildid, candidates[-1].image.variant, image.variant)
 
         # Only estimate the size of the first update for now. Once we'll have the first
         # checkpoint we can also begin to estimate the subsequent updates, if needed.
@@ -438,8 +438,8 @@ class ImagePool:
         all_candidates = self.get_all_allowed_candidates(image, image.release,
                                                          requested_variant)
         candidates = _get_update_candidates(all_candidates, image, force_update, unexpected_buildid)
-        minor_update = self.get_updatepath(image, relative_update_path, curr_release,
-                                           candidates, unexpected_buildid)
+        minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
+                                           curr_release, candidates, unexpected_buildid)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
@@ -448,8 +448,8 @@ class ImagePool:
                                                                   requested_variant)
             candidates_next = _get_update_candidates(all_candidates_next, image, force_update,
                                                      unexpected_buildid)
-            major_update = self.get_updatepath(image, relative_update_path, next_release,
-                                               candidates_next, unexpected_buildid)
+            major_update = self.get_updatepath(image, relative_update_path, requested_variant,
+                                               next_release, candidates_next, unexpected_buildid)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
@@ -492,8 +492,8 @@ class ImagePool:
             # that is not supported and will likely cause unexpected issues.
             candidates_forced = _get_update_candidates(all_candidates, image, force_update,
                                                        unexpected_buildid)
-            minor_update = self.get_updatepath(image, relative_update_path, curr_release,
-                                               candidates_forced, unexpected_buildid)
+            minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
+                                               curr_release, candidates_forced, unexpected_buildid)
             if minor_update:
                 return Update(minor_update, major_update)
 
