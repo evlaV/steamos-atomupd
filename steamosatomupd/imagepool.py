@@ -365,19 +365,18 @@ class ImagePool:
         return candidates
 
     def get_all_allowed_candidates(self, image: Image, release: str,
-                                   requested_variant='') -> list[UpdateCandidate]:
+                                   requested_variant: str) -> list[UpdateCandidate]:
         """Get a list of UpdateCandidate that are potentially valid updates for the image"""
         all_candidates: list[UpdateCandidate] = []
         additional_variants: list[str] = []
-        variant = requested_variant if requested_variant else image.variant
 
-        if variant in self.variants_order:
+        if requested_variant in self.variants_order:
             # Take into consideration all the more stable variants too
-            variant_index = self.variants_order.index(variant)
+            variant_index = self.variants_order.index(requested_variant)
             additional_variants = self.variants_order[:variant_index]
 
         try:
-            all_candidates.extend(self._get_candidate_list(image, release, variant))
+            all_candidates.extend(self._get_candidate_list(image, release, requested_variant))
         except ValueError as err:
             # Continue to check the additional variants, if any
             log.debug(err)
@@ -420,13 +419,13 @@ class ImagePool:
         return UpdatePath(release, candidates)
 
     def get_updates(self, image: Image, relative_update_path: Path,
-                    requested_variant='', unexpected_buildid=False) -> Union[Update, None]:
+                    requested_variant: str, unexpected_buildid=False) -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
         and in the next release (if any).
-        The optional "requested_variant" can be used to request updates for a
-        different variant.
+        "requested_variant" is used to request updates for a specific variant, which may be the
+        same string as "image.variant".
         "relative_update_path" is used to estimate the download size of the updates. The path
         needs to be relative to the pool images directory. If set to None, the download size
         will not be estimated.
@@ -462,7 +461,7 @@ class ImagePool:
         if unexpected_buildid:
             log.error("Even if we were looking for fallback updates for %s, we didn't find a "
                       "suitable one. This can be caused by having unexpected variants in the "
-                      "server configuration.", requested_variant if requested_variant else image.variant)
+                      "server configuration.", requested_variant)
             sys.exit(1)
 
         if image.should_be_skipped():

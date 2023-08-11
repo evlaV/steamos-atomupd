@@ -103,7 +103,7 @@ class UpdateServer:
 
         # Get update candidates
         self.lock.acquire()
-        update = self.image_pool.get_updates(image, None, None)
+        update = self.image_pool.get_updates(image, None, image.variant)
         self.lock.release()
         if not update:
             return ''
