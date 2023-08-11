@@ -118,12 +118,8 @@ class UpdateParser(pyinotify.ProcessEvent):
         parser = argparse.ArgumentParser(description="SteamOS Update Server")
         parser.add_argument('-c', '--config', metavar='FILE', required=True,
                             help="configuration file")
-        parser.add_argument('-r', '--run-daemon', required=False, action='store_const',
-                            dest='daemon', const=True, default=False,
+        parser.add_argument('-r', '--run-daemon', action='store_true', dest='daemon',
                             help="Run as a daemon. Don't quit when done parsing.")
-        parser.add_argument('-s', '--run-single', required=False, action='store_const',
-                            dest='daemon', const=False, default=False,
-                            help="Run as single application, not a daemon (default).")
 
         log_group = parser.add_mutually_exclusive_group()
         log_group.add_argument('-d', '--debug', action='store_const', dest='loglevel',
