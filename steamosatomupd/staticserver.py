@@ -36,7 +36,7 @@ from pathlib import Path
 import pyinotify # type: ignore
 
 from steamosatomupd.imagepool import ImagePool
-from steamosatomupd.update import UpdateCandidate
+from steamosatomupd.update import UpdateCandidate, UpdateType
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -180,7 +180,7 @@ class UpdateParser(pyinotify.ProcessEvent):
 
     def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
                            json_path: Path, update_jsons: set[Path],
-                           unexpected_buildid=False) -> None:
+                           update_type=UpdateType.standard) -> None:
         """Get the available updates and write them in a JSON"""
 
         image = image_update.image
@@ -192,8 +192,7 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         update_jsons.add(json_path)
 
-        update = self.image_pool.get_updates(image, update_path, requested_variant,
-                                             unexpected_buildid)
+        update = self.image_pool.get_updates(image, update_path, requested_variant, update_type)
         update_dict = update.to_dict() if update else {}
 
         self._write_update_for_image(json.dumps(update_dict, sort_keys=True, indent=4), json_path)
@@ -257,7 +256,7 @@ class UpdateParser(pyinotify.ProcessEvent):
 
                 self._write_update_json(image_update, requested_variant, json_path, update_jsons)
                 self._write_update_json(image_update, requested_variant, json_path_fallback,
-                                        fallback_update_jsons, unexpected_buildid=True)
+                                        fallback_update_jsons, UpdateType.unexpected_buildid)
 
         # Pass the canonical update JSONs, because we want to check for leftovers only inside
         # the `/product/arch/version/variant` directories we are actually handling with this

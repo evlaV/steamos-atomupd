@@ -35,7 +35,7 @@ from typing import Union
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
-from steamosatomupd.update import UpdateCandidate, UpdatePath, Update
+from steamosatomupd.update import UpdateCandidate, UpdatePath, Update, UpdateType
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb
 
 log = logging.getLogger(__name__)
@@ -89,7 +89,7 @@ def _get_next_release(release: str, releases: list[str]) -> str:
 
 
 def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
-                           force_update=False, unexpected_buildid=False) -> list[UpdateCandidate]:
+                           update_type: UpdateType) -> list[UpdateCandidate]:
     """Get possible update candidates within a list.
 
     This is where we decide who are the valid update candidates for a
@@ -102,12 +102,12 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     checkpoints: list[UpdateCandidate] = []
 
     for candidate in candidates:
-        if force_update:
+        if update_type == UpdateType.forced:
             # We want to force at least an update, even if that may be a downgrade
             if not latest or candidate.image > latest.image:
                 latest = candidate
 
-        elif unexpected_buildid:
+        elif update_type == UpdateType.unexpected_buildid:
             # When the buildid is unexpected/borked, aka fallback updates, we always want to propose
             # an update to push the client back to a known image
             if not latest:
@@ -144,7 +144,7 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     if latest and latest not in winners:
         winners.append(latest)
 
-    if unexpected_buildid:
+    if update_type == UpdateType.unexpected_buildid:
         # If this is a fallback update, there is no need to do additional checks to avoid cycles.
         # We ALWAYS want to propose an upgrade/downgrade because, if a client requested this file,
         # it means its original image is unexpected/broken/deprecated.
@@ -396,7 +396,7 @@ class ImagePool:
 
     def get_updatepath(self, image: Image, relative_update_path: Union[Path, None],
                        requested_variant: str, release: str, candidates: list[UpdateCandidate],
-                       unexpected_buildid=False) -> Union[UpdatePath, None]:
+                       update_type: UpdateType) -> Union[UpdatePath, None]:
         """Get an UpdatePath from a given UpdateCandidate list
 
         Return an UpdatePath object, or None if no updates available.
@@ -413,13 +413,13 @@ class ImagePool:
         # checkpoint we can also begin to estimate the subsequent updates, if needed.
         # Skip this when the buildid is unexpected, because we have no way of knowing what's the
         # base image the client is using.
-        if relative_update_path and not unexpected_buildid:
+        if relative_update_path and update_type != UpdateType.unexpected_buildid:
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
         return UpdatePath(release, candidates)
 
     def get_updates(self, image: Image, relative_update_path: Path,
-                    requested_variant: str, unexpected_buildid=False) -> Union[Update, None]:
+                    requested_variant: str, update_type=UpdateType.standard) -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
@@ -433,23 +433,21 @@ class ImagePool:
         Return an Update object, or None if no updates available.
         """
 
-        force_update = False
         curr_release = image.release
         all_candidates = self.get_all_allowed_candidates(image, image.release,
                                                          requested_variant)
-        candidates = _get_update_candidates(all_candidates, image, force_update, unexpected_buildid)
+        candidates = _get_update_candidates(all_candidates, image, update_type)
         minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
-                                           curr_release, candidates, unexpected_buildid)
+                                           curr_release, candidates, update_type)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
             all_candidates_next = self.get_all_allowed_candidates(image, next_release,
                                                                   requested_variant)
-            candidates_next = _get_update_candidates(all_candidates_next, image, force_update,
-                                                     unexpected_buildid)
+            candidates_next = _get_update_candidates(all_candidates_next, image, update_type)
             major_update = self.get_updatepath(image, relative_update_path, requested_variant,
-                                               next_release, candidates_next, unexpected_buildid)
+                                               next_release, candidates_next, update_type)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
@@ -458,7 +456,7 @@ class ImagePool:
         # image pool for one of the variants listed in "Variants".
         # In those cases it's better to exit with an error to avoid ending up producing unexpected
         # JSON files.
-        if unexpected_buildid:
+        if update_type == UpdateType.unexpected_buildid:
             log.error("Even if we were looking for fallback updates for %s, we didn't find a "
                       "suitable one. This can be caused by having unexpected variants in the "
                       "server configuration.", requested_variant)
@@ -467,33 +465,32 @@ class ImagePool:
         if image.should_be_skipped():
             # If the client is using an image that has been removed, we force a downgrade to
             # avoid leaving it with its, probably borked, image.
-            force_update = True
+            update_type = UpdateType.forced
         elif requested_variant != image.variant:
             try:
                 # Force an update if we are in an unstable variant, and we want to switch back to a
                 # more stable variant. By reaching this point it means that there isn't a proper
                 # update because our current version is already newer. For this reason we force the
                 # update, that will effectively be a downgrade.
-                force_update = self.variants_order.index(
-                    requested_variant) < self.variants_order.index(image.variant)
+                if self.variants_order.index(requested_variant) < self.variants_order.index(image.variant):
+                    update_type = UpdateType.forced
 
                 # If we reached this point, we had a valid variant order. However, for unversioned
                 # images we can't reliably consider more stable variants. So we force an update
                 # regardless, to allow the requested variant switch.
-                if not force_update and not image.version:
-                    force_update = True
+                if update_type != UpdateType.forced and not image.version:
+                    update_type = UpdateType.forced
             except ValueError:
                 # At least one of those images is not ordered, there is
                 # no way of knowing which one is more stable.
-                force_update = True
+                update_type = UpdateType.forced
 
-        if force_update:
+        if update_type == UpdateType.forced:
             # Force only a minor update. We don't propose a downgrade from a major update because
             # that is not supported and will likely cause unexpected issues.
-            candidates_forced = _get_update_candidates(all_candidates, image, force_update,
-                                                       unexpected_buildid)
+            candidates_forced = _get_update_candidates(all_candidates, image, update_type)
             minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
-                                               curr_release, candidates_forced, unexpected_buildid)
+                                               curr_release, candidates_forced, update_type)
             if minor_update:
                 return Update(minor_update, major_update)
 

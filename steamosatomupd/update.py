@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Union, Any
 
 from steamosatomupd.image import Image
@@ -165,3 +166,19 @@ class Update:
 
         data = self.to_dict()
         return json.dumps(data, indent=2)
+
+
+class UpdateType(Enum):
+    """
+    Used to select which type of update we are looking for
+    """
+
+    standard = auto()
+    """ The canonical update """
+    forced = auto()
+    """ The update should be forced, even if that results in a downgrade """
+    unexpected_buildid = auto()
+    """
+    The image buildid should not be taken into consideration, this is used to
+    generate generic fallback updates
+    """

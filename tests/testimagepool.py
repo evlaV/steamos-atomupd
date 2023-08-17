@@ -20,7 +20,7 @@ import unittest
 
 from steamosatomupd.image import Image
 from steamosatomupd.imagepool import _get_update_candidates
-from steamosatomupd.update import UpdateCandidate
+from steamosatomupd.update import UpdateCandidate, UpdateType
 
 imgdata = {
     'product': 'steamos',
@@ -57,25 +57,25 @@ class GetUpdateCandidatesTestCase(unittest.TestCase):
         c3 = mk_update_candidate(d3)
 
         # only the last image is an update candidate
-        res = _get_update_candidates([ c1, c2, c3 ], i)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
         self.assertTrue(res == [ c3 ])
 
         # checkpoint + last image
         d2['checkpoint'] = True
         c2 = mk_update_candidate(d2)
-        res = _get_update_candidates([ c1, c2, c3 ], i)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
         self.assertTrue(res == [ c2, c3 ])
 
         # checkpoint + last image (no change, as i == d1 version-wise)
         d1['checkpoint'] = True
         c1 = mk_update_candidate(d1)
-        res = _get_update_candidates([ c1, c2, c3 ], i)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
         self.assertTrue(res == [ c2, c3 ])
 
         # no update candidates (already at latest)
         d['version'] = '2.2'
         i = mk_image(d)
-        res = _get_update_candidates([ c1, c2, c3 ], i)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
         self.assertTrue(res == [])
 
 if __name__ == '__main__':
