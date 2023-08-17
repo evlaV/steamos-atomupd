@@ -159,6 +159,7 @@ class StaticServerTestCase(unittest.TestCase):
         for data in server_data:
             with self.subTest(msg=data.msg):
                 subprocess.run(['rm', '-fR', META_OUTPUT_DIR])
+                Path(".lockfile.lock").unlink(missing_ok=True)
 
                 if data.mock_leftovers:
                     shutil.copytree(data.mock_leftovers / META_OUTPUT_DIR, META_OUTPUT_DIR)
