@@ -4,3 +4,4 @@ examples-data
 /steamos
 updated.txt
 steamos-updated.txt
+.lockfile.lock
