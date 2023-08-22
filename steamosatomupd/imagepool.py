@@ -102,29 +102,24 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     checkpoints: list[UpdateCandidate] = []
 
     for candidate in candidates:
-        if update_type == UpdateType.forced:
-            # We want to force at least an update, even if that may be a downgrade
+        if update_type != UpdateType.standard:
+            # We want to force at least an update, even if that may be a downgrade.
+            # E.g. when the buildid is unexpected/borked, we want to push the client back to a
+            # known image
             if not latest or candidate.image > latest.image:
                 latest = candidate
 
-        elif update_type == UpdateType.unexpected_buildid:
-            # When the buildid is unexpected/borked, aka fallback updates, we always want to propose
-            # an update to push the client back to a known image
-            if not latest:
-                latest = candidate
-            elif candidate.image > latest.image:
-                # Before picking the new candidate, we need to check if the previous image was a
-                # checkpoint.
-                if latest.image.checkpoint:
-                    # If the base image is a snapshot, we don't have a way of knowing how old that
-                    # is, so we just keep all the checkpoints that have been released for snapshots.
-                    # Instead, for versioned images we can only use their version, because the base
-                    # image buildid is irrelevant for fallback updates (this is the case where the
-                    # buildid is unexpected/borked).
-                    if not image.version or (latest.image.version
-                                             and latest.image.version >= image.version):
-                        checkpoints.append(latest)
-                latest = candidate
+        if update_type == UpdateType.unexpected_buildid:
+            assert latest
+            if latest.image.checkpoint and latest not in checkpoints:
+                # If the base image is a snapshot, we don't have a way of knowing how old that
+                # is, so we just keep all the checkpoints that have been released for snapshots.
+                # Instead, for versioned images we can only use their version, because the base
+                # image buildid is irrelevant for fallback updates (this is the case where the
+                # buildid is unexpected/borked).
+                if not image.version or (latest.image.version
+                                         and latest.image.version >= image.version):
+                    checkpoints.append(latest)
             continue
 
         if candidate.image <= image:
