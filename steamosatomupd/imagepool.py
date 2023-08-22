@@ -102,6 +102,10 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     checkpoints: list[UpdateCandidate] = []
 
     for candidate in candidates:
+        # TODO revisit our logic once jupiter/tasks#912 has been addressed.
+        #  For unexpected_buildid we can't be sure about how many checkpoints has already been
+        #  installed. Additionally, we are not guaranteed that the candidates are ordered, and this
+        #  could give us unexpected results when we need to traverse one or multiple checkpoints.
         if update_type != UpdateType.standard:
             # We want to force at least an update, even if that may be a downgrade.
             # E.g. when the buildid is unexpected/borked, we want to push the client back to a
