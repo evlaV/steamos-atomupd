@@ -90,7 +90,7 @@ def _get_next_release(release: str, releases: list[str]) -> str:
 
 def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
                            update_type: UpdateType) -> list[UpdateCandidate]:
-    """Get possible update candidates within a list.
+    """Get possible update candidates within an ordered list.
 
     This is where we decide who are the valid update candidates for a
     given image. The valid candidates are:
@@ -101,11 +101,23 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     latest = None
     checkpoints: list[UpdateCandidate] = []
 
+    if not candidates:
+        return []
+
+    dest_variant = candidates[-1].image.variant
+
     for candidate in candidates:
         # TODO revisit our logic once jupiter/tasks#912 has been addressed.
         #  For unexpected_buildid we can't be sure about how many checkpoints has already been
-        #  installed. Additionally, we are not guaranteed that the candidates are ordered, and this
-        #  could give us unexpected results when we need to traverse one or multiple checkpoints.
+        #  installed.
+
+        if candidate.image.variant != dest_variant:
+            # Consider only images from the destination to avoid hopping between different variants
+            # and proposing multiple checkpoints that are conceptually equivalent.
+            # TODO this assumes that dest_variant has all the necessary checkpoints to reach the
+            #  destination image. With jupiter/tasks#912 we'll not have to assume it anymore.
+            continue
+
         if update_type != UpdateType.standard:
             # We want to force at least an update, even if that may be a downgrade.
             # E.g. when the buildid is unexpected/borked, we want to push the client back to a
@@ -365,7 +377,10 @@ class ImagePool:
 
     def get_all_allowed_candidates(self, image: Image, release: str,
                                    requested_variant: str) -> list[UpdateCandidate]:
-        """Get a list of UpdateCandidate that are potentially valid updates for the image"""
+        """Get a list of UpdateCandidate that are potentially valid updates for the image
+
+        The returned list is sorted in ascending order.
+        """
         all_candidates: list[UpdateCandidate] = []
         additional_variants: list[str] = []
 
@@ -390,6 +405,8 @@ class ImagePool:
             except ValueError as err:
                 # If the image with that variant is not supported try the next one
                 log.debug(err)
+
+        all_candidates.sort(key=lambda x: x.image)
 
         return all_candidates
 
