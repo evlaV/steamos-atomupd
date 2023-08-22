@@ -85,9 +85,8 @@ server_data = [
         config='server-releases.conf',
         pooldir='releases',
         expectation='staticexpected',
-        changed_expectation ='staticdaemonexpected2',
+        changed_expectation='staticdaemonexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
-        mock_ndiff=EXPECTATION_PARENT / 'staticexpected_mock_ndiff',
         unchanged_lefovers=True,
         removed_image_warning=True,
         run_as_daemon=True,
@@ -167,6 +166,10 @@ class StaticServerTestCase(unittest.TestCase):
                 updated_path = os.path.join(".", "steamos-updated.txt")
 
                 if data.run_as_daemon:
+                    # We don't grab the output when running as a daemon, so we can't do assumptions
+                    # regarding the ndiff
+                    self.assertEqual(data.mock_ndiff, None)
+
                     my_env = os.environ
                     my_env["IN_SOURCE_TREE"] = "True"
                     daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', str(CONFIG_PARENT / data.config)],
