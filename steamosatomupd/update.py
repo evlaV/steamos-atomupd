@@ -182,3 +182,8 @@ class UpdateType(Enum):
     The image buildid should not be taken into consideration, this is used to
     generate generic fallback updates
     """
+    second_last = auto()
+    """
+    We don't want the latest update, but instead the penultimate. This option implies
+    'unexpected_buildid'.
+    """

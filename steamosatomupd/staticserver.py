@@ -245,6 +245,10 @@ class UpdateParser(pyinotify.ProcessEvent):
         # This is the list of update JSONs with invalid/unknown buildid, where the variant.json
         # will be written up one level, compared to the usual directory
         fallback_update_jsons: set[Path] = set()
+        # List of update JSONs that point to the penultimate images available.
+        # The ${variant}.second_last.json will be written up one level, compared to the usual
+        # directory
+        second_last_update_jsons: set[Path] = set()
 
         for image_update in image_updates:
             for requested_variant in supported_variants:
@@ -253,10 +257,14 @@ class UpdateParser(pyinotify.ProcessEvent):
                                  requested_variant, f'{image.buildid}.json')
                 json_path_fallback = Path(image.product, image.arch, image.get_version_str(),
                                           f'{requested_variant}.json')
+                json_path_second_last = Path(image.product, image.arch, image.get_version_str(),
+                                             f'{requested_variant}.second_last.json')
 
                 self._write_update_json(image_update, requested_variant, json_path, update_jsons)
                 self._write_update_json(image_update, requested_variant, json_path_fallback,
                                         fallback_update_jsons, UpdateType.unexpected_buildid)
+                self._write_update_json(image_update, requested_variant, json_path_second_last,
+                                        second_last_update_jsons, UpdateType.second_last)
 
         # Pass the canonical update JSONs, because we want to check for leftovers only inside
         # the `/product/arch/version/variant` directories we are actually handling with this

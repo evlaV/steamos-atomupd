@@ -98,8 +98,10 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     - images that are either a checkpoint, either the latest image
     """
 
+    previous = None
     latest = None
     checkpoints: list[UpdateCandidate] = []
+    winners: list[UpdateCandidate] = []
 
     if not candidates:
         return []
@@ -123,9 +125,10 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
             # E.g. when the buildid is unexpected/borked, we want to push the client back to a
             # known image
             if not latest or candidate.image > latest.image:
+                previous = latest
                 latest = candidate
 
-        if update_type == UpdateType.unexpected_buildid:
+        if update_type in (UpdateType.unexpected_buildid, UpdateType.second_last):
             assert latest
             if latest.image.checkpoint and latest not in checkpoints:
                 # If the base image is a snapshot, we don't have a way of knowing how old that
@@ -151,7 +154,25 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
         if not latest or candidate.image > latest.image:
             latest = candidate
 
-    winners = checkpoints
+    if update_type == UpdateType.second_last:
+        if (previous and previous.image.checkpoint) or (latest and latest.image.checkpoint) or checkpoints:
+            # If the latest update is a checkpoint, or if we are traversing a checkpoint, we can't
+            # safely propose a second last update. Until we revisit the checkpoints logic in
+            # jupiter/tasks#912, this is the only safe thing to do here.
+            previous = None
+
+        if previous and previous != latest:
+            winners.append(previous)
+        else:
+            log.info("It was not possible to propose the second last update for %s/%s",
+                     image.version, image.release)
+
+        # Return what we have without including "latest" because we are interested in the second
+        # last here
+        return winners
+
+    winners.extend(checkpoints)
+
     if latest and latest not in winners:
         winners.append(latest)
 
@@ -477,6 +498,11 @@ class ImagePool:
                       "suitable one. This can be caused by having unexpected variants in the "
                       "server configuration.", requested_variant)
             sys.exit(1)
+
+        if update_type == UpdateType.second_last:
+            # This can happen for example when our first valid candidate is a checkpoint and we
+            # can't propose a different image
+            return None
 
         if image.should_be_skipped():
             # If the client is using an image that has been removed, we force a downgrade to

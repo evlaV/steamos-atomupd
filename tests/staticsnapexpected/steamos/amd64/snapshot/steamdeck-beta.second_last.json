@@ -1,0 +1,20 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20181102.1",
+                    "checkpoint": false,
+                    "estimated_size": 0,
+                    "product": "steamos",
+                    "release": "holo",
+                    "variant": "steamdeck-beta",
+                    "version": "snapshot"
+                },
+                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20181102.1-snapshot-amd64-steamdeck-beta.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}
