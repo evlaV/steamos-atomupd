@@ -42,7 +42,8 @@ mkdir -p releases
   fake_image steamdeck 3.2 20220411.1 false
   # Simulate an update that we don't want to propose anymore
   fake_image steamdeck 3.2 20220412.1 false true
-  fake_image steamdeck 3.3 20220423.1 true
+  # Test the skip field explicitly set to false
+  fake_image steamdeck 3.3 20220423.1 true false
 
   fake_image steamdeck-rc 3.1 20220401.5 false
 

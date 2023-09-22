@@ -1,18 +1,15 @@
 #!/bin/bash
 # vim: sts=4 sw=4 et
 
-make_manifest() {
-    cat << EOF
-{
+add_common_manifest_fields() {
+    head -c -1 << EOF
   "product": "$1",
   "release": "$2",
   "variant": "$3",
   "arch": "$4",
   "version": "$5",
   "buildid": "$6",
-  "checkpoint": $7,
-  "skip": $8
-}
+  "checkpoint": $7
 EOF
 }
 
@@ -22,7 +19,7 @@ fake_image() {
     local -r version=$2
     local -r buildid=$3
     local -r checkpoint=$4
-    local -r skip=${5:-false}
+    local -r skip=${5-}
     local -r deleted=${6:-false}
     local -r product=steamos
     local -r release=holo
@@ -34,8 +31,17 @@ fake_image() {
     imgname=$product-$release-$buildid-$version-$arch-$variant
 
     mkdir -p "$imgdir"
-    make_manifest "$product" "$release" "$variant" "$arch" "$version" "$buildid" "$checkpoint" "$skip" > \
-      "$imgdir/$imgname.manifest.json"
+    local -r manifest="$imgdir/$imgname.manifest.json"
+    echo "{" > "$manifest"
+
+    add_common_manifest_fields "$product" "$release" "$variant" "$arch" "$version" "$buildid" "$checkpoint" >> \
+      "$manifest"
+
+    if [ -n "$skip" ]; then
+      printf ",\n  \"skip\": %s" "$skip" >> "$manifest"
+    fi
+
+    printf "\n}\n" >> "$manifest"
 
     if [ "$deleted" == true ]; then
       # Do not create the RAUC bundle file and the directory with the chunks,
