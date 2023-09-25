@@ -8,8 +8,7 @@ add_common_manifest_fields() {
   "variant": "$3",
   "arch": "$4",
   "version": "$5",
-  "buildid": "$6",
-  "checkpoint": $7
+  "buildid": "$6"
 EOF
 }
 
@@ -18,7 +17,7 @@ fake_image() {
     local -r variant=$1
     local -r version=$2
     local -r buildid=$3
-    local -r checkpoint=$4
+    local -r checkpoint=${4:-}
     local -r skip=${5-}
     local -r deleted=${6:-false}
     local -r product=steamos
@@ -34,8 +33,12 @@ fake_image() {
     local -r manifest="$imgdir/$imgname.manifest.json"
     echo "{" > "$manifest"
 
-    add_common_manifest_fields "$product" "$release" "$variant" "$arch" "$version" "$buildid" "$checkpoint" >> \
+    add_common_manifest_fields "$product" "$release" "$variant" "$arch" "$version" "$buildid" >> \
       "$manifest"
+
+    if [ -n "$checkpoint" ]; then
+      printf ",\n  \"checkpoint\": %s" "$checkpoint" >> "$manifest"
+    fi
 
     if [ -n "$skip" ]; then
       printf ",\n  \"skip\": %s" "$skip" >> "$manifest"

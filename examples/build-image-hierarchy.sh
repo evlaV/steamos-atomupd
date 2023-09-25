@@ -121,11 +121,11 @@ mkdir -p releases-and-snaps4
 
   # This simulates the case where versioned images reached rel but we never
   # released an updated rc
-  fake_image steamdeck 3.5 20230820.1 false
+  fake_image steamdeck 3.5 20230820.1
 
-  fake_image steamdeck-rc snapshot 20220303.1 false
+  fake_image steamdeck-rc snapshot 20220303.1
 
-  fake_image steamdeck-beta 3.5 20230815.100 false
+  fake_image steamdeck-beta 3.5 20230815.100
 )
 
 mkdir -p releases-and-snaps5
@@ -133,11 +133,11 @@ mkdir -p releases-and-snaps5
 (
   cd releases-and-snaps5
 
-  fake_image steamdeck snapshot 20230801.1 false
+  fake_image steamdeck snapshot 20230801.1
 
-  fake_image steamdeck-rc snapshot 20220303.1 false
+  fake_image steamdeck-rc snapshot 20220303.1
 
-  fake_image steamdeck-beta 3.5 20230815.100 false
+  fake_image steamdeck-beta 3.5 20230815.100
 )
 
 echo "Hierarchy created under '$OUTDIR/images'"
