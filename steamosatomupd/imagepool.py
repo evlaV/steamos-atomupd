@@ -226,7 +226,6 @@ class ImagePool:
 
     def __init__(self, config):
         self._create_pool(config['Images']['PoolDir'],
-                          config['Images'].getboolean('Snapshots', fallback=False),
                           config['Images'].getboolean('Unstable'),
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
@@ -257,10 +256,10 @@ class ImagePool:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
-    def _create_pool(self, images_dir: str, work_with_snapshots: bool,
-                     want_unstable_images: bool, supported_products: list[str],
-                     supported_releases: list[str], supported_variants: list[str],
-                     variants_order: list[str], supported_archs: list[str]) -> None:
+    def _create_pool(self, images_dir: str, want_unstable_images: bool,
+                     supported_products: list[str], supported_releases: list[str],
+                     supported_variants: list[str], variants_order: list[str],
+                     supported_archs: list[str]) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -270,12 +269,6 @@ class ImagePool:
         # Make sure releases are sorted
         if not sorted(supported_releases) == supported_releases:
             raise RuntimeError("Release list '{}' is not sorted".format(supported_releases))
-
-        # If we work with snapshots, then obviously we want to consider unstable images
-        # (as snapshots are treated as unstable images)
-        if work_with_snapshots:
-            log.warning('"Snapshots" property is deprecated, use "Unstable" instead')
-            want_unstable_images = True
 
         # Our variables
         self.images_dir = images_dir
