@@ -16,9 +16,11 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
+import configparser
 import logging
 import os
 import shutil
+import tempfile
 from dataclasses import dataclass
 import signal
 import subprocess
@@ -40,12 +42,23 @@ sys.path.insert(1, os.getcwd())
 
 log = logging.getLogger(__name__)
 
+
+@dataclass
+class ServerConfig:
+    pool_dir: Path
+    variants: tuple[str, ...]
+    variants_order: tuple[str, ...] = ()
+    unstable: bool = True
+    products: tuple[str, ...] = ('steamos',)
+    releases: tuple[str, ...] = ('holo',)
+    archs: tuple[str, ...] = ('amd64',)
+
+
 @dataclass
 class ServerData:
     msg: str
-    config: str
+    config: ServerConfig
     expectation: str
-    pooldir: str = ""
     changed_expectation: str = ""
     mock_leftovers: Union[Path, None] = None
     mock_ndiff: Union[Path, None] = None
@@ -59,7 +72,11 @@ class ServerData:
 server_data = [
     ServerData(
         msg='Static server with release images',
-        config='server-releases.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'staticexpected_mock_ndiff',
@@ -68,12 +85,19 @@ server_data = [
     ),
     ServerData(
         msg='Static server with snapshot images',
-        config='server-snapshots.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'snapshots',
+            variants=('atomic', 'steamdeck', 'steamdeck-beta'),
+        ),
         expectation='staticsnapexpected',
     ),
     ServerData(
         msg='Static server with snapshot and release images',
-        config='server-releases-and-snaps.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-main', 'steamdeck-rc'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='static_rel_and_snap_expected',
         mock_leftovers=EXPECTATION_PARENT / 'static_rel_and_snap_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'static_rel_and_snap_mock_ndiff',
@@ -82,8 +106,11 @@ server_data = [
     ),
     ServerData(
         msg='Static server with release images running as daemon',
-        config='server-releases.conf',
-        pooldir='releases',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='staticexpected',
         changed_expectation='staticdaemonexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
@@ -93,34 +120,57 @@ server_data = [
     ),
     ServerData(
         msg='Static server with snapshot images',
-        config='server-releases-and-snaps2.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps2',
+            variants=('steamdeck', 'steamdeck-beta'),
+            variants_order=('steamdeck', 'steamdeck-beta'),
+        ),
         expectation='static_rel_and_snap2_expected',
     ),
     ServerData(
         msg='Static server with snapshot and release images 3',
-        config='server-releases-and-snaps3.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps3',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-main', 'steamdeck-rc', 'steamdeck-bc'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta', 'steamdeck-bc', 'steamdeck-main'),
+        ),
         expectation='static_rel_and_snap3_expected',
     ),
     ServerData(
         msg='Static server with snapshot and release images 4',
-        config='server-releases-and-snaps4.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps4',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='static_rel_and_snap4_expected',
     ),
     ServerData(
         msg='Static server with snapshot and release images 5',
-        config='server-releases-and-snaps5.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps5',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='static_rel_and_snap5_expected',
     ),
     ServerData(
         msg='Server with a variant that does not match any of the images in the pool',
-        config='server-releases-and-snaps-missing.conf',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps5',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc', 'steamdeck-missing'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='',
         exit_code=1,
     ),
     ServerData(
         msg='Server with a variant that does not match any of the images in the pool, as daemon',
-        config='server-releases-and-snaps-missing.conf',
-        pooldir='',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-and-snaps5',
+            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc', 'steamdeck-missing'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
         expectation='',
         run_as_daemon=True,
         exit_code=1,
@@ -157,9 +207,23 @@ class StaticServerTestCase(unittest.TestCase):
         daemon = None
 
         for data in server_data:
-            with self.subTest(msg=data.msg):
+            with self.subTest(msg=data.msg), tempfile.NamedTemporaryFile(mode='w', buffering=1) as tmp_config:
                 subprocess.run(['rm', '-fR', META_OUTPUT_DIR])
                 Path(".lockfile.lock").unlink(missing_ok=True)
+
+                config = configparser.RawConfigParser()
+                # Preserve case
+                config.optionxform = str
+                config['Images'] = {'PoolDir': str(data.config.pool_dir),
+                                    'Unstable': data.config.unstable,
+                                    'Products': ' '.join(data.config.products),
+                                    'Releases': ' '.join(data.config.releases),
+                                    'Variants': ' '.join(data.config.variants),
+                                    'Archs': ' '.join(data.config.archs)}
+                if data.config.variants_order:
+                    config['Images']['VariantsOrder'] = ' '.join(data.config.variants_order)
+
+                config.write(tmp_config)
 
                 if data.mock_leftovers:
                     shutil.copytree(data.mock_leftovers / META_OUTPUT_DIR, META_OUTPUT_DIR)
@@ -173,7 +237,7 @@ class StaticServerTestCase(unittest.TestCase):
 
                     my_env = os.environ
                     my_env["IN_SOURCE_TREE"] = "True"
-                    daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', str(CONFIG_PARENT / data.config)],
+                    daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', tmp_config.name],
                         env=my_env)
 
                     # Give the static server time to set up it's watch, etc.
@@ -184,8 +248,7 @@ class StaticServerTestCase(unittest.TestCase):
                         self.assertEqual(daemon.wait(timeout=5), data.exit_code)
                         continue
 
-                    self.assertNotEquals(data.pooldir, "")
-                    trigger_path = os.path.join(str(IMAGES_PARENT), data.pooldir, "steamos", "updated.txt")
+                    trigger_path = os.path.join(data.config.pool_dir, "steamos", "updated.txt")
                     log.info(f"TEST: Started static server as daemon, triggering file at {trigger_path}")
 
                     lastmtime = 0
@@ -203,7 +266,7 @@ class StaticServerTestCase(unittest.TestCase):
                     self.assertEqual(p.stdout, '')
                     self.assertEqual(p.returncode, 0)
 
-                    #Trigger a new scan by touching the right file
+                    # Trigger a new scan by touching the right file
                     open(trigger_path, 'a').close()
 
                     log.info("TEST: Touched trigger file, waiting for daemon to parse new data")
@@ -217,10 +280,7 @@ class StaticServerTestCase(unittest.TestCase):
                         if os.path.isfile(updated_path):
                             newmtime = os.path.getmtime(updated_path)
                 else:
-                    # Pooldir is only needed when the tests are executed as a daemon
-                    self.assertEqual(data.pooldir, "")
-
-                    args = ['--debug', '--config', str(CONFIG_PARENT / data.config)]
+                    args = ['--debug', '--config', tmp_config.name]
 
                     with self.assertLogs('steamosatomupd.staticserver', level=logging.DEBUG) as lo:
                         if data.exit_code != 0:
@@ -308,7 +368,7 @@ class StaticServerTestCase(unittest.TestCase):
                         # Now try to run a second instance and make sure the lockfile prevents it doing anything
                         my_env = os.environ
                         my_env["IN_SOURCE_TREE"] = "True"
-                        second_daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', str(CONFIG_PARENT / data.config)],
+                        second_daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', tmp_config.name],
                             env=my_env)
 
                         output = second_daemon.communicate()[0]
