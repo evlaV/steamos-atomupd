@@ -82,14 +82,12 @@ mkdir -p releases-and-snaps2
 (
   cd releases-and-snaps2
 
-  # Simulate the case where we had to set up a checkpoint before the
-  # switch to versioned images was completed
   fake_image steamdeck snapshot 20230201.1 false
-  fake_image steamdeck snapshot 20230303.1 true
+  fake_image steamdeck 3.5 20230303.1 false
   fake_image steamdeck 3.5 20230401.1 true
   fake_image steamdeck 3.5 20230411.1 false
 
-  fake_image steamdeck-beta snapshot 20230303.100 true
+  fake_image steamdeck-beta snapshot 20230303.100 false
   fake_image steamdeck-beta 3.5 20230401.100 true
   fake_image steamdeck-beta 3.6 20230727.100 false
 )
