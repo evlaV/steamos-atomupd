@@ -98,8 +98,8 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     - images that are either a checkpoint, either the latest image
     """
 
-    previous = None
-    latest = None
+    previous: UpdateCandidate | None = None
+    latest: UpdateCandidate | None = None
     checkpoints: list[UpdateCandidate] = []
     winners: list[UpdateCandidate] = []
 
