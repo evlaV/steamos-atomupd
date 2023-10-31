@@ -128,7 +128,7 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
                 previous = latest
                 latest = candidate
 
-        if update_type in (UpdateType.unexpected_buildid, UpdateType.second_last):
+        if update_type.is_fallback():
             assert latest
             if latest.image.checkpoint and latest not in checkpoints:
                 # If the base image is a snapshot, we don't have a way of knowing how old that
@@ -176,7 +176,7 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     if latest and latest not in winners:
         winners.append(latest)
 
-    if update_type in (UpdateType.unexpected_buildid, UpdateType.second_last):
+    if update_type.is_fallback():
         # If this is a fallback update, there is no need to do additional checks to avoid cycles.
         # We ALWAYS want to propose an upgrade/downgrade because, if a client requested this file,
         # it means its original image is unexpected/broken/deprecated.

@@ -187,3 +187,10 @@ class UpdateType(Enum):
     We don't want the latest update, but instead the penultimate. This option implies
     'unexpected_buildid'.
     """
+
+    def is_fallback(self) -> bool:
+        """
+        Check if the provided update_type is a fallback. I.e. a generic update that shouldn't
+        take into consideration the origin image build ID nor its variant.
+        """
+        return self in (UpdateType.unexpected_buildid, UpdateType.second_last)
