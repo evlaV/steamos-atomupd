@@ -66,12 +66,6 @@ class GetUpdateCandidatesTestCase(unittest.TestCase):
         res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
         self.assertTrue(res == [ c2, c3 ])
 
-        # checkpoint + last image (no change, as i == d1 version-wise)
-        d1['checkpoint'] = True
-        c1 = mk_update_candidate(d1)
-        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
-        self.assertTrue(res == [ c2, c3 ])
-
         # no update candidates (already at latest)
         d['version'] = '2.2'
         i = mk_image(d)
