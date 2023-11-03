@@ -6,7 +6,7 @@
                     "arch": "amd64",
                     "buildid": "20220302.1005",
                     "checkpoint": false,
-                    "estimated_size": 405476160,
+                    "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
                     "variant": "steamdeck-main",

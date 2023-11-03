@@ -441,9 +441,9 @@ class ImagePool:
 
         # Only estimate the size of the first update for now. Once we'll have the first
         # checkpoint we can also begin to estimate the subsequent updates, if needed.
-        # Skip this when the buildid is unexpected, because we have no way of knowing what's the
+        # Skip this when the update type is a fallback, because we have no way of knowing what's the
         # base image the client is using.
-        if relative_update_path and update_type != UpdateType.unexpected_buildid:
+        if relative_update_path and not update_type.is_fallback():
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
         return UpdatePath(release, candidates)
