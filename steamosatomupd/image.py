@@ -240,6 +240,11 @@ class Image:
         # update or not. There is no need to export it in the update dictionary/JSON
         data.pop('skip')
 
+        # If the image is not a checkpoint, use the implicit missing "checkpoint" property
+        # value to indicate that this is not a checkpoint.
+        if not self.checkpoint:
+            data.pop('checkpoint')
+
         return data
 
     def get_version_str(self) -> str:

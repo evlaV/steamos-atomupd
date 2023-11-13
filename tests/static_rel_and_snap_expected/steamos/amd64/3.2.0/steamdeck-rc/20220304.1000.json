@@ -5,7 +5,6 @@
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220303.2",
-                    "checkpoint": false,
                     "estimated_size": 203173010,
                     "product": "steamos",
                     "release": "holo",
