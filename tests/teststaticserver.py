@@ -175,6 +175,15 @@ server_data = [
         run_as_daemon=True,
         exit_code=1,
     ),
+    ServerData(
+        msg='Static server with a checkpoint image that goes directly from zero to two',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-checkpoints',
+            variants=('steamdeck', 'steamdeck-beta'),
+            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+        ),
+        expectation='static_rel_checkpoints_expected',
+    ),
 ]
 
 

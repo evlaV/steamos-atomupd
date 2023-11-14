@@ -32,6 +32,21 @@ mkdir -p snapshots
   fake_image atomic snapshot 20181108.1 false
 )
 
+mkdir -p releases-checkpoints
+
+(
+  cd releases-checkpoints
+
+  fake_image steamdeck 3.6 20231112.1
+  # Simulate an image that requires a checkpoint zero and provides directly
+  # the checkpoint 2
+  fake_image steamdeck 3.6 20231114.1 2 0
+  fake_image steamdeck 3.6 20231115.1 0 2
+
+  fake_image steamdeck-beta 3.6 20231113.100 1 0
+  fake_image steamdeck-beta 3.6 20231113.101 2 1
+)
+
 mkdir -p releases
 
 (
