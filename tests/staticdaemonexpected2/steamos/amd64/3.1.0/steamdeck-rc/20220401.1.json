@@ -5,10 +5,11 @@
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220402.3",
-                    "checkpoint": true,
                     "estimated_size": 0,
+                    "introduces_checkpoint": 1,
                     "product": "steamos",
                     "release": "holo",
+                    "requires_checkpoint": 0,
                     "variant": "steamdeck",
                     "version": "3.1.0"
                 },
@@ -18,10 +19,11 @@
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220423.1",
-                    "checkpoint": true,
                     "estimated_size": 0,
+                    "introduces_checkpoint": 2,
                     "product": "steamos",
                     "release": "holo",
+                    "requires_checkpoint": 1,
                     "variant": "steamdeck",
                     "version": "3.3.0"
                 },
@@ -31,10 +33,11 @@
                 "image": {
                     "arch": "amd64",
                     "buildid": "20230705.1",
-                    "checkpoint": true,
                     "estimated_size": 0,
+                    "introduces_checkpoint": 3,
                     "product": "steamos",
                     "release": "holo",
+                    "requires_checkpoint": 2,
                     "variant": "steamdeck",
                     "version": "3.5.0"
                 },

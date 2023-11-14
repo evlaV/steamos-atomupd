@@ -82,14 +82,14 @@ Query request details
 To query the update server an HTTP `GET` request is sent.
 
 For example a request will look like this:
-`https://example.com/update?product=steamos&release=holo&variant=jupiter&arch=amd64&version=snapshot&buildid=20211022.4&checkpoint=False`
+`https://example.com/update?product=steamos&release=holo&variant=jupiter&arch=amd64&version=snapshot&buildid=20211022.4`
 
 To the base server URL, taken from the `QueryUrl` field in the
 [configuration file][], is appended a question mark followed by multiple "query"
 parameters, in the form of "key=value", separated by an ampersand (following
 the [RFC 3986][] specification).
 
-`product`, `release`, `variant`, `arch`, `version`, `buildid` and `checkpoint`
+`product`, `release`, `variant`, `arch`, `version` and `buildid`
 are all guaranteed to be present as "query" parameters.
 Their values are taken from the [image manifest][].
 
@@ -97,13 +97,10 @@ However, if the `manifest.json` has an empty value for one of these parameters,
 e.g. `"product": ""`, the client will not throw any error while parsing that
 JSON, and the resulting `GET` request will have `[...]?product=&release=[...]`.
 
-Additionally `checkpoint` is expected to be a boolean, so the GET request
-usually terminates with either `&checkpoint=False` or `&checkpoint=True`.
-If `checkpoint` is missing from the manifest file, by default its value will
-be assumed to be `False`.
-However, while parsing the `manifest.json` file, its type is not enforced.
-For this reason if the JSON had some unexpected value like
-`"checkpoint": "maybe"`, the request will contain `[...]&checkpoint=maybe`.
+If an image is past at least a single checkpoint, the request will also contain
+the parameter `requires_checkpoint`.
+If an image introduces a new checkpoint, it will include the parameter
+`introduces_checkpoint`.
 
 [configuration file]: #the-client-configuration-file
 [RFC 3986]: https://datatracker.ietf.org/doc/html/rfc3986#section-3

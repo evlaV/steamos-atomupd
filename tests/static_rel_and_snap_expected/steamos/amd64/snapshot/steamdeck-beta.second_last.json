@@ -4,14 +4,14 @@
             {
                 "image": {
                     "arch": "amd64",
-                    "buildid": "20220221.100",
+                    "buildid": "20220303.2",
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
-                    "variant": "steamdeck-beta",
-                    "version": "snapshot"
+                    "variant": "steamdeck",
+                    "version": "3.0.0"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20220221.100-snapshot-amd64-steamdeck-beta.raucb"
+                "update_path": "steamos/holo/3.0/amd64/steamos-holo-20220303.2-3.0-amd64-steamdeck.raucb"
             }
         ],
         "release": "holo"

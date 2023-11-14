@@ -5,10 +5,11 @@
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220501.100",
-                    "checkpoint": true,
                     "estimated_size": 0,
+                    "introduces_checkpoint": 3,
                     "product": "steamos",
                     "release": "holo",
+                    "requires_checkpoint": 2,
                     "variant": "steamdeck-beta",
                     "version": "3.4.0"
                 },

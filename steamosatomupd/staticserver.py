@@ -255,8 +255,11 @@ class UpdateParser(pyinotify.ProcessEvent):
                 image = image_update.image
                 base_path = Path(image.product, image.arch, image.get_version_str())
                 json_path = Path(base_path, requested_variant, f'{image.buildid}.json')
-                json_path_fallback = Path(base_path, f'{requested_variant}.json')
-                json_path_second_last = Path(base_path, f'{requested_variant}.second_last.json')
+
+                checkpoint_number = image.get_image_checkpoint()
+                checkpoint_str = f'.{checkpoint_number}' if checkpoint_number > 0 else ''
+                json_path_fallback = Path(base_path, f'{requested_variant}{checkpoint_str}.json')
+                json_path_second_last = Path(base_path, f'{requested_variant}{checkpoint_str}.second_last.json')
 
                 self._write_update_json(image_update, requested_variant, json_path, update_jsons)
                 self._write_update_json(image_update, requested_variant, json_path_fallback,

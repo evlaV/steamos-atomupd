@@ -4,23 +4,11 @@
             {
                 "image": {
                     "arch": "amd64",
-                    "buildid": "20230401.100",
-                    "checkpoint": true,
-                    "estimated_size": 0,
-                    "product": "steamos",
-                    "release": "holo",
-                    "variant": "steamdeck-beta",
-                    "version": "3.5.0"
-                },
-                "update_path": "steamos/holo/3.5/amd64/steamos-holo-20230401.100-3.5-amd64-steamdeck-beta.raucb"
-            },
-            {
-                "image": {
-                    "arch": "amd64",
                     "buildid": "20230727.100",
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
+                    "requires_checkpoint": 1,
                     "variant": "steamdeck-beta",
                     "version": "3.6.0"
                 },

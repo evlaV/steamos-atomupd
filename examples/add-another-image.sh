@@ -15,7 +15,7 @@ cd $OUTDIR/images
 (
   cd releases
 
-  fake_image steamdeck 3.5 20230705.1 true
+  fake_image steamdeck 3.5 20230705.1 3 2
 )
 
 touch releases/steamos/updated.txt

@@ -10,7 +10,8 @@
           "arch": "amd64",
           "version": "snapshot",
           "buildid": "20211225.1",
-          "checkpoint": true,
+          "requires_checkpoint": 0,
+          "introduces_checkpoint": 1,
           "estimated_size": 0
         },
         "update_path": "steamdeck/20211225.1/steamdeck-20211225.1-snapshot.raucb"
@@ -23,7 +24,8 @@
           "arch": "amd64",
           "version": "snapshot",
           "buildid": "20220101.1",
-          "checkpoint": true,
+          "requires_checkpoint": 1,
+          "introduces_checkpoint": 2,
           "estimated_size": 0
         },
         "update_path": "steamdeck/20220101.1/steamdeck-20220101.1-snapshot.raucb"
@@ -36,7 +38,7 @@
           "arch": "amd64",
           "version": "snapshot",
           "buildid": "20220227.3",
-          "checkpoint": false,
+          "requires_checkpoint": 2,
           "estimated_size": 0
         },
         "update_path": "steamdeck/20220227.3/steamdeck-20220227.3-snapshot.raucb"

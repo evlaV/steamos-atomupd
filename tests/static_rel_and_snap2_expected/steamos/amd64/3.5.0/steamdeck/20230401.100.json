@@ -8,6 +8,7 @@
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
+                    "requires_checkpoint": 1,
                     "variant": "steamdeck",
                     "version": "3.5.0"
                 },

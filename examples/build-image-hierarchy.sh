@@ -38,23 +38,21 @@ mkdir -p releases
   cd releases
 
   fake_image steamdeck 3.1 20220401.1 false
-  fake_image steamdeck 3.1 20220402.3 true
-  fake_image steamdeck 3.2 20220411.1 false
+  fake_image steamdeck 3.1 20220402.3 1 0
+  fake_image steamdeck 3.2 20220411.1 0 1
   # Simulate an update that we don't want to propose anymore
-  fake_image steamdeck 3.2 20220412.1 false true
+  fake_image steamdeck 3.2 20220412.1 0 1 true
   # Test the skip field explicitly set to false
-  fake_image steamdeck 3.3 20220423.1 true false
+  fake_image steamdeck 3.3 20220423.1 2 1 false
 
   fake_image steamdeck-rc 3.1 20220401.5 false
 
   # Same checkpoint as in 'steamdeck'
-  fake_image steamdeck-beta 3.1 20220402.3 true
-  fake_image steamdeck-beta 3.1 20220405.100 false
-  # The buildid of a checkpoint can be different, as long as they are
-  # conceptually the same (i.e. introduce the same breaking changes)
-  fake_image steamdeck-beta 3.3 20220423.100 true
+  fake_image steamdeck-beta 3.1 20220402.3 1 0
+  fake_image steamdeck-beta 3.1 20220405.100 0 1
+  fake_image steamdeck-beta 3.3 20220423.100 2 1
   # Testing a new checkpoint that still hasn't been promoted to 'steamdeck'
-  fake_image steamdeck-beta 3.4 20220501.100 true
+  fake_image steamdeck-beta 3.4 20220501.100 3 2
 )
 
 mkdir -p releases-and-snaps
@@ -66,7 +64,7 @@ mkdir -p releases-and-snaps
   fake_image steamdeck snapshot 20220225.1 false
   fake_image steamdeck 3.0 20220303.2 false
   # Simulate an update that has been removed
-  fake_image steamdeck 3.0 20220303.3 false true true
+  fake_image steamdeck 3.0 20220303.3 false false true true
 
   fake_image steamdeck-rc 3.0 20220303.1 false
 
@@ -84,12 +82,12 @@ mkdir -p releases-and-snaps2
 
   fake_image steamdeck snapshot 20230201.1 false
   fake_image steamdeck 3.5 20230303.1 false
-  fake_image steamdeck 3.5 20230401.1 true
-  fake_image steamdeck 3.5 20230411.1 false
+  fake_image steamdeck 3.5 20230401.1 1 0
+  fake_image steamdeck 3.5 20230411.1 0 1
 
   fake_image steamdeck-beta snapshot 20230303.100 false
-  fake_image steamdeck-beta 3.5 20230401.100 true
-  fake_image steamdeck-beta 3.6 20230727.100 false
+  fake_image steamdeck-beta 3.5 20230401.100 1 0
+  fake_image steamdeck-beta 3.6 20230727.100 0 1
 )
 
 mkdir -p releases-and-snaps3

@@ -119,14 +119,15 @@ class Image:
     arch: str
     version: semantic_version.Version
     buildid: BuildId
-    checkpoint: bool
+    introduces_checkpoint: int
+    requires_checkpoint: int
     estimated_size: int
     skip: bool
 
     @classmethod
     def from_values(cls, product: str, release: str, variant: str, arch: str,
-                    version_str: str, buildid_str: str, checkpoint: bool,
-                    estimated_size: int, skip: bool) -> Image:
+                    version_str: str, buildid_str: str, introduces_checkpoint: int,
+                    requires_checkpoint: int, estimated_size: int, skip: bool) -> Image:
         """Create an Image from mandatory values
 
         This method performs mandatory conversions and sanity checks before
@@ -149,7 +150,8 @@ class Image:
             arch = 'amd64'
 
         # Return an instance
-        return cls(product, release, variant, arch, version, buildid, checkpoint, estimated_size, skip)
+        return cls(product, release, variant, arch, version, buildid, introduces_checkpoint,
+                   requires_checkpoint, estimated_size, skip)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Image:
@@ -171,7 +173,8 @@ class Image:
         buildid_str = data_copy.pop('buildid')
 
         # Get optional fields
-        checkpoint = data_copy.pop('checkpoint', False)
+        introduces_checkpoint = data_copy.pop('introduces_checkpoint', 0)
+        requires_checkpoint = data_copy.pop('requires_checkpoint', 0)
         estimated_size = data_copy.pop('estimated_size', 0)
         skip = data_copy.pop('skip', False)
 
@@ -179,21 +182,20 @@ class Image:
             log.warning('The image manifest has some unknown key-values: %s', data_copy)
 
         # Return an instance
-        return cls.from_values(product, release, variant, arch,
-                               version_str, buildid_str, checkpoint,
-                               estimated_size, skip)
+        return cls.from_values(product, release, variant, arch, version_str, buildid_str,
+                               introduces_checkpoint, requires_checkpoint, estimated_size, skip)
 
     @classmethod
     def from_os(cls, product='', release='', variant='', arch='',
-                version_str='', buildid_str='', checkpoint=False,
-                estimated_size: int = 0, skip=False) -> Image:
+                version_str='', buildid_str='', introduces_checkpoint=0,
+                requires_checkpoint=0, estimated_size: int = 0, skip=False) -> Image:
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
         current system. The os-release file provides for most of the default values.
 
-        'checkpoint' does not exist in any standard place, hence it's assumed to be
-        false if it's not provided. Note that os-release allows custom additional
+        '*_checkpoint' do not exist in any standard place, hence we assume the
+        default values. Note that os-release allows custom additional
         fields (and recommends to use some kind of namespacing), so we could look for
         'checkpoint' in a custom field named ${PRODUCT}_CHECKPOINT, for example.
 
@@ -226,8 +228,8 @@ class Image:
 
         # Return an instance, might raise exceptions
         return cls.from_values(product, release, variant, arch,
-                               version_str, buildid_str, checkpoint,
-                               estimated_size, skip)
+                               version_str, buildid_str, introduces_checkpoint,
+                               requires_checkpoint, estimated_size, skip)
 
     def to_dict(self) -> dict[str, Any]:
         """Export an Image to a dictionary"""
@@ -240,10 +242,15 @@ class Image:
         # update or not. There is no need to export it in the update dictionary/JSON
         data.pop('skip')
 
-        # If the image is not a checkpoint, use the implicit missing "checkpoint" property
-        # value to indicate that this is not a checkpoint.
-        if not self.checkpoint:
-            data.pop('checkpoint')
+        if not self.is_checkpoint():
+            # If this is not a checkpoint, there is no need to print the "introduces_checkpoint"
+            # entry in the JSON. It would just make it more confusing.
+            data.pop('introduces_checkpoint')
+            if self.requires_checkpoint == 0:
+                # This is the canonical case where an image is not a checkpoint and doesn't require
+                # to be past any particular checkpoint.
+                # Avoid printing in the resulting JSON the default zero values to prevent confusion.
+                data.pop('requires_checkpoint')
 
         return data
 
@@ -284,6 +291,16 @@ class Image:
             return not self.version.prerelease
 
         return False
+
+    def is_checkpoint(self) -> bool:
+        """Whether this image introduces a new checkpoint"""
+
+        return self.introduces_checkpoint > 0
+
+    def get_image_checkpoint(self) -> int:
+        """Returns the checkpoint number that this image will require for the
+        subsequent updates"""
+        return max(self.requires_checkpoint, self.introduces_checkpoint)
 
     def get_unique_name(self) -> str:
         """Generates a string that is unique for this image"""
@@ -350,6 +367,6 @@ class Image:
         return (self.release, self.buildid) >= (other.release, other.buildid)
 
     def __repr__(self) -> str:
-        return "{{ {}, {}, {}, {}, {}, {}, {} }}".format(
+        return "{{ {}, {}, {}, {}, {}, {}, {}, {} }}".format(
             self.product, self.release, self.variant, self.arch,
-            self.version, self.buildid, self.checkpoint)
+            self.version, self.buildid, self.introduces_checkpoint, self.requires_checkpoint)

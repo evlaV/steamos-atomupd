@@ -99,82 +99,63 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     """
 
     previous: UpdateCandidate | None = None
-    latest: UpdateCandidate | None = None
+    newest_candidate: UpdateCandidate | None = None
     checkpoints: list[UpdateCandidate] = []
     winners: list[UpdateCandidate] = []
 
     if not candidates:
         return []
 
-    dest_variant = candidates[-1].image.variant
-
-    for candidate in candidates:
-        # TODO revisit our logic once jupiter/tasks#912 has been addressed.
-        #  For unexpected_buildid we can't be sure about how many checkpoints has already been
-        #  installed.
-
-        if candidate.image.variant != dest_variant:
-            # Consider only images from the destination to avoid hopping between different variants
-            # and proposing multiple checkpoints that are conceptually equivalent.
-            # TODO this assumes that dest_variant has all the necessary checkpoints to reach the
-            #  destination image. With jupiter/tasks#912 we'll not have to assume it anymore.
-            continue
-
-        if update_type != UpdateType.standard:
-            # We want to force at least an update, even if that may be a downgrade.
-            # E.g. when the buildid is unexpected/borked, we want to push the client back to a
-            # known image
-            if not latest or candidate.image > latest.image:
-                previous = latest
-                latest = candidate
-
-        if update_type.is_fallback():
-            assert latest
-            if latest.image.checkpoint and latest not in checkpoints:
-                # If the base image is a snapshot, we don't have a way of knowing how old that
-                # is, so we just keep all the checkpoints that have been released for snapshots.
-                # Instead, for versioned images we can only use their version, because the base
-                # image buildid is irrelevant for fallback updates (this is the case where the
-                # buildid is unexpected/borked).
-                if not image.version or (latest.image.version
-                                         and latest.image.version >= image.version):
-                    checkpoints.append(latest)
-            continue
-
-        if candidate.image <= image:
-            continue
-
-        if latest and candidate.image <= latest.image:
-            # Avoid a downgrade cycle
-            continue
-
-        if candidate.image.checkpoint:
-            checkpoints.append(candidate)
-
-        if not latest or candidate.image > latest.image:
-            latest = candidate
+    for candidate in reversed(candidates):
+        if not newest_candidate:
+            newest_candidate = candidate
+        elif not previous:
+            previous = candidate
+            break
 
     if update_type == UpdateType.second_last:
-        if (previous and previous.image.checkpoint) or (latest and latest.image.checkpoint) or checkpoints:
-            # If the latest update is a checkpoint, or if we are traversing a checkpoint, we can't
-            # safely propose a second last update. Until we revisit the checkpoints logic in
-            # jupiter/tasks#912, this is the only safe thing to do here.
-            previous = None
+        # If we are looking for the penultimate update, discard the newest image and
+        # replace it with the "previous" ones
+        newest_candidate = previous
 
-        if previous and previous != latest:
-            winners.append(previous)
-        else:
-            log.info("It was not possible to propose the second last update for %s/%s",
-                     image.version, image.release)
+    if not newest_candidate:
+        log.debug("There are no updates for %s/%s/%s",
+                  image.version, image.release, image.buildid)
+        return []
 
-        # Return what we have without including "latest" because we are interested in the second
-        # last here
-        return winners
+    if image.get_image_checkpoint() > newest_candidate.image.requires_checkpoint:
+        log.info("(%s) can't update to (%s) because it is past a newer checkpoint",
+                 image, newest_candidate.image)
+        return []
 
-    winners.extend(checkpoints)
+    # Keep only the candidates from the destination image, to avoid hopping between
+    # different variants.
+    # Also remove any candidate that is newer than our chosen `newest_candidate`. We may encounter
+    # newer candidates when we are searching for the penultimate update
+    filtered_candidates = [candidate for candidate in candidates if
+                           candidate.image.variant == newest_candidate.image.variant and
+                           candidate.image < newest_candidate.image]
 
-    if latest and latest not in winners:
-        winners.append(latest)
+    # If the destination requires a newer checkpoint we populate the necessary checkpoints list
+    curr_checkpoint = image.get_image_checkpoint()
+    for candidate in filtered_candidates:
+        if not candidate.image.is_checkpoint():
+            continue
+
+        if curr_checkpoint == candidate.image.requires_checkpoint <= newest_candidate.image.requires_checkpoint:
+            checkpoints.append(candidate)
+            curr_checkpoint = candidate.image.introduces_checkpoint
+
+    if curr_checkpoint != newest_candidate.image.requires_checkpoint:
+        log.info("(%s) can't update to \"%s\" because it is missing a required checkpoint",
+                 image, newest_candidate.image.variant)
+        return []
+
+    # Use a separate winners list. It will be used by a future commit.
+    winners = checkpoints
+
+    if newest_candidate not in winners:
+        winners.append(newest_candidate)
 
     if update_type.is_fallback():
         # If this is a fallback update, there is no need to do additional checks to avoid cycles.
@@ -482,15 +463,20 @@ class ImagePool:
         if minor_update or major_update:
             return Update(minor_update, major_update)
 
-        # This can be caused by a configuration error, e.g. we don't have a single image in the
-        # image pool for one of the variants listed in "Variants".
-        # In those cases it's better to exit with an error to avoid ending up producing unexpected
-        # JSON files.
         if update_type == UpdateType.unexpected_buildid:
-            log.error("Even if we were looking for fallback updates for %s, we didn't find a "
-                      "suitable one. This can be caused by having unexpected variants in the "
-                      "server configuration.", requested_variant)
-            sys.exit(1)
+            if not all_candidates:
+                # This can be caused by a configuration error, e.g. we don't have a single image in
+                # the image pool for one of the variants listed in "Variants".
+                # In those cases it's better to exit with an error to avoid ending up producing
+                # unexpected JSON files.
+                log.error("There is not a single valid candidate for the variant %s. This can be "
+                          "caused by having unexpected variants in the server configuration",
+                          requested_variant)
+                sys.exit(1)
+            else:
+                log.debug("There isn't a fallback update for [%i, %s]",
+                          image.requires_checkpoint, requested_variant)
+                return None
 
         if update_type == UpdateType.second_last:
             # This can happen for example when our first valid candidate is a checkpoint and we

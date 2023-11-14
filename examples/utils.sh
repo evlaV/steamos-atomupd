@@ -17,9 +17,10 @@ fake_image() {
     local -r variant=$1
     local -r version=$2
     local -r buildid=$3
-    local -r checkpoint=${4:-}
-    local -r skip=${5-}
-    local -r deleted=${6:-false}
+    local -r introduces_checkpoint=${4:-}
+    local -r requires_checkpoint=${5:-}
+    local -r skip=${6:-}
+    local deleted=${7:-false}
     local -r product=steamos
     local -r release=holo
     local -r arch=amd64
@@ -36,8 +37,12 @@ fake_image() {
     add_common_manifest_fields "$product" "$release" "$variant" "$arch" "$version" "$buildid" >> \
       "$manifest"
 
-    if [ -n "$checkpoint" ]; then
-      printf ",\n  \"checkpoint\": %s" "$checkpoint" >> "$manifest"
+    if [ -n "$introduces_checkpoint" ] && [ "$introduces_checkpoint" != false ]; then
+      printf ",\n  \"introduces_checkpoint\": %s" "$introduces_checkpoint" >> "$manifest"
+    fi
+
+    if [ -n "$requires_checkpoint" ] && [ "$requires_checkpoint" != false ]; then
+      printf ",\n  \"requires_checkpoint\": %s" "$requires_checkpoint" >> "$manifest"
     fi
 
     if [ -n "$skip" ]; then
