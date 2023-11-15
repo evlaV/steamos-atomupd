@@ -76,6 +76,35 @@ allowed to install images that have a `requires_checkpoint: 1` instead of
 `requires_checkpoint: 0`.
 
 
+Shadow checkpoints
+------------------
+
+Shadow checkpoints are not real images and the server will never propose them
+as valid update candidates.
+
+In this regard they are similar to "skip" images but with a key difference. Even
+if they are not proposed as candidates, they still increase the checkpoint number
+as if the client actually passed that checkpoint.
+
+They are used to flag that two particular checkpoints are compatible with each other.
+
+This is easier to understand with an example:
+![Shadow checkpoints example](shadow_checkpoint_example.png)
+
+In this example we have `20231003.1` that has been released as a shadow checkpoint.
+This allows `20230913.1` to directly install the canonical image `20231003.2`, even
+if it has a different `requires_checkpoint`.
+
+The main use case for shadow checkpoints is when there are two checkpoints that
+essentially cancel each other. E.g. we introduce checkpoint 2, but then we realize
+that its breaking changes are not needed anymore, or they are simply wrong, so we
+introduce another checkpoint 3 that basically reverts all the previous breaking changes.
+
+Shadow checkpoints allow us to signal that a checkpoint 1 is compatible with the
+checkpoint 3 and that we don't actually need to install any checkpoint to perform
+the transition.
+
+
 Client and server
 -----------------
 
@@ -151,7 +180,10 @@ No, checkpoint numbers can only increase.
 If you want to revert the breaking changes that you made you have to release a new
 checkpoint that essentially reverts everything to what you had before that checkpoint.
 
+However, in all the other variants you might be able to create shadow checkpoints instead.
+
 E.g. if you want to revert checkpoint 2, you need to release an image that has
-`introduces_checkpoint: 3` and `requires_checkpoint: 2`. This must be done in
-all the other variants too. With the only difference that you might be able to
-create a single checkpoint as explained in the question above.
+`introduces_checkpoint: 3` and `requires_checkpoint: 2`.
+But in the other variants (unless there you already released the checkpoint 2 too),
+you can create a shadow checkpoint with `introduces_checkpoint: 3` and `requires_checkpoint: 1`.
+This will allow the server to consider the checkpoint 1 and 3 as being compatible.

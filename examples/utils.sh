@@ -21,6 +21,7 @@ fake_image() {
     local -r requires_checkpoint=${5:-}
     local -r skip=${6:-}
     local deleted=${7:-false}
+    local -r shadow_checkpoint=${8:-}
     local -r product=steamos
     local -r release=holo
     local -r arch=amd64
@@ -43,6 +44,10 @@ fake_image() {
 
     if [ -n "$requires_checkpoint" ] && [ "$requires_checkpoint" != false ]; then
       printf ",\n  \"requires_checkpoint\": %s" "$requires_checkpoint" >> "$manifest"
+    fi
+
+    if [ -n "$shadow_checkpoint" ] && [ "$shadow_checkpoint" != false ]; then
+      printf ",\n  \"shadow_checkpoint\": %s" "$shadow_checkpoint" >> "$manifest"
     fi
 
     if [ -n "$skip" ]; then

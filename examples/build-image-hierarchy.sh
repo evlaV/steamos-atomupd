@@ -83,6 +83,71 @@ mkdir -p releases
   fake_image steamdeck-beta 3.4 20220501.100 3 2
 )
 
+mkdir releases2
+
+(
+  cd releases2
+
+  fake_image steamdeck 3.5 20230403.1
+  fake_image steamdeck 3.5 20230404.1 1 0
+  fake_image steamdeck 3.5 20230411.1 0 1
+  # This is a shadow checkpoint
+  fake_image steamdeck 3.6 20230423.1 3 1 false true true
+  fake_image steamdeck 3.6 20230425.1 0 3
+
+  fake_image steamdeck-beta 3.5 20230402.100 1 0
+  # Simulate a checkpoint 2 and then a checkpoint 3 that reverts it.
+  # This is signaled by the fact that in "steamdeck" we have a shadow checkpoint
+  # for those two.
+  fake_image steamdeck-beta 3.6 20230412.100 2 1
+  fake_image steamdeck-beta 3.6 20230412.101 0 2
+  fake_image steamdeck-beta 3.6 20230413.100 3 2
+)
+
+mkdir -p releases3
+
+(
+  cd releases3
+
+  fake_image steamdeck 3.5 20230403.1
+  fake_image steamdeck 3.5 20230404.1 1 0
+  fake_image steamdeck 3.5 20230411.1 0 1
+
+  fake_image steamdeck-staging 3.5 20230501.10000 0 1
+  fake_image steamdeck-staging 3.5 20230507.10000 2 1
+)
+
+mkdir -p releases4
+
+(
+  cd releases4
+
+  fake_image steamdeck 3.5 20230404.1 1 0
+  fake_image steamdeck 3.5 20230411.1 0 1
+  # Shadow checkpoint
+  fake_image steamdeck 3.6 20230508.1 2 1 false true true
+
+  fake_image steamdeck-staging 3.5 20230501.10000 0 1
+  fake_image steamdeck-staging 3.6 20230507.10000 2 1
+)
+
+mkdir -p releases5
+
+(
+  cd releases5
+
+  fake_image steamdeck 3.5 20230404.1
+  fake_image steamdeck 3.5 20230411.1 1 0
+  fake_image steamdeck 3.5 20230412.1 0 1
+  fake_image steamdeck 3.6 20230413.1 0 1
+
+  fake_image steamdeck-beta 3.5 20230405.100
+  fake_image steamdeck-beta 3.5 20230405.101 1 0
+  fake_image steamdeck-beta 3.5 20230406.100 0 1
+  fake_image steamdeck-beta 3.6 20230421.100 0 1
+  fake_image steamdeck-beta 3.6 20230422.100 0 1
+)
+
 mkdir -p releases-and-snaps
 
 (

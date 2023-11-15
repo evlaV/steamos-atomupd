@@ -121,13 +121,14 @@ class Image:
     buildid: BuildId
     introduces_checkpoint: int
     requires_checkpoint: int
+    shadow_checkpoint: bool
     estimated_size: int
     skip: bool
 
     @classmethod
     def from_values(cls, product: str, release: str, variant: str, arch: str,
                     version_str: str, buildid_str: str, introduces_checkpoint: int,
-                    requires_checkpoint: int, estimated_size: int, skip: bool) -> Image:
+                    requires_checkpoint: int, shadow_checkpoint: bool, estimated_size: int, skip: bool) -> Image:
         """Create an Image from mandatory values
 
         This method performs mandatory conversions and sanity checks before
@@ -151,7 +152,7 @@ class Image:
 
         # Return an instance
         return cls(product, release, variant, arch, version, buildid, introduces_checkpoint,
-                   requires_checkpoint, estimated_size, skip)
+                   requires_checkpoint, shadow_checkpoint, estimated_size, skip)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Image:
@@ -175,6 +176,7 @@ class Image:
         # Get optional fields
         introduces_checkpoint = data_copy.pop('introduces_checkpoint', 0)
         requires_checkpoint = data_copy.pop('requires_checkpoint', 0)
+        shadow_checkpoint = data_copy.pop('shadow_checkpoint', False)
         estimated_size = data_copy.pop('estimated_size', 0)
         skip = data_copy.pop('skip', False)
 
@@ -183,12 +185,13 @@ class Image:
 
         # Return an instance
         return cls.from_values(product, release, variant, arch, version_str, buildid_str,
-                               introduces_checkpoint, requires_checkpoint, estimated_size, skip)
+                               introduces_checkpoint, requires_checkpoint, shadow_checkpoint,
+                               estimated_size, skip)
 
     @classmethod
     def from_os(cls, product='', release='', variant='', arch='',
                 version_str='', buildid_str='', introduces_checkpoint=0,
-                requires_checkpoint=0, estimated_size: int = 0, skip=False) -> Image:
+                requires_checkpoint=0, shadow_checkpoint=False, estimated_size: int = 0, skip=False) -> Image:
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
@@ -227,9 +230,9 @@ class Image:
             arch = platform.machine()
 
         # Return an instance, might raise exceptions
-        return cls.from_values(product, release, variant, arch,
-                               version_str, buildid_str, introduces_checkpoint,
-                               requires_checkpoint, estimated_size, skip)
+        return cls.from_values(product, release, variant, arch, version_str,
+                               buildid_str, introduces_checkpoint, requires_checkpoint,
+                               shadow_checkpoint, estimated_size, skip)
 
     def to_dict(self) -> dict[str, Any]:
         """Export an Image to a dictionary"""
@@ -241,6 +244,9 @@ class Image:
         # This is an internal flag used to decide if we should propose this image as an
         # update or not. There is no need to export it in the update dictionary/JSON
         data.pop('skip')
+
+        # Another internal flag used to decide if this is a canonical checkpoint or not.
+        data.pop('shadow_checkpoint')
 
         if not self.is_checkpoint():
             # If this is not a checkpoint, there is no need to print the "introduces_checkpoint"

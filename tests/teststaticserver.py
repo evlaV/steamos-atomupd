@@ -184,6 +184,49 @@ server_data = [
         ),
         expectation='static_rel_checkpoints_expected',
     ),
+    ServerData(
+        msg='Static server with a retired checkpoint',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases-retired-checkpoint',
+            variants=('steamdeck',),
+        ),
+        expectation='statis_retired_checkpoint',
+    ),
+    ServerData(
+        msg='Static server with release images 2',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases2',
+            variants=('steamdeck', 'steamdeck-beta'),
+            variants_order=('steamdeck', 'steamdeck-beta'),
+        ),
+        expectation='staticexpected2',
+    ),
+    ServerData(
+        msg='Static server with release images 3',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases3',
+            variants=('steamdeck', 'steamdeck-staging'),
+            variants_order=('steamdeck', 'steamdeck-staging'),
+        ),
+        expectation='staticexpected3',
+    ),
+    ServerData(
+        msg='Static server with release images 4',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases4',
+            variants=('steamdeck', 'steamdeck-staging'),
+            variants_order=('steamdeck', 'steamdeck-staging'),
+        ),
+        expectation='staticexpected4',
+    ),
+    ServerData(
+        msg='Static server with release images 5',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases5',
+            variants=('steamdeck',),
+        ),
+        expectation='staticexpected5',
+    ),
 ]
 
 

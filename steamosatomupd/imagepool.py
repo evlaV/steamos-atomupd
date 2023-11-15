@@ -107,6 +107,9 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
         return []
 
     for candidate in reversed(candidates):
+        if candidate.image.shadow_checkpoint:
+            continue
+
         if not newest_candidate:
             newest_candidate = candidate
         elif not previous:
@@ -137,7 +140,8 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     # Keep only the candidates from the destination image, to avoid hopping between
     # different variants.
     # Also remove any candidate that is newer than our chosen `newest_candidate`. We may encounter
-    # newer candidates when we are searching for the penultimate update
+    # newer candidates when we are searching for the penultimate update or when there are shadow
+    # checkpoints.
     filtered_candidates = [candidate for candidate in candidates if
                            candidate.image.variant == newest_candidate.image.variant and
                            candidate.image < newest_candidate.image]
@@ -149,7 +153,11 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
             continue
 
         if curr_checkpoint == candidate.image.requires_checkpoint <= newest_candidate.image.requires_checkpoint:
-            checkpoints.append(candidate)
+            if not candidate.image.shadow_checkpoint:
+                # Save this to the checkpoints list only if it's not a shadow checkpoint.
+                # Otherwise, we simply keep track that we passed that checkpoint but do not propose
+                # it as an update.
+                checkpoints.append(candidate)
             curr_checkpoint = candidate.image.introduces_checkpoint
 
     if curr_checkpoint != newest_candidate.image.requires_checkpoint:
@@ -315,7 +323,11 @@ class ImagePool:
 
                 # Get an update path for this image
                 try:
-                    update_path = _get_rauc_update_path(images_dir, manifest_path)
+                    if image.shadow_checkpoint:
+                        # Those are not real images, so we don't expect valid update paths
+                        update_path = ''
+                    else:
+                        update_path = _get_rauc_update_path(images_dir, manifest_path)
                 except Exception as e:
                     log.debug("Failed to get update path for manifest %s: %s", f, e)
                     continue

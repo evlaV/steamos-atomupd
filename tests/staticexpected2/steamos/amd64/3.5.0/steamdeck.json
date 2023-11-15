@@ -1,0 +1,34 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20230404.1",
+                    "estimated_size": 0,
+                    "introduces_checkpoint": 1,
+                    "product": "steamos",
+                    "release": "holo",
+                    "requires_checkpoint": 0,
+                    "variant": "steamdeck",
+                    "version": "3.5.0"
+                },
+                "update_path": "steamos/holo/3.5/amd64/steamos-holo-20230404.1-3.5-amd64-steamdeck.raucb"
+            },
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20230425.1",
+                    "estimated_size": 0,
+                    "product": "steamos",
+                    "release": "holo",
+                    "requires_checkpoint": 3,
+                    "variant": "steamdeck",
+                    "version": "3.6.0"
+                },
+                "update_path": "steamos/holo/3.6/amd64/steamos-holo-20230425.1-3.6-amd64-steamdeck.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}
