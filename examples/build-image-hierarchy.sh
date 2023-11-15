@@ -47,6 +47,19 @@ mkdir -p releases-checkpoints
   fake_image steamdeck-beta 3.6 20231113.101 2 1
 )
 
+mkdir -p releases-retired-checkpoint
+
+(
+  cd releases-retired-checkpoint
+
+  fake_image steamdeck 3.6 20231112.1
+  # Simulate a checkpoint that was quickly retired by using the "skip" option
+  # and substituted with another one
+  fake_image steamdeck 3.6 20231113.1 1 0 true
+  fake_image steamdeck 3.6 20231113.2 1 0
+  fake_image steamdeck 3.6 20231120.1 0 1
+)
+
 mkdir -p releases
 
 (
