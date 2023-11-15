@@ -128,6 +128,12 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
                  image, newest_candidate.image)
         return []
 
+    if not update_type.is_fallback() and update_type != UpdateType.forced:
+        if image >= newest_candidate.image:
+            log.debug("There aren't newer candidates for %s/%s/%s",
+                      image.version, image.release, image.buildid)
+            return []
+
     # Keep only the candidates from the destination image, to avoid hopping between
     # different variants.
     # Also remove any candidate that is newer than our chosen `newest_candidate`. We may encounter
@@ -371,10 +377,15 @@ class ImagePool:
         return candidates
 
     def get_all_allowed_candidates(self, image: Image, release: str,
-                                   requested_variant: str) -> list[UpdateCandidate]:
+                                   requested_variant: str) -> tuple[list[UpdateCandidate], list[UpdateCandidate]]:
         """Get a list of UpdateCandidate that are potentially valid updates for the image
 
-        The returned list is sorted in ascending order.
+        The first list contains all the possible allowed candidates, while the second one has only
+        images that are specifically for the requested variant.
+        The two lists may differ when the server is configured to take into consideration more
+        stable variants.
+
+        The returned lists are sorted in ascending order.
         """
         all_candidates: list[UpdateCandidate] = []
         additional_variants: list[str] = []
@@ -403,7 +414,10 @@ class ImagePool:
 
         all_candidates.sort(key=lambda x: x.image)
 
-        return all_candidates
+        same_variant_candidates = [candidate for candidate in all_candidates if
+                                   candidate.image.variant == requested_variant]
+
+        return all_candidates, same_variant_candidates
 
     def get_updatepath(self, image: Image, relative_update_path: Union[Path, None],
                        requested_variant: str, release: str, candidates: list[UpdateCandidate],
@@ -445,18 +459,26 @@ class ImagePool:
         """
 
         curr_release = image.release
-        all_candidates = self.get_all_allowed_candidates(image, image.release,
-                                                         requested_variant)
+        all_candidates, same_variant_candidates = self.get_all_allowed_candidates(image, image.release,
+                                                                                  requested_variant)
         candidates = _get_update_candidates(all_candidates, image, update_type)
+        if not candidates:
+            # If we were not able to find a valid update candidate we retry with only candidates
+            # that are exactly the requested variant. For example, when we use a VariantOrder we
+            # might attempt to go to a more stable variant, but sometimes that could not be possible.
+            candidates = _get_update_candidates(same_variant_candidates, image, update_type)
+
         minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
                                            curr_release, candidates, update_type)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
-            all_candidates_next = self.get_all_allowed_candidates(image, next_release,
-                                                                  requested_variant)
+            all_candidates_next, sv_candidates_next = self.get_all_allowed_candidates(image, next_release,
+                                                                                      requested_variant)
             candidates_next = _get_update_candidates(all_candidates_next, image, update_type)
+            if not candidates_next:
+                candidates_next = _get_update_candidates(sv_candidates_next, image, update_type)
             major_update = self.get_updatepath(image, relative_update_path, requested_variant,
                                                next_release, candidates_next, update_type)
 
@@ -510,6 +532,9 @@ class ImagePool:
             # Force only a minor update. We don't propose a downgrade from a major update because
             # that is not supported and will likely cause unexpected issues.
             candidates_forced = _get_update_candidates(all_candidates, image, update_type)
+            if not candidates_forced:
+                candidates_forced = _get_update_candidates(same_variant_candidates, image, update_type)
+
             minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
                                                curr_release, candidates_forced, update_type)
             if minor_update:
