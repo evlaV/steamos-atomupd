@@ -180,6 +180,9 @@ class Image:
         estimated_size = data_copy.pop('estimated_size', 0)
         skip = data_copy.pop('skip', False)
 
+        # Older images are expected to still have the `checkpoint: False` field, just ignore it
+        legacy_checkpoint = data_copy.pop('checkpoint', False)
+
         if len(data_copy) > 0:
             log.warning('The image manifest has some unknown key-values: %s', data_copy)
 
