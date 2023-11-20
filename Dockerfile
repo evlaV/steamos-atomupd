@@ -50,7 +50,7 @@
 #    # There should be no difference
 #    diff -ru tests/staticexpected/steamos tmp/steamos
 
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 ARG BUILD_ID=""
 ARG IMAGE_ID="steamos-atomupd"
