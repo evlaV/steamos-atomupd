@@ -182,6 +182,9 @@ class Image:
 
         # Older images are expected to still have the `checkpoint: False` field, just ignore it
         legacy_checkpoint = data_copy.pop('checkpoint', False)
+        if legacy_checkpoint:
+            raise RuntimeError("`checkpoint: True` is deprecated and not handled anymore. "
+                               "Use `introduces_checkpoint` and `requires_checkpoint` instead.")
 
         if len(data_copy) > 0:
             log.warning('The image manifest has some unknown key-values: %s', data_copy)
