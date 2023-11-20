@@ -33,20 +33,3 @@ else
     cd -
     rm -rf /tmp/desync
 fi
-
-if [ "${STEAMOS_ATOMUPD_SKIP_RAUC-}" = 1 ]; then
-    echo "skipping building rauc"
-else
-    # We need at least RAUC 1.7
-    # Once it hits the Debian repositories, just install that instead
-    git clone https://github.com/rauc/rauc.git /tmp/rauc
-    cd /tmp/rauc
-    # RAUC v1.7 tag
-    git checkout a0974f4eda3dd0938587c2b5d6026f2cc45cc361
-    ./autogen.sh
-    ./configure --prefix=/usr
-    make
-    make install
-    cd -
-    rm -rf /tmp/rauc
-fi

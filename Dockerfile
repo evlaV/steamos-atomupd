@@ -57,7 +57,6 @@ ARG IMAGE_ID="steamos-atomupd"
 ARG IMAGE_NAME="steamos-atomupd"
 ARG IMAGE_VERSION=""
 
-RUN sed -n '/^deb\s/s//deb-src /p' /etc/apt/sources.list > /etc/apt/sources.list.d/deb-src.list
 RUN apt-get update \
     && apt-get install -y \
        meson python3-flask python3-semantic-version python3-pyinotify \
@@ -65,8 +64,8 @@ RUN apt-get update \
        git golang \
     && apt-get install -y \
        devscripts \
-    && mk-build-deps -irt'apt -y' \
-       rauc \
+    && apt-get install -y \
+       rauc squashfs-tools \
     && rm -rf /var/lib/apt/lists/*
 
 # Import working directory to /src/, build to /build/, install to /
@@ -81,7 +80,6 @@ meson install -C /build; \
 rm -rf /src /build; \
 apt-get purge -y meson; \
 apt-get purge -y git golang; \
-apt-get purge -y rauc-build-deps; \
 apt-get purge -y devscripts; \
 :
 

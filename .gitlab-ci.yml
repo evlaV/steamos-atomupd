@@ -36,11 +36,10 @@ default:
 .test_debian_template:
     extends: .test_template
     before_script:
-    - sed -n '/^deb\s/s//deb-src /p' /etc/apt/sources.list > /etc/apt/sources.list.d/deb-src.list
     - apt-get update
     - apt-get install -y meson python3-flask python3-semantic-version
     - apt-get install -y git golang
-    - apt-get build-dep -y rauc
+    - apt-get install -y rauc squashfs-tools
     - ./build/build-deps.sh
 
 test:debian-12:
@@ -53,12 +52,7 @@ test:jupiter:
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-flask
-          python-semantic-version python-pyinotify squashfs-tools
-
-        # FIXME RAUC in the repositories is currently too old. Build it from
-        # source until https://gitlab.steamos.cloud/holo/holo/-/merge_requests/195
-        # lands in the main variant of Jupiter
-        - STEAMOS_ATOMUPD_SKIP_DESYNC=1 ./build/build-deps.sh
+          python-semantic-version python-pyinotify rauc squashfs-tools
 
 .lint_template:
     stage: lint
