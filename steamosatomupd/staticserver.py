@@ -261,6 +261,11 @@ class UpdateParser(pyinotify.ProcessEvent):
                 json_path_fallback = Path(base_path, f'{requested_variant}{checkpoint_str}.json')
                 json_path_second_last = Path(base_path, f'{requested_variant}{checkpoint_str}.second_last.json')
 
+                if image.shadow_checkpoint:
+                    # Shadow checkpoints are not real images.
+                    # It is not possible for users to be running them.
+                    continue
+
                 self._write_update_json(image_update, requested_variant, json_path, update_jsons)
                 self._write_update_json(image_update, requested_variant, json_path_fallback,
                                         fallback_update_jsons, UpdateType.unexpected_buildid)
