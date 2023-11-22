@@ -262,6 +262,12 @@ class UpdateParser(pyinotify.ProcessEvent):
                 json_path_second_last = Path(base_path, f'{requested_variant}{checkpoint_str}.second_last.json')
 
                 if image.shadow_checkpoint:
+                    if json_path.exists():
+                        log.error("We have a meta JSON file for the shadow checkpoint '%s'.\n"
+                                  "Are you trying to convert a regular image into a shadow checkpoint?\n"
+                                  "This is not allowed! Shadow checkpoints are special images.", image)
+                        return 1
+
                     # Shadow checkpoints are not real images.
                     # It is not possible for users to be running them.
                     continue

@@ -202,6 +202,17 @@ server_data = [
         expectation='staticexpected2',
     ),
     ServerData(
+        msg='Simulate an image that got converted into a shadow checkpoint',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'releases2',
+            variants=('steamdeck', 'steamdeck-beta'),
+            variants_order=('steamdeck', 'steamdeck-beta'),
+        ),
+        expectation='staticexpected2',
+        mock_leftovers=EXPECTATION_PARENT / 'staticexpected2_mock_leftover',
+        exit_code=1,
+    ),
+    ServerData(
         msg='Static server with release images 3',
         config=ServerConfig(
             pool_dir=IMAGES_PARENT / 'releases3',
