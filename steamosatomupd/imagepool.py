@@ -293,6 +293,8 @@ class ImagePool:
             dirs.sort()
             files.sort()
             dirs[:] = [d for d in dirs if not d.endswith(".castr")]
+            # Exclude hidden directories from the search
+            dirs[:] = [d for d in dirs if not d.startswith(".")]
             for f in files:
                 # We're looking for manifest files
                 if not f.endswith(IMAGE_MANIFEST_EXT):
