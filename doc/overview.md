@@ -75,6 +75,9 @@ install the image `20230909.2` that has `introduces_checkpoint: 1`, you'll be
 allowed to install images that have a `requires_checkpoint: 1` instead of
 `requires_checkpoint: 0`.
 
+At the moment, for a particular `introduces_checkpoint: X`, it is allowed to
+have at most one "canonical" checkpoint image and one shadow checkpoint.
+Instead, for checkpoints flagged as `skip`, there is no limit.
 
 Shadow checkpoints
 ------------------
@@ -104,6 +107,9 @@ Shadow checkpoints allow us to signal that a checkpoint 1 is compatible with the
 checkpoint 3 and that we don't actually need to install any checkpoint to perform
 the transition.
 
+Shadow checkpoints can't be flagged as `skip`. If you released a shadow checkpoint
+and then, later on, you desire to delete it, you need to remove, rename or move
+the image manifest.
 
 Client and server
 -----------------
