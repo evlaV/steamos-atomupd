@@ -311,7 +311,7 @@ class StaticServerTestCase(unittest.TestCase):
     # Do not cut out the assertion error diff messages
     maxDiff = None
 
-    @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path('./examples/rauc/system.conf'))
+    @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path('./tests/rauc/system.conf'))
     def test_static_server(self):
         shutil.rmtree(IMAGES_PARENT, ignore_errors=True)
         IMAGES_PARENT.mkdir(parents=True)
