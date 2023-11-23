@@ -32,6 +32,8 @@ from pathlib import Path
 from typing import Union
 from unittest.mock import patch
 
+from tests.createmanifests import build_image_hierarchy
+
 CONFIG_PARENT = Path('./examples')
 IMAGES_PARENT = Path('./examples-data/images')
 EXPECTATION_PARENT = Path('./tests')
@@ -311,14 +313,9 @@ class StaticServerTestCase(unittest.TestCase):
 
     @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path('./examples/rauc/system.conf'))
     def test_static_server(self):
-        # First build example files
-        p = subprocess.run(['./examples/build-image-hierarchy.sh'],
-                           check=False,
-                           stderr=subprocess.STDOUT,
-                           stdout=subprocess.PIPE,
-                           text=True)
-        self.assertEqual(p.stdout, "Hierarchy created under 'examples-data/images'\n")
-        self.assertEqual(p.returncode, 0)
+        shutil.rmtree(IMAGES_PARENT, ignore_errors=True)
+        IMAGES_PARENT.mkdir(parents=True)
+        build_image_hierarchy(IMAGES_PARENT)
 
         try:
             from steamosatomupd import staticserver
@@ -450,13 +447,8 @@ class StaticServerTestCase(unittest.TestCase):
 
                 if data.changed_expectation:
                     # Now add some updates
-                    p = subprocess.run(['./examples/add-another-image.sh'],
-                           check=False,
-                           stderr=subprocess.STDOUT,
-                           stdout=subprocess.PIPE,
-                           text=True)
-                    self.assertEqual(p.stdout, "Hierarchy updated under 'examples-data/images'\n")
-                    self.assertEqual(p.returncode, 0)
+                    build_image_hierarchy(IMAGES_PARENT, only_additional_images=True)
+                    (IMAGES_PARENT / 'releases' / 'steamos' / 'updated.txt').touch()
 
                     # Now compare result with previous expectation. since daemon
                     # should not have yet updated any metadata

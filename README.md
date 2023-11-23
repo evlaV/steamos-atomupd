@@ -28,8 +28,8 @@ Install runtime dependencies:
 
 Run locally:
 
-    # Create a fake image hierarchy
-    ./examples/build-image-hierarchy.sh
+    # Create the images hierarchy. If you want mock images you can look at
+    # `tests/createmanifests.py`
 
     # Shell #1
     export IN_SOURCE_TREE=1
