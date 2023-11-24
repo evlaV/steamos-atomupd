@@ -100,7 +100,6 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
 
     previous: UpdateCandidate | None = None
     newest_candidate: UpdateCandidate | None = None
-    checkpoints: list[UpdateCandidate] = []
     winners: list[UpdateCandidate] = []
 
     if not candidates:
@@ -146,7 +145,7 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
                            candidate.image.variant == newest_candidate.image.variant and
                            candidate.image < newest_candidate.image]
 
-    # If the destination requires a newer checkpoint we populate the necessary checkpoints list
+    # If the destination requires a newer checkpoint we add the necessary checkpoints to the winners list
     curr_checkpoint = image.get_image_checkpoint()
     for candidate in filtered_candidates:
         if not candidate.image.is_checkpoint():
@@ -154,19 +153,16 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
 
         if curr_checkpoint == candidate.image.requires_checkpoint <= newest_candidate.image.requires_checkpoint:
             if not candidate.image.shadow_checkpoint:
-                # Save this to the checkpoints list only if it's not a shadow checkpoint.
+                # Save this to the winners list only if it's not a shadow checkpoint.
                 # Otherwise, we simply keep track that we passed that checkpoint but do not propose
                 # it as an update.
-                checkpoints.append(candidate)
+                winners.append(candidate)
             curr_checkpoint = candidate.image.introduces_checkpoint
 
     if curr_checkpoint != newest_candidate.image.requires_checkpoint:
         log.info("(%s) can't update to \"%s\" because it is missing a required checkpoint",
                  image, newest_candidate.image.variant)
         return []
-
-    # Use a separate winners list. It will be used by a future commit.
-    winners = checkpoints
 
     if newest_candidate not in winners:
         winners.append(newest_candidate)
