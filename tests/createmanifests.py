@@ -16,18 +16,13 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-# TODO remove when the server has Python>=3.11
-from __future__ import annotations
-
 import json
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from pathlib import Path
 
 
-# TODO When we ensure to have Python>=3.11 on the server, use StrEnum and
-#  remove the __str__ redefine
-class Variant(str, Enum):
+class Variant(StrEnum):
     STEAMDECK = 'steamdeck'
     STEAMDECK_RC = 'steamdeck-rc'
     STEAMDECK_BETA = 'steamdeck-beta'
@@ -35,9 +30,6 @@ class Variant(str, Enum):
     STEAMDECK_MAIN = 'steamdeck-main'
     STEAMDECK_STAGING = 'steamdeck-staging'
     ATOMIC = 'atomic'
-
-    def __str__(self) -> str:
-        return self.value
 
 
 @dataclass
