@@ -20,7 +20,6 @@ import json
 import logging
 import subprocess
 from pathlib import Path
-from typing import Union
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +57,8 @@ def get_update_size(seed_index: Path, update_index: Path) -> int:
     return int(dedup_size / COMPRESSION_RATIO)
 
 
-def extract_index_from_raucb(raucb_location: Union[Path, str], extract_prefix: Path,
-                             unique_dir_name: str) -> Union[Path, None]:
+def extract_index_from_raucb(raucb_location: Path | str, extract_prefix: Path,
+                             unique_dir_name: str) -> Path | None:
     """Extract the rootfs index file from a rauc bundle.
 
     The provided raucb location can be either a path or a URL.

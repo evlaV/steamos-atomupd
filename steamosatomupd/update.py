@@ -16,14 +16,14 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-# Needed to support list annotation for Python 3.7, without using the
-# deprecated "typing.List".
+# Needed until PEP 563 string-based annotations is not enabled by default
+# (scheduled for Python 3.13)
 from __future__ import annotations
 
 import json
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Union, Any
+from typing import Any
 
 from steamosatomupd.image import Image
 
@@ -129,8 +129,8 @@ class Update:
       }
     """
 
-    minor: Union[UpdatePath, None]
-    major: Union[UpdatePath, None]
+    minor: UpdatePath | None
+    major: UpdatePath | None
 
     @classmethod
     def from_dict(cls, data) -> Update:

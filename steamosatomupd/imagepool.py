@@ -16,10 +16,6 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-# Needed to support list annotation for Python 3.7, without using the
-# deprecated "typing".
-from __future__ import annotations
-
 import errno
 import logging
 import os
@@ -31,7 +27,6 @@ import weakref
 from configparser import ConfigParser
 from copy import deepcopy
 from pathlib import Path
-from typing import Union
 
 from steamosatomupd.image import Image
 from steamosatomupd.manifest import Manifest
@@ -459,9 +454,9 @@ class ImagePool:
 
         return all_candidates, same_variant_candidates
 
-    def get_updatepath(self, image: Image, relative_update_path: Union[Path, None],
+    def get_updatepath(self, image: Image, relative_update_path: Path | None,
                        requested_variant: str, release: str, candidates: list[UpdateCandidate],
-                       estimate_download_size: bool) -> Union[UpdatePath, None]:
+                       estimate_download_size: bool) -> UpdatePath | None:
         """Get an UpdatePath from a given UpdateCandidate list
 
         Return an UpdatePath object, or None if no updates available.
@@ -483,7 +478,7 @@ class ImagePool:
 
     def get_updates(self, image: Image, relative_update_path: Path,
                     requested_variant: str, update_type=UpdateType.standard,
-                    estimate_download_size=False) -> Union[Update, None]:
+                    estimate_download_size=False) -> Update | None:
         """Get updates
 
         We look for update candidates in the same release as the image,

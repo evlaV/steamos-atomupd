@@ -17,7 +17,7 @@
 # <http://www.gnu.org/licenses/>.
 
 # Needed until PEP 563 string-based annotations is not enabled by default
-# (scheduled for Python 3.11)
+# (scheduled for Python 3.13)
 from __future__ import annotations
 
 import datetime

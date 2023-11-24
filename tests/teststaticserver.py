@@ -29,7 +29,6 @@ import time
 import unittest
 from difflib import ndiff
 from pathlib import Path
-from typing import Union
 from unittest.mock import patch
 
 from tests.createmanifests import build_image_hierarchy
@@ -60,8 +59,8 @@ class ServerData:
     config: ServerConfig
     expectation: str
     changed_expectation: str = ""
-    mock_leftovers: Union[Path, None] = None
-    mock_ndiff: Union[Path, None] = None
+    mock_leftovers: Path | None = None
+    mock_ndiff: Path | None = None
     replaced_leftovers: bool = False
     unchanged_lefovers: bool = False
     removed_image_warning: bool = False
