@@ -57,6 +57,8 @@ class Manifest:
     deleted: bool = False
     # Create a manifest file that is empty
     empty: bool = False
+    # Optional path to write the manifest into
+    img_dir: str = None
 
 
 @dataclass
@@ -78,6 +80,10 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, 'snapshot', '20181108.1'),
             Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.1'),
             Manifest(Variant.ATOMIC, 'snapshot', '20181108.1'),
+            # Simulate some .ci images
+            Manifest(Variant.STEAMDECK, 'snapshot', '20181108.1', img_dir='steamdeck/.ci/snapshot'),
+            Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.1', img_dir='steamdeck-beta/.ci/snapshot'),
+            Manifest(Variant.ATOMIC, 'snapshot', '20181108.1', img_dir='atomic/.ci/snapshot'),
         ]
     ),
 
@@ -353,6 +359,8 @@ def build_image_hierarchy(path: Path, only_additional_images=False) -> None:
 
         for manifest in hierarchy.manifests:
             img_dir = images_directory / manifest.product / manifest.release / manifest.version / manifest.arch
+            if manifest.img_dir:
+                img_dir = images_directory / manifest.img_dir
             img_name = f'{manifest.product}-{manifest.release}-{manifest.buildid}-{manifest.version}-{manifest.arch}-{manifest.variant}'
             img_manifest = img_dir / f'{img_name}.manifest.json'
             img_raucb = img_dir / f'{img_name}.raucb'
