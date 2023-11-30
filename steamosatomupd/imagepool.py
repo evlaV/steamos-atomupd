@@ -349,12 +349,17 @@ class ImagePool:
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: %s", f)
 
+        seen_intro: dict[str, list[int]] = {variant: [] for variant in supported_variants}
+        seen_shadow: dict[str, list[int]] = {variant: [] for variant in supported_variants}
+
         # Validate the image pool
         for image_update in self.image_updates_found:
             image = image_update.image
+
             if 0 < image.introduces_checkpoint <= image.requires_checkpoint:
                 raise RuntimeError(f"The image {image.buildid} must require a checkpoint that is "
                                    f"lower than the one it is introducing.")
+
             if image.shadow_checkpoint:
                 if image.introduces_checkpoint < 1:
                     raise RuntimeError(f"The image {image.buildid} is marked as a shadow checkpoint "
@@ -363,6 +368,18 @@ class ImagePool:
                     raise RuntimeError(f"{image.buildid} can't be a shadow checkpoint and a skip at "
                                        f"the same time. If you want to delete a shadow checkpoint, "
                                        f"you can simply remove its manifest.")
+
+            if image.is_checkpoint():
+                if image.shadow_checkpoint:
+                    if image.introduces_checkpoint in seen_shadow[image.variant]:
+                        raise RuntimeError(f"There are two shadow images for the same variant "
+                                           f"{image.variant} and checkpoint {image.introduces_checkpoint}!")
+                    seen_shadow[image.variant].append(image.introduces_checkpoint)
+                elif not image.skip:
+                    if image.introduces_checkpoint in seen_intro[image.variant]:
+                        raise RuntimeError(f"There are two images for the same variant {image.variant} "
+                                           f"that introduce the same checkpoint {image.introduces_checkpoint}!")
+                    seen_intro[image.variant].append(image.introduces_checkpoint)
 
     def __str__(self) -> str:
         return '\n'.join([

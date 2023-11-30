@@ -259,6 +259,28 @@ mkdir -p shadow-introduce
   fake_image steamdeck 3.6.1 20231104.4 0 0 false true true
 )
 
+mkdir -p shadow-multiple
+
+(
+  cd shadow-multiple
+
+  fake_image steamdeck 3.6.1 20231104.1
+  fake_image steamdeck 3.6.1 20231105.1 1 0 false true true
+  # Another shadow checkpoint that introduces the same checkpoint
+  fake_image steamdeck 3.6.1 20231106.1 1 0 false true true
+)
+
+mkdir -p checkpoint-multiple
+
+(
+  cd checkpoint-multiple
+
+  fake_image steamdeck 3.6.1 20231104.1
+  fake_image steamdeck 3.6.1 20231105.1 1 0
+  # Another image that introduces the same checkpoint
+  fake_image steamdeck 3.6.1 20231106.1 1 0
+)
+
 mkdir -p wrong-checkpoint
 
 (

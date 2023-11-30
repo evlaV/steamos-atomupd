@@ -266,6 +266,24 @@ server_data = [
         exit_code=1,
     ),
     ServerData(
+        msg='Two shadow checkpoints that introduce the same checkpoint',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'shadow-multiple',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Multiple images that introduce the same checkpoints',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'checkpoint-multiple',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
         msg='Image with wrong checkpoint',
         config=ServerConfig(
             pool_dir=IMAGES_PARENT / 'wrong-checkpoint',
