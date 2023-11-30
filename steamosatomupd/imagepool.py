@@ -308,8 +308,7 @@ class ImagePool:
                 try:
                     manifest = Manifest.from_file(manifest_path)
                 except Exception as e:
-                    log.error("Failed to create image from manifest %s: %s", f, e)
-                    continue
+                    raise RuntimeError('Failed to create image from manifest %s' % f) from e
 
                 image = manifest.image
 
@@ -329,8 +328,7 @@ class ImagePool:
                     else:
                         update_path = _get_rauc_update_path(images_dir, manifest_path)
                 except Exception as e:
-                    log.debug("Failed to get update path for manifest %s: %s", f, e)
-                    continue
+                    raise RuntimeError("Failed to get update path for manifest %s" % f) from e
 
                 # Get the list where this image belongs
                 try:

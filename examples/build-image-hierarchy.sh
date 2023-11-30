@@ -229,5 +229,15 @@ mkdir -p releases-and-snaps5
   fake_image steamdeck-beta 3.5 20230815.100
 )
 
+mkdir -p unexpected-manifest
+
+(
+  cd unexpected-manifest
+
+  fake_image steamdeck 3.6.1 20231104.1
+  # Image manifest that is unexpectedly empty
+  touch steamos/holo/3.6.1/amd64/steamos-holo-20231104.2-3.6.1-amd64-steamdeck.manifest.json
+)
+
 echo "Hierarchy created under '$OUTDIR/images'"
 

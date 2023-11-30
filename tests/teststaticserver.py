@@ -238,6 +238,15 @@ server_data = [
         ),
         expectation='staticexpected5',
     ),
+    ServerData(
+        msg='Image with a broken manifest',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'unexpected-manifest',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
 ]
 
 

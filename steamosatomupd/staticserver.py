@@ -297,7 +297,11 @@ def main(args=None):
     signal.signal(signal.SIGINT, signal_handler)
 
     # Run once to parse any new images
-    server = UpdateParser(args)
+    try:
+        server = UpdateParser(args)
+    except RuntimeError as re:
+        log.error(re)
+        sys.exit(1)
 
     # Lock so we don't ever end up with multiple staticserver.py parsing
     # a single image pool.
