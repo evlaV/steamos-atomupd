@@ -352,6 +352,9 @@ class ImagePool:
         # Validate the image pool
         for image_update in self.image_updates_found:
             image = image_update.image
+            if 0 < image.introduces_checkpoint <= image.requires_checkpoint:
+                raise RuntimeError(f"The image {image.buildid} must require a checkpoint that is "
+                                   f"lower than the one it is introducing.")
             if image.shadow_checkpoint:
                 if image.introduces_checkpoint < 1:
                     raise RuntimeError(f"The image {image.buildid} is marked as a shadow checkpoint "

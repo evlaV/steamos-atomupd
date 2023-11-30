@@ -265,6 +265,24 @@ server_data = [
         expectation='',
         exit_code=1,
     ),
+    ServerData(
+        msg='Image with wrong checkpoint',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'wrong-checkpoint',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Image with wrong checkpoint 2',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'wrong-checkpoint2',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
 ]
 
 

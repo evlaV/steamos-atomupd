@@ -259,5 +259,25 @@ mkdir -p shadow-introduce
   fake_image steamdeck 3.6.1 20231104.4 0 0 false true true
 )
 
+mkdir -p wrong-checkpoint
+
+(
+  cd wrong-checkpoint
+
+  fake_image steamdeck 3.6.1 20231104.1 0 3
+  # Image that introduces a checkpoint that is lower than what it requires
+  fake_image steamdeck 3.6.1 20231104.4 2 3
+)
+
+mkdir -p wrong-checkpoint2
+
+(
+  cd wrong-checkpoint2
+
+  fake_image steamdeck 3.6.1 20231104.1 0 3
+  # Image that introduces a checkpoint that is equal to what it requires
+  fake_image steamdeck 3.6.1 20231104.4 3 3
+)
+
 echo "Hierarchy created under '$OUTDIR/images'"
 
