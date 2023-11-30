@@ -349,6 +349,18 @@ class ImagePool:
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: %s", f)
 
+        # Validate the image pool
+        for image_update in self.image_updates_found:
+            image = image_update.image
+            if image.shadow_checkpoint:
+                if image.introduces_checkpoint < 1:
+                    raise RuntimeError(f"The image {image.buildid} is marked as a shadow checkpoint "
+                                       f"but doesn't introduce any.")
+                if image.skip:
+                    raise RuntimeError(f"{image.buildid} can't be a shadow checkpoint and a skip at "
+                                       f"the same time. If you want to delete a shadow checkpoint, "
+                                       f"you can simply remove its manifest.")
+
     def __str__(self) -> str:
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),

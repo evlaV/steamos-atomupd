@@ -247,6 +247,24 @@ server_data = [
         expectation='',
         exit_code=1,
     ),
+    ServerData(
+        msg='Shadow image that is unexpectedly also marked as skip',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'shadow-skip',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Shadow image that is not introducing a checkpoint',
+        config=ServerConfig(
+            pool_dir=IMAGES_PARENT / 'shadow-introduce',
+            variants=('steamdeck',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
 ]
 
 

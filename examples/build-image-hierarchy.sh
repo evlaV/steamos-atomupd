@@ -239,5 +239,25 @@ mkdir -p unexpected-manifest
   touch steamos/holo/3.6.1/amd64/steamos-holo-20231104.2-3.6.1-amd64-steamdeck.manifest.json
 )
 
+mkdir -p shadow-skip
+
+(
+  cd shadow-skip
+
+  fake_image steamdeck 3.6.1 20231104.1
+  # Image that is both a shadow checkpoint and marked as skip
+  fake_image steamdeck 3.6.1 20231104.4 1 0 true true true
+)
+
+mkdir -p shadow-introduce
+
+(
+  cd shadow-introduce
+
+  fake_image steamdeck 3.6.1 20231104.1
+  # Shadow checkpoint that doesn't introduce any checkpoint
+  fake_image steamdeck 3.6.1 20231104.4 0 0 false true true
+)
+
 echo "Hierarchy created under '$OUTDIR/images'"
 
