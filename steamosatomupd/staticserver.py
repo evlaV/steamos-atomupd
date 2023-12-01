@@ -180,7 +180,7 @@ class UpdateParser(pyinotify.ProcessEvent):
 
     def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
                            json_path: Path, update_jsons: set[Path],
-                           update_type=UpdateType.standard) -> None:
+                           update_type=UpdateType.standard, estimate_download_size=False) -> None:
         """Get the available updates and write them in a JSON"""
 
         image = image_update.image
@@ -192,7 +192,8 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         update_jsons.add(json_path)
 
-        update = self.image_pool.get_updates(image, update_path, requested_variant, update_type)
+        update = self.image_pool.get_updates(image, update_path, requested_variant, update_type,
+                                             estimate_download_size)
         update_dict = update.to_dict() if update else {}
 
         self._write_update_for_image(json.dumps(update_dict, sort_keys=True, indent=4), json_path)
@@ -250,10 +251,25 @@ class UpdateParser(pyinotify.ProcessEvent):
         # directory
         second_last_update_jsons: set[Path] = set()
 
-        for image_update in image_updates:
+        # Number of images for which we should pre-estimate the download size.
+        # This is an arbitrary number chosen to be not big enough to slow down the static
+        # server execution needlessly. At the current release rate, this should cover
+        # 1 year of updates. If a client has a base image so old that wasn't
+        # included in the server pre-estimation, it will perform an estimation itself,
+        # which usually takes up to 10 seconds to complete.
+        index_cutoff = 150
+
+        image_updates.sort(key=lambda x: x.image, reverse=True)
+
+        for index, image_update in enumerate(image_updates):
+            image = image_update.image
+            base_path = Path(image.product, image.arch, image.get_version_str())
+
+            # If this is a checkpoint, we include the estimated download size regardless of how old
+            # it is, because it's likely a considerable amount of devices will pass through this one.
+            estimate_download_size = index < index_cutoff or image.is_checkpoint()
+
             for requested_variant in supported_variants:
-                image = image_update.image
-                base_path = Path(image.product, image.arch, image.get_version_str())
                 json_path = Path(base_path, requested_variant, f'{image.buildid}.json')
 
                 checkpoint_number = image.get_image_checkpoint()
@@ -272,7 +288,11 @@ class UpdateParser(pyinotify.ProcessEvent):
                     # It is not possible for users to be running them.
                     continue
 
-                self._write_update_json(image_update, requested_variant, json_path, update_jsons)
+                self._write_update_json(image_update, requested_variant, json_path, update_jsons,
+                                        UpdateType.standard, estimate_download_size)
+
+                # Skip the download size estimation for the generic fallbacks, because we have no
+                # way of knowing what's the base image the client is using.
                 self._write_update_json(image_update, requested_variant, json_path_fallback,
                                         fallback_update_jsons, UpdateType.unexpected_buildid)
                 self._write_update_json(image_update, requested_variant, json_path_second_last,

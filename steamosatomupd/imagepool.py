@@ -461,7 +461,7 @@ class ImagePool:
 
     def get_updatepath(self, image: Image, relative_update_path: Union[Path, None],
                        requested_variant: str, release: str, candidates: list[UpdateCandidate],
-                       update_type: UpdateType) -> Union[UpdatePath, None]:
+                       estimate_download_size: bool) -> Union[UpdatePath, None]:
         """Get an UpdatePath from a given UpdateCandidate list
 
         Return an UpdatePath object, or None if no updates available.
@@ -476,15 +476,14 @@ class ImagePool:
 
         # Only estimate the size of the first update for now. Once we'll have the first
         # checkpoint we can also begin to estimate the subsequent updates, if needed.
-        # Skip this when the update type is a fallback, because we have no way of knowing what's the
-        # base image the client is using.
-        if relative_update_path and not update_type.is_fallback():
+        if estimate_download_size and relative_update_path:
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
         return UpdatePath(release, candidates)
 
     def get_updates(self, image: Image, relative_update_path: Path,
-                    requested_variant: str, update_type=UpdateType.standard) -> Union[Update, None]:
+                    requested_variant: str, update_type=UpdateType.standard,
+                    estimate_download_size=False) -> Union[Update, None]:
         """Get updates
 
         We look for update candidates in the same release as the image,
@@ -509,7 +508,7 @@ class ImagePool:
             candidates = _get_update_candidates(same_variant_candidates, image, update_type)
 
         minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
-                                           curr_release, candidates, update_type)
+                                           curr_release, candidates, estimate_download_size)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
@@ -520,7 +519,7 @@ class ImagePool:
             if not candidates_next:
                 candidates_next = _get_update_candidates(sv_candidates_next, image, update_type)
             major_update = self.get_updatepath(image, relative_update_path, requested_variant,
-                                               next_release, candidates_next, update_type)
+                                               next_release, candidates_next, estimate_download_size)
 
         if minor_update or major_update:
             return Update(minor_update, major_update)
@@ -576,7 +575,7 @@ class ImagePool:
                 candidates_forced = _get_update_candidates(same_variant_candidates, image, update_type)
 
             minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
-                                               curr_release, candidates_forced, update_type)
+                                               curr_release, candidates_forced, estimate_download_size)
             if minor_update:
                 return Update(minor_update, major_update)
 
