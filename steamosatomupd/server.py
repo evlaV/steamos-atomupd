@@ -60,7 +60,7 @@ def updates():
     global server
     try:
         data = server.get_update(request.args)
-    except (ValueError, KeyError) as err:
+    except (ValueError, KeyError, RuntimeError) as err:
         log.debug('Malformed request: {}'.format(err))
         return Response("Malformed request", status=400)
 
