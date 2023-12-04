@@ -180,8 +180,23 @@ class Image:
         estimated_size = data_copy.pop('estimated_size', 0)
         skip = data_copy.pop('skip', False)
 
+        # Contrary to the common expectations, the dynamic server with Flask treats all request
+        # arguments as strings. This means that we must convert the integers and booleans ourselves.
+        if isinstance(introduces_checkpoint, str):
+            introduces_checkpoint = int(introduces_checkpoint)
+        if isinstance(requires_checkpoint, str):
+            requires_checkpoint = int(requires_checkpoint)
+        if isinstance(shadow_checkpoint, str):
+            shadow_checkpoint = shadow_checkpoint.lower() == "true"
+        if isinstance(estimated_size, str):
+            estimated_size = int(estimated_size)
+        if isinstance(skip, str):
+            skip = skip.lower() == "true"
+
         # Older images are expected to still have the `checkpoint: False` field, just ignore it
         legacy_checkpoint = data_copy.pop('checkpoint', False)
+        if isinstance(legacy_checkpoint, str):
+            legacy_checkpoint = legacy_checkpoint.lower() == "true"
         if legacy_checkpoint:
             raise RuntimeError("`checkpoint: True` is deprecated and not handled anymore. "
                                "Use `introduces_checkpoint` and `requires_checkpoint` instead.")

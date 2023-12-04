@@ -147,5 +147,41 @@ class MiscTestCase(unittest.TestCase):
         d['version'] = 'snapshot'
         self.assertFalse(Image.from_dict(d).is_stable())
 
+    def test_flask_args(self):
+        d = dict(imgdata)
+
+        # When the old dynamic server builds an image from the request parameters,
+        # everything is a string.
+        d['checkpoint'] = 'False'
+        d['introduces_checkpoint'] = '0'
+        d['requires_checkpoint'] = '1'
+        d['shadow_checkpoint'] = 'false'
+        d['estimated_size'] = '0'
+        d['skip'] = 'True'
+
+        image = Image.from_dict(d)
+        self.assertEqual(image.introduces_checkpoint, 0)
+        self.assertEqual(image.requires_checkpoint, 1)
+        self.assertFalse(image.shadow_checkpoint)
+        self.assertEqual(image.estimated_size, 0)
+        self.assertTrue(image.skip)
+
+    def test_manifest_args(self):
+        d = dict(imgdata)
+
+        d['checkpoint'] = False
+        d['introduces_checkpoint'] = 2
+        d['requires_checkpoint'] = 1
+        d['shadow_checkpoint'] = True
+        d['estimated_size'] = 12312345
+        d['skip'] = False
+
+        image = Image.from_dict(d)
+        self.assertEqual(image.introduces_checkpoint, 2)
+        self.assertEqual(image.requires_checkpoint, 1)
+        self.assertTrue(image.shadow_checkpoint)
+        self.assertEqual(image.estimated_size, 12312345)
+        self.assertFalse(image.skip)
+
 if __name__ == '__main__':
     unittest.main()
