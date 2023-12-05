@@ -203,6 +203,7 @@ class ImageData:
 class ImageStatus:
     image_data: ImageData
     update_path: str
+    generic_update_path: str
     is_checkpoint: bool = False
     image_checkpoint: int = 0
 
@@ -215,6 +216,7 @@ image_status = [
             buildid='20231201.1',
         ),
         update_path='steamos/amd64/3.6.4/steamdeck/20231201.1.json',
+        generic_update_path='steamos/amd64/3.6.4/steamdeck.json',
     ),
 
     ImageStatus(
@@ -224,6 +226,7 @@ image_status = [
             buildid='20231002.100',
         ),
         update_path='steamos/amd64/snapshot/steamdeck-beta/20231002.100.json',
+        generic_update_path='steamos/amd64/snapshot/steamdeck-beta.json',
     ),
 
     ImageStatus(
@@ -235,6 +238,7 @@ image_status = [
             requires_checkpoint=0,
         ),
         update_path='steamos/amd64/3.7.1/steamdeck-main/20231205.1000.json',
+        generic_update_path='steamos/amd64/3.7.1/steamdeck-main.json',
         is_checkpoint=True,
         image_checkpoint=1,
     ),
@@ -248,6 +252,7 @@ image_status = [
             requires_checkpoint=1,
         ),
         update_path='steamos/amd64/3.7.2/steamdeck-main/20231205.1001.json',
+        generic_update_path='steamos/amd64/3.7.2/steamdeck-main.json',
         image_checkpoint=1,
     ),
 
@@ -260,6 +265,7 @@ image_status = [
             requires_checkpoint=1,
         ),
         update_path='steamos/amd64/3.7.5/steamdeck-main/20231206.1005.json',
+        generic_update_path='steamos/amd64/3.7.5/steamdeck-main.json',
         is_checkpoint=True,
         image_checkpoint=2,
     ),
@@ -278,7 +284,8 @@ class ImageMethods(unittest.TestCase):
                                           shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)
 
                 self.assertEqual(i_d.version, image.get_version_str())
-                self.assertEqual(data.update_path, image.to_update_path())
+                self.assertEqual(data.update_path, image.get_update_path())
+                self.assertEqual(data.generic_update_path, image.get_update_path(fallback=True))
                 self.assertEqual(data.is_checkpoint, image.is_checkpoint())
                 self.assertEqual(data.image_checkpoint, image.get_image_checkpoint())
 

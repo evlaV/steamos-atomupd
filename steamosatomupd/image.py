@@ -297,14 +297,22 @@ class Image:
 
         return urllib.parse.quote(string.replace('/', '_'))
 
-    def to_update_path(self) -> str:
+    def get_update_path(self, fallback=False) -> str:
         """Give an update path in the form of
-        <product>/<arch>/<version>/<variant>/<buildid>.json """
+        <product>/<arch>/<version>/<variant>/<buildid>.json
+
+        If `fallback` is true, the update path is the generic fallback
+        <product>/<arch>/<version>/<variant>.json
+        """
 
         bits = [self.product, self.arch, self.get_version_str(),
-                self.variant, str(self.buildid)]
+                self.variant]
+        path = '/'.join([self.quote(b) for b in bits])
 
-        return '/'.join([self.quote(b) for b in bits]) + '.json'
+        if not fallback:
+            path += '/' + str(self.buildid)
+
+        return path + '.json'
 
     def is_snapshot(self) -> bool:
         """Whether an Image is a snapshot"""

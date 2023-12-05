@@ -259,7 +259,7 @@ def write_json_to_file(json_str: str) -> str:
     return f.name
 
 
-def download_update_from_rest_url(url: str) -> str:
+def download_update_from_rest_url(meta_url: str, image: Image) -> str:
     """Download an update file from the server
 
     The parameters for the request are the details of the image that
@@ -272,49 +272,30 @@ def download_update_from_rest_url(url: str) -> str:
     An empty string will be returned if an error occurs.
     """
 
-    log.debug("Downloading update file %s", url)
+    log.debug("Downloading update file from %s", meta_url)
 
-    initialize_http_authentication(url)
+    initialize_http_authentication(meta_url)
 
-    jsonstr = ""
-
-    tries = 0
-    while not jsonstr:
-
-        # Try up to 2 times, removing part of the path each time on 404 responses.
-        # Paths look like <product>/<arch>/<version>/<variant>/<buildid>.json
-        # Once we get up to <product>/<arch>/<version>/<variant>.json that's the
-        # last thing we can check
-        # Since a product with an unknown architecture version and variant makes no sense.
-        if tries == 2:
-            log.warning("Unable to get JSON from server")
-            return ""
-
-        tries += 1
+    # Try the canonical update URL. If that fails, we re-try with the generic
+    # fallback URL.
+    for update_path in [image.get_update_path(), image.get_update_path(fallback=True)]:
+        url = meta_url + '/' + update_path
+        log.debug("Trying URL: %s", url)
 
         try:
-            log.debug("Trying url: %s", url)
             with urllib.request.urlopen(url) as response:
-                jsonstr = response.read()
-
+                json_str = response.read()
+                if json_str:
+                    return write_json_to_file(json_str)
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             if isinstance(e, urllib.error.HTTPError) and e.code == 404:
-                log.debug("Got 404 from server, trying again with less arguments")
-                # Try the next level up in the url until we get a json string.
-                urlparts = urllib.parse.urlparse(url)
-                path = urlparts.path
-                pathparts = path.split('/')
-                pathparts = pathparts[:-1]
-
-                nextpath = "/".join(pathparts)
-                # Add the .json on this new shortened path
-                nextpath += '.json'
-                url = urlparts._replace(path=nextpath).geturl()
+                log.debug("Got 404 from server")
             else:
                 log.warning("Unable to get JSON from server: %s", e)
                 return ""
 
-    return write_json_to_file(jsonstr)
+    log.warning("Unable to get JSON from server")
+    return ""
 
 
 def download_update_from_query_url(url: str) -> str:
@@ -824,8 +805,7 @@ class UpdateClient:
             # If we have both MetaUrl and QueryUrl, try the meta first and use
             # the query as a fallback
             if meta_url:
-                url = meta_url + '/' + current_image.to_update_path()
-                tmp_file = download_update_from_rest_url(url)
+                tmp_file = download_update_from_rest_url(meta_url, current_image)
             if images_url and not tmp_file:
                 log.info("MetaURL is either missing or not working, falling "
                          "back to QueryURL")
