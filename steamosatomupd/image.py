@@ -301,15 +301,21 @@ class Image:
         """Give an update path in the form of
         <product>/<arch>/<version>/<variant>/<buildid>.json
 
-        If `fallback` is true, the update path is the generic fallback
-        <product>/<arch>/<version>/<variant>.json
+        If `fallback` is true, the update path for images that never crossed
+        a checkpoint is the fallback <product>/<arch>/<version>/<variant>.json.
+        Instead, if an image requires a checkpoint for its subsequent updates,
+        the path is in the form of
+        <product>/<arch>/<version>/<variant>.<checkpoint_number>.json
         """
 
         bits = [self.product, self.arch, self.get_version_str(),
                 self.variant]
         path = '/'.join([self.quote(b) for b in bits])
 
-        if not fallback:
+        if fallback:
+            if self.get_image_checkpoint() > 0:
+                path += f'.{self.get_image_checkpoint()}'
+        else:
             path += '/' + str(self.buildid)
 
         return path + '.json'
