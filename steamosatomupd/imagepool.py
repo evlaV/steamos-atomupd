@@ -281,6 +281,10 @@ class ImagePool:
                         data[product][arch][release][variant] = []
         self.candidates = data
 
+        # Create a set to store all the images that we encounter. This is used to ensure we don't have
+        # multiple images with the same version, release and buildid.
+        images_found: set[Image] = set()
+
         # Populate the candidates dict
         log.debug("Walking the image tree: %s", images_dir)
         for root, dirs, files in os.walk(images_dir):
@@ -304,6 +308,12 @@ class ImagePool:
                     raise RuntimeError('Failed to create image from manifest %s' % f) from e
 
                 image = manifest.image
+
+                if image in images_found:
+                    raise RuntimeError("There are two images in the pool with the same version %s and buildid %s. "
+                                       "This is not allowed!" % (image.get_version_str(), image.buildid))
+
+                images_found.add(image)
 
                 if image.should_be_skipped():
                     # This is an image that should not be an update candidate

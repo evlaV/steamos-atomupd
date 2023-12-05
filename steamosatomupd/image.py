@@ -414,3 +414,6 @@ class Image:
         return "{{ {}, {}, {}, {}, {}, {}, {}, {} }}".format(
             self.product, self.release, self.variant, self.arch,
             self.version, self.buildid, self.introduces_checkpoint, self.requires_checkpoint)
+
+    def __hash__(self) -> int:
+        return hash((self.get_version_str(), self.release, str(self.buildid)))

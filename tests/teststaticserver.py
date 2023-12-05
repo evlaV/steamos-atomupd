@@ -300,6 +300,15 @@ server_data = [
         expectation='',
         exit_code=1,
     ),
+    ServerData(
+        msg='Duplicated image',
+        config=ServerConfig(
+            pool_dir='duplicated-image',
+            variants=('steamdeck', 'steamdeck-beta'),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
 ]
 
 

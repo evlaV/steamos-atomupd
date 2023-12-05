@@ -328,6 +328,17 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, '3.6.1', '20231104.4', requires_checkpoint=3, introduces_checkpoint=3),
         ]
     ),
+
+    Hierarchy(
+        directory_name='duplicated-image',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6', '20231202.1', requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.6', '20231203.1', requires_checkpoint=1),
+            # Image in another variant that doesn't have a unique version and buildid
+            Manifest(Variant.STEAMDECK_BETA, '3.6', '20231202.1'),
+        ]
+    ),
+
 ]
 
 additional_images = [
