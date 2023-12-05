@@ -17,6 +17,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import unittest
+from dataclasses import dataclass
 
 from steamosatomupd.image import Image
 
@@ -182,6 +183,105 @@ class MiscTestCase(unittest.TestCase):
         self.assertTrue(image.shadow_checkpoint)
         self.assertEqual(image.estimated_size, 12312345)
         self.assertFalse(image.skip)
+
+
+@dataclass
+class ImageData:
+    variant: str
+    version: str
+    buildid: str
+    product: str = 'steamos'
+    release: str = 'holo'
+    arch: str = 'amd64'
+    introduces_checkpoint: int = 0
+    requires_checkpoint: int = 0
+    shadow_checkpoint: bool = False
+    skip: bool = False
+
+
+@dataclass
+class ImageStatus:
+    image_data: ImageData
+    update_path: str
+    is_checkpoint: bool = False
+    image_checkpoint: int = 0
+
+
+image_status = [
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            version='3.6.4',
+            buildid='20231201.1',
+        ),
+        update_path='steamos/amd64/3.6.4/steamdeck/20231201.1.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck-beta',
+            version='snapshot',
+            buildid='20231002.100',
+        ),
+        update_path='steamos/amd64/snapshot/steamdeck-beta/20231002.100.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck-main',
+            version='3.7.1',
+            buildid='20231205.1000',
+            introduces_checkpoint=1,
+            requires_checkpoint=0,
+        ),
+        update_path='steamos/amd64/3.7.1/steamdeck-main/20231205.1000.json',
+        is_checkpoint=True,
+        image_checkpoint=1,
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck-main',
+            version='3.7.2',
+            buildid='20231205.1001',
+            introduces_checkpoint=0,
+            requires_checkpoint=1,
+        ),
+        update_path='steamos/amd64/3.7.2/steamdeck-main/20231205.1001.json',
+        image_checkpoint=1,
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck-main',
+            version='3.7.5',
+            buildid='20231206.1005',
+            introduces_checkpoint=2,
+            requires_checkpoint=1,
+        ),
+        update_path='steamos/amd64/3.7.5/steamdeck-main/20231206.1005.json',
+        is_checkpoint=True,
+        image_checkpoint=2,
+    ),
+]
+
+
+class ImageMethods(unittest.TestCase):
+    def test_image_methods(self):
+        for data in image_status:
+            with self.subTest(msg=data.image_data.buildid):
+                i_d = data.image_data
+                image = Image.from_values(product=i_d.product, release=i_d.release, variant=i_d.variant, arch=i_d.arch,
+                                          version_str=i_d.version, buildid_str=i_d.buildid,
+                                          introduces_checkpoint=i_d.introduces_checkpoint,
+                                          requires_checkpoint=i_d.requires_checkpoint,
+                                          shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)
+
+                self.assertEqual(i_d.version, image.get_version_str())
+                self.assertEqual(data.update_path, image.to_update_path())
+                self.assertEqual(data.is_checkpoint, image.is_checkpoint())
+                self.assertEqual(data.image_checkpoint, image.get_image_checkpoint())
+
 
 if __name__ == '__main__':
     unittest.main()
