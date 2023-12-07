@@ -64,14 +64,12 @@ images_hierarchies = [
         directory_name='snapshots',
         manifests=[
             Manifest(Variant.STEAMDECK, 'snapshot', '20181102.1'),
-            Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181102.1'),
+            Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181102.100'),
             Manifest(Variant.STEAMDECK_RC, 'snapshot', '20220215.0'),
-            Manifest(Variant.ATOMIC, 'snapshot', '20181102.1'),
-            Manifest(Variant.STEAMDECK, 'snapshot', '20181102.2'),
+            Manifest(Variant.ATOMIC, 'snapshot', '20181102.10'),
             Manifest(Variant.ATOMIC, 'snapshot', '20181102.2'),
             Manifest(Variant.STEAMDECK, 'snapshot', '20181108.1'),
-            Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.1'),
-            Manifest(Variant.ATOMIC, 'snapshot', '20181108.1'),
+            Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.100'),
             # Simulate some .ci images
             Manifest(Variant.STEAMDECK, 'snapshot', '20181108.1', img_dir='steamdeck/.ci/snapshot'),
             Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.1', img_dir='steamdeck-beta/.ci/snapshot'),
@@ -118,7 +116,7 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK_RC, '3.1', '20220401.5'),
 
             # Same checkpoint as in 'steamdeck'
-            Manifest(Variant.STEAMDECK_BETA, '3.1', '20220402.3', requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK_BETA, '3.1', '20220402.103', requires_checkpoint=0, introduces_checkpoint=1),
             Manifest(Variant.STEAMDECK_BETA, '3.1', '20220405.100', requires_checkpoint=1),
             Manifest(Variant.STEAMDECK_BETA, '3.3', '20220423.100', requires_checkpoint=1, introduces_checkpoint=2),
             # Testing a new checkpoint that still hasn't been promoted to 'steamdeck'
