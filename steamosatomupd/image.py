@@ -305,7 +305,10 @@ class Image:
         a checkpoint is the fallback <product>/<arch>/<version>/<variant>.json.
         Instead, if an image requires a checkpoint for its subsequent updates,
         the path is in the form of
-        <product>/<arch>/<version>/<variant>.<checkpoint_number>.json
+        <product>/<arch>/<version>/<variant>.cp<checkpoint_number>.json
+        In this case the <checkpoint_number> is the max from requires and provides
+        checkpoint, because it represents which checkpoint number this image
+        will require for the subsequent updates.
         """
 
         bits = [self.product, self.arch, self.get_version_str(),
@@ -314,7 +317,7 @@ class Image:
 
         if fallback:
             if self.get_image_checkpoint() > 0:
-                path += f'.{self.get_image_checkpoint()}'
+                path += f'.cp{self.get_image_checkpoint()}'
         else:
             path += '/' + str(self.buildid)
 
