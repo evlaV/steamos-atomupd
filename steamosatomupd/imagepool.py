@@ -354,6 +354,7 @@ class ImagePool:
 
         seen_intro: dict[str, list[int]] = {variant: [] for variant in supported_variants}
         seen_shadow: dict[str, list[int]] = {variant: [] for variant in supported_variants}
+        seen_intro_skip: list[tuple[str, int]] = []
 
         # Validate the image pool
         for image_update in self.image_updates_found:
@@ -383,6 +384,13 @@ class ImagePool:
                         raise RuntimeError(f"There are two images for the same variant {image.variant} "
                                            f"that introduce the same checkpoint {image.introduces_checkpoint}!")
                     seen_intro[image.variant].append(image.introduces_checkpoint)
+                else:
+                    seen_intro_skip.append((image.variant, image.introduces_checkpoint))
+
+        for variant, introduced_checkpoint in seen_intro_skip:
+            if introduced_checkpoint not in seen_intro[variant]:
+                log.warning("The pool has a checkpoint for (%s, %s) marked as 'skip', but "
+                            "there isn't a canonical checkpoint to replace it.", variant, introduced_checkpoint)
 
     def __str__(self) -> str:
         return '\n'.join([

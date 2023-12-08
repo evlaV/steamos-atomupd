@@ -339,6 +339,15 @@ images_hierarchies = [
         ]
     ),
 
+    Hierarchy(
+        directory_name='skip-checkpoint',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.5', '20231201.1'),
+            # Checkpoint marked as skip, but without another canonical checkpoint to replace it yet
+            Manifest(Variant.STEAMDECK, '3.6.6', '20231202.1', requires_checkpoint=0, introduces_checkpoint=1, skip=True),
+            Manifest(Variant.STEAMDECK_BETA, '3.6.6', '20231205.100', requires_checkpoint=0, introduces_checkpoint=1),
+        ]
+    ),
 ]
 
 additional_images = [

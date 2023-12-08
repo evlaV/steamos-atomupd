@@ -66,6 +66,7 @@ class ServerData:
     removed_image_warning: bool = False
     run_as_daemon: bool = False
     exit_code: int = 0
+    log_message: str = ""
 
 
 server_data = [
@@ -309,6 +310,16 @@ server_data = [
         expectation='',
         exit_code=1,
     ),
+    ServerData(
+        msg='Checkpoint marked as skip',
+        config=ServerConfig(
+            pool_dir='skip-checkpoint',
+            variants=('steamdeck', 'steamdeck-beta'),
+        ),
+        expectation='skip_checkpoint_expected',
+        log_message='WARNING:steamosatomupd.imagepool:The pool has a checkpoint for (steamdeck, 1) marked as '
+                    '\'skip\', but there isn\'t a canonical checkpoint to replace it.',
+    ),
 ]
 
 
@@ -413,7 +424,7 @@ class StaticServerTestCase(unittest.TestCase):
                 else:
                     args = ['--debug', '--config', tmp_config.name]
 
-                    with self.assertLogs('steamosatomupd.staticserver', level=logging.DEBUG) as lo:
+                    with self.assertLogs(level=logging.DEBUG) as lo:
                         if data.exit_code != 0:
                             with self.assertRaises(SystemExit) as se:
                                 staticserver.main(args)
@@ -432,6 +443,9 @@ class StaticServerTestCase(unittest.TestCase):
 
                     deleted_images = any(line.endswith('with the "skip" option set') for line in lo.output)
                     self.assertEqual(deleted_images, data.removed_image_warning, deleted_images)
+
+                    if data.log_message:
+                        self.assertIn(data.log_message, lo.output)
 
                 if data.mock_ndiff:
                     # Assert that the diff between the new files and the leftovers is correctly
