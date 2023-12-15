@@ -29,7 +29,6 @@ class Variant(StrEnum):
     STEAMDECK_BC = 'steamdeck-bc'
     STEAMDECK_MAIN = 'steamdeck-main'
     STEAMDECK_STAGING = 'steamdeck-staging'
-    ATOMIC = 'atomic'
 
 
 @dataclass
@@ -66,14 +65,11 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, 'snapshot', '20181102.1'),
             Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181102.100'),
             Manifest(Variant.STEAMDECK_RC, 'snapshot', '20220215.0'),
-            Manifest(Variant.ATOMIC, 'snapshot', '20181102.10'),
-            Manifest(Variant.ATOMIC, 'snapshot', '20181102.2'),
             Manifest(Variant.STEAMDECK, 'snapshot', '20181108.1'),
             Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.100'),
             # Simulate some .ci images
             Manifest(Variant.STEAMDECK, 'snapshot', '20181108.1', img_dir='steamdeck/.ci/snapshot'),
             Manifest(Variant.STEAMDECK_BETA, 'snapshot', '20181108.1', img_dir='steamdeck-beta/.ci/snapshot'),
-            Manifest(Variant.ATOMIC, 'snapshot', '20181108.1', img_dir='atomic/.ci/snapshot'),
         ]
     ),
 

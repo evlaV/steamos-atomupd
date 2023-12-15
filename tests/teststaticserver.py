@@ -87,7 +87,7 @@ server_data = [
         msg='Static server with snapshot images',
         config=ServerConfig(
             pool_dir='snapshots',
-            variants=('atomic', 'steamdeck', 'steamdeck-beta'),
+            variants=('steamdeck', 'steamdeck-beta'),
         ),
         expectation='staticsnapexpected',
     ),

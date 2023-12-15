@@ -24,7 +24,7 @@ from steamosatomupd.image import Image
 imgdata = {
     'product': 'steamos',
     'release': 'clockwerk',
-    'variant': 'atomic',
+    'variant': 'steamdeck',
     'arch'   : 'amd64',
     'version': 'snapshot',
     'buildid': '20180214',
