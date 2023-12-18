@@ -229,7 +229,7 @@ class ImagePool:
         options = ['PoolDir', 'Unstable', 'Products', 'Releases', 'Variants', 'Archs']
         for option in options:
             if not config.has_option('Images', option):
-                log.error("Please provide a valid configuration file")
+                log.error("Please provide a valid configuration file, the option '%s' is missing", option)
                 sys.exit(1)
 
         # We strongly expect releases to be an ordered list. We could sort
