@@ -24,6 +24,7 @@ import shutil
 import sys
 import tempfile
 import weakref
+from collections import defaultdict
 from configparser import ConfigParser
 from copy import deepcopy
 from pathlib import Path
@@ -269,17 +270,7 @@ class ImagePool:
 
         self._finalizer = weakref.finalize(self, shutil.rmtree, self.extract_dir)
 
-        # Create the hierarchy to store images
-        data: dict[str, dict] = {}
-        for product in supported_products:
-            data[product] = {}
-            for arch in supported_archs:
-                data[product][arch] = {}
-                for release in supported_releases:
-                    data[product][arch][release] = {}
-                    for variant in supported_variants:
-                        data[product][arch][release][variant] = []
-        self.candidates = data
+        self.candidates: dict[str, list[UpdateCandidate]] = defaultdict(list)
 
         # Create a set to store all the images that we encounter. This is used to ensure we don't have
         # multiple images with the same version, release and buildid.
@@ -416,18 +407,16 @@ class ImagePool:
         We might raise exceptions if the image is not supported.
         """
 
-        # Get the image list according to image details
-        try:
-            product = image.product
-            release = override_release if override_release else image.release
-            variant = override_variant if override_variant else image.variant
-            arch = image.arch
-            candidates = self.candidates[product][arch][release][variant]
-        except KeyError as e:
-            # None with that variant, so don't suggest anything
-            raise ValueError("Image is not supported") from e
+        release = override_release if override_release else image.release
+        variant = override_variant if override_variant else image.variant
 
-        return candidates
+        if (image.product not in self.supported_products
+                or image.arch not in self.supported_archs
+                or release not in self.supported_releases
+                or variant not in self.supported_variants):
+            raise ValueError(f'Image ({image.product}, {image.arch}, {release}, {variant}) is not supported')
+
+        return self.candidates[f'{image.product}_{image.arch}_{release}_{variant}']
 
     def get_all_allowed_candidates(self, image: Image, release: str,
                                    requested_variant: str) -> tuple[list[UpdateCandidate], list[UpdateCandidate]]:
