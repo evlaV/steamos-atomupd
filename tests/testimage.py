@@ -277,8 +277,8 @@ class ImageMethods(unittest.TestCase):
         for data in image_status:
             with self.subTest(msg=data.image_data.buildid):
                 i_d = data.image_data
-                image = Image.from_values(product=i_d.product, release=i_d.release, variant=i_d.variant, arch=i_d.arch,
-                                          version_str=i_d.version, buildid_str=i_d.buildid,
+                image = Image.from_values(product=i_d.product, release=i_d.release, variant=i_d.variant, branch='',
+                                          arch=i_d.arch, version_str=i_d.version, buildid_str=i_d.buildid,
                                           introduces_checkpoint=i_d.introduces_checkpoint,
                                           requires_checkpoint=i_d.requires_checkpoint,
                                           shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)

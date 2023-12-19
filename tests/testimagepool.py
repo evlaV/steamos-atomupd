@@ -25,7 +25,7 @@ from steamosatomupd.update import UpdateCandidate, UpdateType
 imgdata = {
     'product': 'steamos',
     'release': 'clockwerk',
-    'variant': 'xyz',
+    'variant': 'steamdeck',
     'arch'   : 'amd64',
     'version': 'SET-ME',
     'buildid': '20190214',

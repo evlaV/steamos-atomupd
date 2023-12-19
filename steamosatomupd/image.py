@@ -116,6 +116,7 @@ class Image:
     product: str
     release: str
     variant: str
+    branch: str
     arch: str
     version: semantic_version.Version
     buildid: BuildId
@@ -124,9 +125,12 @@ class Image:
     shadow_checkpoint: bool
     estimated_size: int
     skip: bool
+    # Older images that were using variants 'steamdeck*' without the concept of
+    # branches
+    legacy_variant: str
 
     @classmethod
-    def from_values(cls, product: str, release: str, variant: str, arch: str,
+    def from_values(cls, product: str, release: str, variant: str, branch: str, arch: str,
                     version_str: str, buildid_str: str, introduces_checkpoint: int,
                     requires_checkpoint: int, shadow_checkpoint: bool, estimated_size: int, skip: bool) -> Image:
         """Create an Image from mandatory values
@@ -146,13 +150,21 @@ class Image:
         # Parse buildid, raise ValueError if need be
         buildid = BuildId.from_string(buildid_str)
 
+        if branch:
+            legacy_variant = ''
+        else:
+            # If 'branch' is missing, we assume this is an old image with a legacy variant.
+            # Extrapolate the variant and branch from the provided legacy value.
+            legacy_variant = variant
+            variant, branch = cls.convert_from_legacy_variant(legacy_variant)
+
         # Tweak architecture a bit
         if arch == 'x86_64':
             arch = 'amd64'
 
         # Return an instance
-        return cls(product, release, variant, arch, version, buildid, introduces_checkpoint,
-                   requires_checkpoint, shadow_checkpoint, estimated_size, skip)
+        return cls(product, release, variant, branch, arch, version, buildid, introduces_checkpoint,
+                   requires_checkpoint, shadow_checkpoint, estimated_size, skip, legacy_variant)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Image:
@@ -172,6 +184,9 @@ class Image:
         arch = data_copy.pop('arch')
         version_str = data_copy.pop('version')
         buildid_str = data_copy.pop('buildid')
+
+        # This is technically a mandatory field. But old legacy images don't have it.
+        branch = data_copy.pop('branch', '')
 
         # Get optional fields
         introduces_checkpoint = data_copy.pop('introduces_checkpoint', 0)
@@ -205,12 +220,12 @@ class Image:
             log.warning('The image manifest has some unknown key-values: %s', data_copy)
 
         # Return an instance
-        return cls.from_values(product, release, variant, arch, version_str, buildid_str,
+        return cls.from_values(product, release, variant, branch, arch, version_str, buildid_str,
                                introduces_checkpoint, requires_checkpoint, shadow_checkpoint,
                                estimated_size, skip)
 
     @classmethod
-    def from_os(cls, product='', release='', variant='', arch='',
+    def from_os(cls, product='', release='', variant='', branch='', arch='',
                 version_str='', buildid_str='', introduces_checkpoint=0,
                 requires_checkpoint=0, shadow_checkpoint=False, estimated_size: int = 0, skip=False) -> Image:
         """Create an Image with parameters, use running OS for defaults.
@@ -218,10 +233,8 @@ class Image:
         All arguments are optional, and default values are taken by inspecting the
         current system. The os-release file provides for most of the default values.
 
-        '*_checkpoint' do not exist in any standard place, hence we assume the
-        default values. Note that os-release allows custom additional
-        fields (and recommends to use some kind of namespacing), so we could look for
-        'checkpoint' in a custom field named ${PRODUCT}_CHECKPOINT, for example.
+        '*_BRANCH' do not exist in any standard place, hence we use a custom additional
+        field called ${PRODUCT}_DEFAULT_BRANCH.
 
         If a value is not specified and can't be found in the os-release, we raise
         a RuntimeError exception.
@@ -250,8 +263,12 @@ class Image:
         if not arch:
             arch = platform.machine()
 
+        if not branch:
+            # This is technically a mandatory field. But old legacy images don't have it.
+            branch = osrel.get(product.upper() + '_DEFAULT_BRANCH', '')
+
         # Return an instance, might raise exceptions
-        return cls.from_values(product, release, variant, arch, version_str,
+        return cls.from_values(product, release, variant, branch, arch, version_str,
                                buildid_str, introduces_checkpoint, requires_checkpoint,
                                shadow_checkpoint, estimated_size, skip)
 
@@ -279,6 +296,14 @@ class Image:
                 # Avoid printing in the resulting JSON the default zero values to prevent confusion.
                 data.pop('requires_checkpoint')
 
+        # Internal flag used to represent the legacy variant
+        data.pop('legacy_variant')
+
+        if self.legacy_variant:
+            # Backward compatibility with the legacy variant
+            data['variant'] = self.legacy_variant
+            data.pop('branch')
+
         return data
 
     def get_version_str(self) -> str:
@@ -289,6 +314,29 @@ class Image:
         return 'snapshot'
 
     @staticmethod
+    def convert_from_legacy_variant(legacy_variant: str) -> tuple[str, str]:
+        """Convert the legacy variant into the new variant and branch values"""
+        if '-' in legacy_variant:
+            variant, branch = legacy_variant.split('-', 1)
+        else:
+            # The stable legacy variant was just 'steamdeck'
+            variant = legacy_variant
+            branch = 'stable'
+
+        if variant != 'steamdeck':
+            raise RuntimeError('%s is an unexpected legacy variant value' % legacy_variant)
+
+        return variant, branch
+
+    @staticmethod
+    def convert_to_legacy_variant(branch: str) -> str:
+        """Convert a branch into its equivalent legacy variant"""
+        if branch == 'stable':
+            return 'steamdeck'
+
+        return f'steamdeck-{branch}'
+
+    @staticmethod
     def quote(string: str) -> str:
         """Quote a string by replacing the eventual initial '.' with a '_', and then
         following the RFC 3986 Uniform Resource Identifier (URI)"""
@@ -297,7 +345,7 @@ class Image:
 
         return urllib.parse.quote(string.replace('/', '_'))
 
-    def get_update_path(self, override_variant='', fallback=False,
+    def get_update_path(self, override_branch='', fallback=False,
                         second_last=False) -> str:
         """Give an update path in the form of
         <product>/<arch>/<version>/<variant>/<buildid>.json
@@ -318,8 +366,13 @@ class Image:
         respectively.
         """
 
-        bits = [self.product, self.arch, self.get_version_str(),
-                override_variant if override_variant else self.variant]
+        if self.legacy_variant:
+            branch = override_branch if override_branch else self.branch
+            bits = [self.product, self.arch, self.get_version_str(),
+                    self.convert_to_legacy_variant(branch)]
+        else:
+            raise RuntimeError('TODO: The new image manifest is not supported yet')
+
         path = '/'.join([self.quote(b) for b in bits])
 
         if fallback or second_last:
@@ -420,8 +473,8 @@ class Image:
         return (self.release, self.buildid) >= (other.release, other.buildid)
 
     def __repr__(self) -> str:
-        return "{{ {}, {}, {}, {}, {}, {}, {}, {} }}".format(
-            self.product, self.release, self.variant, self.arch,
+        return "{{ {}, {}, {}, {}, {}, {}, {}, {}, {} }}".format(
+            self.product, self.release, self.variant, self.branch, self.arch,
             self.version, self.buildid, self.introduces_checkpoint, self.requires_checkpoint)
 
     def __hash__(self) -> int:

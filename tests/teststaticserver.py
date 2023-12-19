@@ -45,9 +45,10 @@ log = logging.getLogger(__name__)
 @dataclass
 class ServerConfig:
     pool_dir: str
-    variants: tuple[str, ...]
-    variants_order: tuple[str, ...] = ()
+    branches: tuple[str, ...]
+    branches_order: tuple[str, ...] = ()
     unstable: bool = True
+    variants: tuple[str, ...] = ('steamdeck',)
     products: tuple[str, ...] = ('steamos',)
     releases: tuple[str, ...] = ('holo',)
     archs: tuple[str, ...] = ('amd64',)
@@ -74,8 +75,8 @@ server_data = [
         msg='Static server with release images',
         config=ServerConfig(
             pool_dir='releases',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
@@ -87,7 +88,7 @@ server_data = [
         msg='Static server with snapshot images',
         config=ServerConfig(
             pool_dir='snapshots',
-            variants=('steamdeck', 'steamdeck-beta'),
+            branches=('stable', 'beta')
         ),
         expectation='staticsnapexpected',
     ),
@@ -95,8 +96,8 @@ server_data = [
         msg='Static server with snapshot and release images',
         config=ServerConfig(
             pool_dir='releases-and-snaps',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-main', 'steamdeck-rc'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'main', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='static_rel_and_snap_expected',
         mock_leftovers=EXPECTATION_PARENT / 'static_rel_and_snap_mock_leftover',
@@ -108,8 +109,8 @@ server_data = [
         msg='Static server with release images running as daemon',
         config=ServerConfig(
             pool_dir='releases',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='staticexpected',
         changed_expectation='staticdaemonexpected2',
@@ -122,8 +123,8 @@ server_data = [
         msg='Static server with snapshot images',
         config=ServerConfig(
             pool_dir='releases-and-snaps2',
-            variants=('steamdeck', 'steamdeck-beta'),
-            variants_order=('steamdeck', 'steamdeck-beta'),
+            branches=('stable', 'beta'),
+            branches_order=('stable', 'beta'),
         ),
         expectation='static_rel_and_snap2_expected',
     ),
@@ -131,8 +132,8 @@ server_data = [
         msg='Static server with snapshot and release images 3',
         config=ServerConfig(
             pool_dir='releases-and-snaps3',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-main', 'steamdeck-rc', 'steamdeck-bc'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta', 'steamdeck-bc', 'steamdeck-main'),
+            branches=('stable', 'beta', 'main', 'rc', 'bc'),
+            branches_order=('stable', 'rc', 'beta', 'bc', 'main'),
         ),
         expectation='static_rel_and_snap3_expected',
     ),
@@ -140,8 +141,8 @@ server_data = [
         msg='Static server with snapshot and release images 4',
         config=ServerConfig(
             pool_dir='releases-and-snaps4',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='static_rel_and_snap4_expected',
     ),
@@ -149,8 +150,8 @@ server_data = [
         msg='Static server with snapshot and release images 5',
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='static_rel_and_snap5_expected',
     ),
@@ -158,8 +159,8 @@ server_data = [
         msg='Server with a variant that does not match any of the images in the pool',
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc', 'steamdeck-missing'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'rc', 'missing'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='',
         exit_code=1,
@@ -168,8 +169,8 @@ server_data = [
         msg='Server with a variant that does not match any of the images in the pool, as daemon',
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
-            variants=('steamdeck', 'steamdeck-beta', 'steamdeck-rc', 'steamdeck-missing'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta', 'rc', 'missing'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='',
         run_as_daemon=True,
@@ -179,8 +180,8 @@ server_data = [
         msg='Static server with a checkpoint image that goes directly from zero to two',
         config=ServerConfig(
             pool_dir='releases-checkpoints',
-            variants=('steamdeck', 'steamdeck-beta'),
-            variants_order=('steamdeck', 'steamdeck-rc', 'steamdeck-beta'),
+            branches=('stable', 'beta'),
+            branches_order=('stable', 'rc', 'beta'),
         ),
         expectation='static_rel_checkpoints_expected',
     ),
@@ -188,7 +189,7 @@ server_data = [
         msg='Static server with a retired checkpoint',
         config=ServerConfig(
             pool_dir='releases-retired-checkpoint',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='statis_retired_checkpoint',
     ),
@@ -196,8 +197,8 @@ server_data = [
         msg='Static server with release images 2',
         config=ServerConfig(
             pool_dir='releases2',
-            variants=('steamdeck', 'steamdeck-beta'),
-            variants_order=('steamdeck', 'steamdeck-beta'),
+            branches=('stable', 'beta'),
+            branches_order=('stable', 'beta'),
         ),
         expectation='staticexpected2',
     ),
@@ -205,8 +206,8 @@ server_data = [
         msg='Simulate an image that got converted into a shadow checkpoint',
         config=ServerConfig(
             pool_dir='releases2',
-            variants=('steamdeck', 'steamdeck-beta'),
-            variants_order=('steamdeck', 'steamdeck-beta'),
+            branches=('stable', 'beta'),
+            branches_order=('stable', 'beta'),
         ),
         expectation='staticexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected2_mock_leftover',
@@ -216,8 +217,8 @@ server_data = [
         msg='Static server with release images 3',
         config=ServerConfig(
             pool_dir='releases3',
-            variants=('steamdeck', 'steamdeck-staging'),
-            variants_order=('steamdeck', 'steamdeck-staging'),
+            branches=('stable', 'staging'),
+            branches_order=('stable', 'staging'),
         ),
         expectation='staticexpected3',
     ),
@@ -225,8 +226,8 @@ server_data = [
         msg='Static server with release images 4',
         config=ServerConfig(
             pool_dir='releases4',
-            variants=('steamdeck', 'steamdeck-staging'),
-            variants_order=('steamdeck', 'steamdeck-staging'),
+            branches=('stable', 'staging'),
+            branches_order=('stable', 'staging'),
         ),
         expectation='staticexpected4',
     ),
@@ -234,7 +235,7 @@ server_data = [
         msg='Static server with release images 5',
         config=ServerConfig(
             pool_dir='releases5',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='staticexpected5',
     ),
@@ -242,7 +243,7 @@ server_data = [
         msg='Image with a broken manifest',
         config=ServerConfig(
             pool_dir='unexpected-manifest',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -251,7 +252,7 @@ server_data = [
         msg='Shadow image that is unexpectedly also marked as skip',
         config=ServerConfig(
             pool_dir='shadow-skip',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -260,7 +261,7 @@ server_data = [
         msg='Shadow image that is not introducing a checkpoint',
         config=ServerConfig(
             pool_dir='shadow-introduce',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -269,7 +270,7 @@ server_data = [
         msg='Two shadow checkpoints that introduce the same checkpoint',
         config=ServerConfig(
             pool_dir='shadow-multiple',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -278,7 +279,7 @@ server_data = [
         msg='Multiple images that introduce the same checkpoints',
         config=ServerConfig(
             pool_dir='checkpoint-multiple',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -287,7 +288,7 @@ server_data = [
         msg='Image with wrong checkpoint',
         config=ServerConfig(
             pool_dir='wrong-checkpoint',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -296,7 +297,7 @@ server_data = [
         msg='Image with wrong checkpoint 2',
         config=ServerConfig(
             pool_dir='wrong-checkpoint2',
-            variants=('steamdeck',),
+            branches=('stable',),
         ),
         expectation='',
         exit_code=1,
@@ -305,7 +306,7 @@ server_data = [
         msg='Duplicated image',
         config=ServerConfig(
             pool_dir='duplicated-image',
-            variants=('steamdeck', 'steamdeck-beta'),
+            branches=('stable', 'beta'),
         ),
         expectation='',
         exit_code=1,
@@ -314,10 +315,10 @@ server_data = [
         msg='Checkpoint marked as skip',
         config=ServerConfig(
             pool_dir='skip-checkpoint',
-            variants=('steamdeck', 'steamdeck-beta'),
+            branches=('stable', 'beta'),
         ),
         expectation='skip_checkpoint_expected',
-        log_message='WARNING:steamosatomupd.imagepool:The pool has a checkpoint for (steamdeck, 1) marked as '
+        log_message='WARNING:steamosatomupd.imagepool:The pool has a checkpoint for (steamdeck_stable, 1) marked as '
                     '\'skip\', but there isn\'t a canonical checkpoint to replace it.',
     ),
 ]
@@ -387,9 +388,10 @@ class StaticServerTestCase(unittest.TestCase):
                                     'Products': ' '.join(data.config.products),
                                     'Releases': ' '.join(data.config.releases),
                                     'Variants': ' '.join(data.config.variants),
+                                    'Branches': ' '.join(data.config.branches),
                                     'Archs': ' '.join(data.config.archs)}
-                if data.config.variants_order:
-                    config['Images']['VariantsOrder'] = ' '.join(data.config.variants_order)
+                if data.config.branches_order:
+                    config['Images']['BranchesOrder'] = ' '.join(data.config.branches_order)
 
                 config.write(tmp_config)
 

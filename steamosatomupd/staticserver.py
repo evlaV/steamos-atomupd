@@ -178,7 +178,7 @@ class UpdateParser(pyinotify.ProcessEvent):
         with open(json_path, 'w', encoding='utf-8') as file:
             file.write(update_json)
 
-    def _write_update_json(self, image_update: UpdateCandidate, requested_variant: str,
+    def _write_update_json(self, image_update: UpdateCandidate, requested_branch: str,
                            json_path: Path, update_jsons: set[Path],
                            update_type=UpdateType.standard, estimate_download_size=False) -> None:
         """Get the available updates and write them in a JSON"""
@@ -192,7 +192,7 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         update_jsons.add(json_path)
 
-        update = self.image_pool.get_updates(image, update_path, requested_variant, update_type,
+        update = self.image_pool.get_updates(image, update_path, requested_branch, update_type,
                                              estimate_download_size)
         update_dict = update.to_dict() if update else {}
 
@@ -241,7 +241,7 @@ class UpdateParser(pyinotify.ProcessEvent):
         """Create file structure as needed based on known images"""
 
         image_updates = self.image_pool.get_image_updates_found()
-        supported_variants = self.image_pool.get_supported_variants()
+        supported_branches = self.image_pool.get_supported_branches()
         update_jsons: set[Path] = set()
         # This is the list of update JSONs with invalid/unknown buildid, where the variant.json
         # will be written up one level, compared to the usual directory
@@ -268,10 +268,10 @@ class UpdateParser(pyinotify.ProcessEvent):
             # it is, because it's likely a considerable amount of devices will pass through this one.
             estimate_download_size = index < index_cutoff or image.is_checkpoint()
 
-            for requested_variant in supported_variants:
-                json_path = Path(image.get_update_path(requested_variant))
-                json_path_fallback = Path(image.get_update_path(requested_variant, fallback=True))
-                json_path_second_last = Path(image.get_update_path(requested_variant, second_last=True))
+            for requested_branch in supported_branches:
+                json_path = Path(image.get_update_path(requested_branch))
+                json_path_fallback = Path(image.get_update_path(requested_branch, fallback=True))
+                json_path_second_last = Path(image.get_update_path(requested_branch, second_last=True))
 
                 if image.shadow_checkpoint:
                     if json_path.exists():
@@ -284,14 +284,14 @@ class UpdateParser(pyinotify.ProcessEvent):
                     # It is not possible for users to be running them.
                     continue
 
-                self._write_update_json(image_update, requested_variant, json_path, update_jsons,
+                self._write_update_json(image_update, requested_branch, json_path, update_jsons,
                                         UpdateType.standard, estimate_download_size)
 
                 # Skip the download size estimation for the generic fallbacks, because we have no
                 # way of knowing what's the base image the client is using.
-                self._write_update_json(image_update, requested_variant, json_path_fallback,
+                self._write_update_json(image_update, requested_branch, json_path_fallback,
                                         fallback_update_jsons, UpdateType.unexpected_buildid)
-                self._write_update_json(image_update, requested_variant, json_path_second_last,
+                self._write_update_json(image_update, requested_branch, json_path_second_last,
                                         second_last_update_jsons, UpdateType.second_last)
 
         # Pass the canonical update JSONs, because we want to check for leftovers only inside

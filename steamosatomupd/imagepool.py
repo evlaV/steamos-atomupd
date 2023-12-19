@@ -133,12 +133,13 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
             return []
 
     # Keep only the candidates from the destination image, to avoid hopping between
-    # different variants.
+    # different variants and branches.
     # Also remove any candidate that is newer than our chosen `newest_candidate`. We may encounter
     # newer candidates when we are searching for the penultimate update or when there are shadow
     # checkpoints.
     filtered_candidates = [candidate for candidate in candidates if
                            candidate.image.variant == newest_candidate.image.variant and
+                           candidate.image.branch == newest_candidate.image.branch and
                            candidate.image < newest_candidate.image]
 
     # If the destination requires a newer checkpoint we add the necessary checkpoints to the winners list
@@ -156,8 +157,8 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
             curr_checkpoint = candidate.image.introduces_checkpoint
 
     if curr_checkpoint != newest_candidate.image.requires_checkpoint:
-        log.info("(%s) can't update to \"%s\" because it is missing a required checkpoint",
-                 image, newest_candidate.image.variant)
+        log.info("(%s) can't update to \"%s\"/\"%s\" because it is missing a required checkpoint",
+                 image, newest_candidate.image.variant, newest_candidate.image.branch)
         return []
 
     if newest_candidate not in winners:
@@ -172,7 +173,7 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
     for update in winners:
         if update.image == image:
             # If the same image version, release and buildid is available in multiple
-            # variants, we assume that they are exactly the same image and do not
+            # branches, we assume that they are exactly the same image and do not
             # offer an update. Given that we don't know if a request is for an update,
             # or for a branch switch, this could otherwise introduce an unexpected cycle.
             log.info("Cycle detected, an update for %s/%s/%s can't be safely forced",
@@ -217,7 +218,8 @@ class ImagePool:
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
-                          config.get('Images', 'VariantsOrder', fallback='').split(),
+                          config['Images']['Branches'].split(),
+                          config.get('Images', 'BranchesOrder', fallback='').split(),
                           config['Images']['Archs'].split())
 
     @classmethod
@@ -226,7 +228,7 @@ class ImagePool:
 
         The execution will stop if the validation fails."""
 
-        options = ['PoolDir', 'Unstable', 'Products', 'Releases', 'Variants', 'Archs']
+        options = ['PoolDir', 'Unstable', 'Products', 'Releases', 'Variants', 'Branches', 'Archs']
         for option in options:
             if not config.has_option('Images', option):
                 log.error("Please provide a valid configuration file, the option '%s' is missing", option)
@@ -243,10 +245,9 @@ class ImagePool:
             log.error("Releases in configuration file must be ordered!")
             sys.exit(1)
 
-    def _create_pool(self, images_dir: str, want_unstable_images: bool,
-                     supported_products: list[str], supported_releases: list[str],
-                     supported_variants: list[str], variants_order: list[str],
-                     supported_archs: list[str]) -> None:
+    def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
+                     supported_releases: list[str], supported_variants: list[str], supported_branches: list[str],
+                     branches_order: list[str], supported_archs: list[str]) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -263,7 +264,8 @@ class ImagePool:
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
-        self.variants_order = variants_order
+        self.supported_branches = supported_branches
+        self.branches_order = branches_order
         self.supported_archs = supported_archs
         self.image_updates_found: list[UpdateCandidate] = []
         self.extract_dir = tempfile.mkdtemp()
@@ -343,8 +345,8 @@ class ImagePool:
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: %s", f)
 
-        seen_intro: dict[str, list[int]] = {variant: [] for variant in supported_variants}
-        seen_shadow: dict[str, list[int]] = {variant: [] for variant in supported_variants}
+        seen_intro: dict[str, list[int]] = defaultdict(list)
+        seen_shadow: dict[str, list[int]] = defaultdict(list)
         seen_intro_skip: list[tuple[str, int]] = []
 
         # Validate the image pool
@@ -366,22 +368,24 @@ class ImagePool:
 
             if image.is_checkpoint():
                 if image.shadow_checkpoint:
-                    if image.introduces_checkpoint in seen_shadow[image.variant]:
-                        raise RuntimeError(f"There are two shadow images for the same variant "
-                                           f"{image.variant} and checkpoint {image.introduces_checkpoint}!")
-                    seen_shadow[image.variant].append(image.introduces_checkpoint)
+                    if image.introduces_checkpoint in seen_shadow[f'{image.variant}_{image.branch}']:
+                        raise RuntimeError(f"There are two shadow images for the same variant {image.variant}, "
+                                           f"branch {image.branch} and checkpoint {image.introduces_checkpoint}!")
+                    seen_shadow[f'{image.variant}_{image.branch}'].append(image.introduces_checkpoint)
                 elif not image.skip:
-                    if image.introduces_checkpoint in seen_intro[image.variant]:
-                        raise RuntimeError(f"There are two images for the same variant {image.variant} "
-                                           f"that introduce the same checkpoint {image.introduces_checkpoint}!")
-                    seen_intro[image.variant].append(image.introduces_checkpoint)
+                    if image.introduces_checkpoint in seen_intro[f'{image.variant}_{image.branch}']:
+                        raise RuntimeError(f"There are two images for the same variant {image.variant}, "
+                                           f"and branch {image.branch}, that introduce the same "
+                                           f"checkpoint {image.introduces_checkpoint}!")
+                    seen_intro[f'{image.variant}_{image.branch}'].append(image.introduces_checkpoint)
                 else:
-                    seen_intro_skip.append((image.variant, image.introduces_checkpoint))
+                    seen_intro_skip.append((f'{image.variant}_{image.branch}', image.introduces_checkpoint))
 
-        for variant, introduced_checkpoint in seen_intro_skip:
-            if introduced_checkpoint not in seen_intro[variant]:
+        for variant_branch, introduced_checkpoint in seen_intro_skip:
+            if introduced_checkpoint not in seen_intro[variant_branch]:
                 log.warning("The pool has a checkpoint for (%s, %s) marked as 'skip', but "
-                            "there isn't a canonical checkpoint to replace it.", variant, introduced_checkpoint)
+                            "there isn't a canonical checkpoint to replace it.",
+                            variant_branch, introduced_checkpoint)
 
     def __str__(self) -> str:
         return '\n'.join([
@@ -390,79 +394,82 @@ class ImagePool:
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
-            'Variants order: {}'.format(self.variants_order),
+            'Branches  : {}'.format(self.supported_branches),
+            'Branches order: {}'.format(self.branches_order),
             'Archs     : {}'.format(self.supported_archs),
             'Candidates: (see below)',
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
     def _get_candidate_list(self, image: Image, override_release='',
-                            override_variant='') -> list[UpdateCandidate]:
+                            override_branch='') -> list[UpdateCandidate]:
         """Return the list of update candidates that an image belong to
 
-        The optional 'override_release' and 'override_variant' fields are used to respectively
-        override the image release and the image variant.
+        The optional 'override_release' and 'override_branch' fields are used to respectively
+        override the image release and the image branch.
 
         This method also does sanity check, to ensure the image is supported.
         We might raise exceptions if the image is not supported.
         """
 
         release = override_release if override_release else image.release
-        variant = override_variant if override_variant else image.variant
+        branch = override_branch if override_branch else image.branch
 
         if (image.product not in self.supported_products
                 or image.arch not in self.supported_archs
                 or release not in self.supported_releases
-                or variant not in self.supported_variants):
-            raise ValueError(f'Image ({image.product}, {image.arch}, {release}, {variant}) is not supported')
+                or image.variant not in self.supported_variants
+                or branch not in self.supported_branches):
+            raise ValueError(f'Image ({image.product}, {image.arch}, {release}, {image.variant}, {branch}) '
+                             'is not supported')
 
-        return self.candidates[f'{image.product}_{image.arch}_{release}_{variant}']
+        return self.candidates[f'{image.product}_{image.arch}_{release}_{image.variant}_{branch}']
 
     def get_all_allowed_candidates(self, image: Image, release: str,
-                                   requested_variant: str) -> tuple[list[UpdateCandidate], list[UpdateCandidate]]:
+                                   requested_branch: str) -> tuple[list[UpdateCandidate], list[UpdateCandidate]]:
         """Get a list of UpdateCandidate that are potentially valid updates for the image
 
         The first list contains all the possible allowed candidates, while the second one has only
-        images that are specifically for the requested variant.
+        images that are specifically for the requested branch.
         The two lists may differ when the server is configured to take into consideration more
-        stable variants.
+        stable branches.
 
         The returned lists are sorted in ascending order.
         """
         all_candidates: list[UpdateCandidate] = []
-        additional_variants: list[str] = []
+        additional_branches: list[str] = []
 
-        if requested_variant in self.variants_order:
-            # Take into consideration all the more stable variants too
-            variant_index = self.variants_order.index(requested_variant)
-            additional_variants = self.variants_order[:variant_index]
+        if requested_branch in self.branches_order:
+            # Take into consideration all the more stable branches too
+            branch_index = self.branches_order.index(requested_branch)
+            additional_branches = self.branches_order[:branch_index]
 
         try:
-            all_candidates.extend(self._get_candidate_list(image, release, requested_variant))
+            all_candidates.extend(self._get_candidate_list(image, release, requested_branch))
         except ValueError as err:
-            # Continue to check the additional variants, if any
+            # Continue to check the additional branches, if any
             log.debug(err)
 
-        for additional_variant in additional_variants:
+        for additional_branch in additional_branches:
             try:
-                additional_candidates = self._get_candidate_list(image, release, additional_variant)
+                additional_candidates = self._get_candidate_list(image, release, additional_branch)
                 # Remove all additional candidates that are still unversioned. We can't reliably
-                # consider additional images for different variants, if they are old snapshot
+                # consider additional images for different branches, if they are old snapshot
                 # images (no way to really order them). So we just skip over those.
                 all_candidates.extend([candidate for candidate in additional_candidates if candidate.image.version])
             except ValueError as err:
-                # If the image with that variant is not supported try the next one
+                # If the image with that branch is not supported try the next one
                 log.debug(err)
 
         all_candidates.sort(key=lambda x: x.image)
 
-        same_variant_candidates = [candidate for candidate in all_candidates if
-                                   candidate.image.variant == requested_variant]
+        same_branch_candidates = [candidate for candidate in all_candidates if
+                                  candidate.image.branch == requested_branch]
 
-        return all_candidates, same_variant_candidates
+        return all_candidates, same_branch_candidates
 
     def get_updatepath(self, image: Image, relative_update_path: Path | None,
-                       requested_variant: str, release: str, candidates: list[UpdateCandidate],
+                       requested_branch: str, release: str, candidates: list[UpdateCandidate],
                        estimate_download_size: bool) -> UpdatePath | None:
         """Get an UpdatePath from a given UpdateCandidate list
 
@@ -472,9 +479,9 @@ class ImagePool:
         if not candidates:
             return None
 
-        if candidates[-1].image.variant != requested_variant:
-            log.info("Selected image '%s' from variant '%s', instead of '%s', because is newer",
-                     candidates[-1].image.buildid, candidates[-1].image.variant, image.variant)
+        if candidates[-1].image.branch != requested_branch:
+            log.info("Selected image '%s' from branch '%s', instead of '%s', because is newer",
+                     candidates[-1].image.buildid, candidates[-1].image.branch, requested_branch)
 
         # Only estimate the size of the first update for now. Once we'll have the first
         # checkpoint we can also begin to estimate the subsequent updates, if needed.
@@ -484,14 +491,14 @@ class ImagePool:
         return UpdatePath(release, candidates)
 
     def get_updates(self, image: Image, relative_update_path: Path,
-                    requested_variant: str, update_type=UpdateType.standard,
+                    requested_branch: str, update_type=UpdateType.standard,
                     estimate_download_size=False) -> Update | None:
         """Get updates
 
         We look for update candidates in the same release as the image,
         and in the next release (if any).
-        "requested_variant" is used to request updates for a specific variant, which may be the
-        same string as "image.variant".
+        "requested_branch" is used to request updates for a specific branch, which may be the
+        same string as "image.branch".
         "relative_update_path" is used to estimate the download size of the updates. The path
         needs to be relative to the pool images directory. If set to None, the download size
         will not be estimated.
@@ -500,27 +507,27 @@ class ImagePool:
         """
 
         curr_release = image.release
-        all_candidates, same_variant_candidates = self.get_all_allowed_candidates(image, image.release,
-                                                                                  requested_variant)
+        all_candidates, same_branch_candidates = self.get_all_allowed_candidates(image, image.release,
+                                                                                 requested_branch)
         candidates = _get_update_candidates(all_candidates, image, update_type)
         if not candidates:
             # If we were not able to find a valid update candidate we retry with only candidates
-            # that are exactly the requested variant. For example, when we use a VariantOrder we
-            # might attempt to go to a more stable variant, but sometimes that could not be possible.
-            candidates = _get_update_candidates(same_variant_candidates, image, update_type)
+            # that are exactly the requested branch. For example, when we use a BranchOrder we
+            # might attempt to go to a more stable branch, but sometimes that could not be possible.
+            candidates = _get_update_candidates(same_branch_candidates, image, update_type)
 
-        minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
+        minor_update = self.get_updatepath(image, relative_update_path, requested_branch,
                                            curr_release, candidates, estimate_download_size)
 
         next_release = _get_next_release(curr_release, self.supported_releases)
         major_update = None
         if next_release:
             all_candidates_next, sv_candidates_next = self.get_all_allowed_candidates(image, next_release,
-                                                                                      requested_variant)
+                                                                                      requested_branch)
             candidates_next = _get_update_candidates(all_candidates_next, image, update_type)
             if not candidates_next:
                 candidates_next = _get_update_candidates(sv_candidates_next, image, update_type)
-            major_update = self.get_updatepath(image, relative_update_path, requested_variant,
+            major_update = self.get_updatepath(image, relative_update_path, requested_branch,
                                                next_release, candidates_next, estimate_download_size)
 
         if minor_update or major_update:
@@ -529,16 +536,16 @@ class ImagePool:
         if update_type == UpdateType.unexpected_buildid:
             if not all_candidates:
                 # This can be caused by a configuration error, e.g. we don't have a single image in
-                # the image pool for one of the variants listed in "Variants".
+                # the image pool for one of the branches listed in "Branches".
                 # In those cases it's better to exit with an error to avoid ending up producing
                 # unexpected JSON files.
-                log.error("There is not a single valid candidate for the variant %s. This can be "
-                          "caused by having unexpected variants in the server configuration",
-                          requested_variant)
+                log.error("There is not a single valid candidate for the branch %s. This can be "
+                          "caused by having unexpected branches in the server configuration",
+                          requested_branch)
                 sys.exit(1)
             else:
                 log.debug("There isn't a fallback update for [%i, %s]",
-                          image.requires_checkpoint, requested_variant)
+                          image.requires_checkpoint, requested_branch)
                 return None
 
         if update_type == UpdateType.second_last:
@@ -550,18 +557,18 @@ class ImagePool:
             # If the client is using an image that has been removed, we force a downgrade to
             # avoid leaving it with its, probably borked, image.
             update_type = UpdateType.forced
-        elif requested_variant != image.variant:
+        elif requested_branch != image.branch:
             try:
-                # Force an update if we are in an unstable variant, and we want to switch back to a
-                # more stable variant. By reaching this point it means that there isn't a proper
+                # Force an update if we are in an unstable branch, and we want to switch back to a
+                # more stable branch. By reaching this point it means that there isn't a proper
                 # update because our current version is already newer. For this reason we force the
                 # update, that will effectively be a downgrade.
-                if self.variants_order.index(requested_variant) < self.variants_order.index(image.variant):
+                if self.branches_order.index(requested_branch) < self.branches_order.index(image.branch):
                     update_type = UpdateType.forced
 
-                # If we reached this point, we had a valid variant order. However, for unversioned
-                # images we can't reliably consider more stable variants. So we force an update
-                # regardless, to allow the requested variant switch.
+                # If we reached this point, we had a valid branch order. However, for unversioned
+                # images we can't reliably consider more stable branches. So we force an update
+                # regardless, to allow the requested branch switch.
                 if update_type != UpdateType.forced and not image.version:
                     update_type = UpdateType.forced
             except ValueError:
@@ -574,15 +581,15 @@ class ImagePool:
             # that is not supported and will likely cause unexpected issues.
             candidates_forced = _get_update_candidates(all_candidates, image, update_type)
             if not candidates_forced:
-                candidates_forced = _get_update_candidates(same_variant_candidates, image, update_type)
+                candidates_forced = _get_update_candidates(same_branch_candidates, image, update_type)
 
-            minor_update = self.get_updatepath(image, relative_update_path, requested_variant,
+            minor_update = self.get_updatepath(image, relative_update_path, requested_branch,
                                                curr_release, candidates_forced, estimate_download_size)
             if minor_update:
                 return Update(minor_update, major_update)
 
             log.warning("Failed to force an update from '%s' (%s) to '%s'",
-                        image.variant, image.buildid, requested_variant)
+                        image.branch, image.buildid, requested_branch)
 
         return None
 
@@ -626,3 +633,7 @@ class ImagePool:
     def get_supported_variants(self) -> list[str]:
         """ Get list of supported variants"""
         return self.supported_variants
+
+    def get_supported_branches(self) -> list[str]:
+        """ Get list of supported branches"""
+        return self.supported_branches
