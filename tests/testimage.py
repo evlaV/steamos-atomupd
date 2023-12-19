@@ -193,6 +193,7 @@ class ImageData:
     product: str = 'steamos'
     release: str = 'holo'
     arch: str = 'amd64'
+    branch: str = ''
     introduces_checkpoint: int = 0
     requires_checkpoint: int = 0
     shadow_checkpoint: bool = False
@@ -269,6 +270,57 @@ image_status = [
         is_checkpoint=True,
         image_checkpoint=2,
     ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='stable',
+            version='3.6.6',
+            buildid='20240101.1',
+        ),
+        update_path='holo/steamos/amd64/steamdeck/stable/3.6.6/20240101.1.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/stable.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='beta',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        update_path='holo/steamos/amd64/steamdeck/beta/3.6.7/20240101.100.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/beta.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='rc',
+            version='3.7.0',
+            buildid='20240201.1',
+            introduces_checkpoint=0,
+            requires_checkpoint=1,
+        ),
+        update_path='holo/steamos/amd64/steamdeck/rc/3.7.0/20240201.1.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/rc.cp1.json',
+        image_checkpoint=1,
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='main',
+            version='3.7.5',
+            buildid='20240203.1000',
+            introduces_checkpoint=2,
+            requires_checkpoint=1,
+        ),
+        update_path='holo/steamos/amd64/steamdeck/main/3.7.5/20240203.1000.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/main.cp2.json',
+        is_checkpoint=True,
+        image_checkpoint=2,
+    ),
 ]
 
 
@@ -277,9 +329,9 @@ class ImageMethods(unittest.TestCase):
         for data in image_status:
             with self.subTest(msg=data.image_data.buildid):
                 i_d = data.image_data
-                image = Image.from_values(product=i_d.product, release=i_d.release, variant=i_d.variant, branch='',
-                                          arch=i_d.arch, version_str=i_d.version, buildid_str=i_d.buildid,
-                                          introduces_checkpoint=i_d.introduces_checkpoint,
+                image = Image.from_values(product=i_d.product, release=i_d.release, variant=i_d.variant,
+                                          branch=i_d.branch, arch=i_d.arch, version_str=i_d.version,
+                                          buildid_str=i_d.buildid, introduces_checkpoint=i_d.introduces_checkpoint,
                                           requires_checkpoint=i_d.requires_checkpoint,
                                           shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)
 

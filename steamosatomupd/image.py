@@ -345,33 +345,42 @@ class Image:
 
         return urllib.parse.quote(string.replace('/', '_'))
 
-    def get_update_path(self, override_branch='', fallback=False,
+    def get_update_path(self, override_branch='', override_variant='', fallback=False,
                         second_last=False) -> str:
         """Give an update path in the form of
-        <product>/<arch>/<version>/<variant>/<buildid>.json
+        <release>/<product>/<arch>/<variant>/<branch>/<version>/<buildid>.json
 
         If `fallback` is true, the update path for images that never crossed
-        a checkpoint is the fallback <product>/<arch>/<version>/<variant>.json.
+        a checkpoint is the fallback <release>/<product>/<arch>/<variant>/<branch>.json.
         Instead, if an image requires a checkpoint for its subsequent updates,
         the path is in the form of
-        <product>/<arch>/<version>/<variant>.cp<checkpoint_number>.json
+        <release>/<product>/<arch>/<variant>/<branch>.cp<checkpoint_number>.json
         In this case the <checkpoint_number> is the max from requires and provides
         checkpoint, because it represents which checkpoint number this image
         will require for the subsequent updates.
 
         Similarly, if `second_last` is true, the path for images that never
         crossed a checkpoint and for the ones that did, will be
-        <product>/<arch>/<version>/<variant>.second_last.json and
-        <product>/<arch>/<version>/<variant>.cp<checkpoint_number>.second_last.json,
+        <release>/<product>/<arch>/<variant>/<branch>.second_last.json and
+        <release>/<product>/<arch>/<variant>/<branch>.cp<checkpoint_number>.second_last.json,
         respectively.
+
+        If this image is still using the legacy variant, the path will be
+        the old deprecated form instead.
         """
 
         if self.legacy_variant:
-            branch = override_branch if override_branch else self.branch
-            bits = [self.product, self.arch, self.get_version_str(),
-                    self.convert_to_legacy_variant(branch)]
+            if override_branch:
+                # We are using the new branch feature with an image that doesn't support it.
+                # Convert it to its equivalent legacy variant
+                variant = self.convert_to_legacy_variant(override_branch)
+            else:
+                variant = override_variant if override_variant else self.legacy_variant
+            bits = [self.product, self.arch, self.get_version_str(), variant]
         else:
-            raise RuntimeError('TODO: The new image manifest is not supported yet')
+            bits = [self.release, self.product, self.arch,
+                    override_variant if override_variant else self.variant,
+                    override_branch if override_branch else self.branch]
 
         path = '/'.join([self.quote(b) for b in bits])
 
@@ -381,6 +390,9 @@ class Image:
             if second_last:
                 path += '.second_last'
         else:
+            if not self.legacy_variant:
+                path += '/' + self.get_version_str()
+
             path += '/' + str(self.buildid)
 
         return path + '.json'
