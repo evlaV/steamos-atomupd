@@ -263,19 +263,15 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         for index, image_update in enumerate(image_updates):
             image = image_update.image
-            base_path = Path(image.product, image.arch, image.get_version_str())
 
             # If this is a checkpoint, we include the estimated download size regardless of how old
             # it is, because it's likely a considerable amount of devices will pass through this one.
             estimate_download_size = index < index_cutoff or image.is_checkpoint()
 
             for requested_variant in supported_variants:
-                json_path = Path(base_path, requested_variant, f'{image.buildid}.json')
-
-                checkpoint_number = image.get_image_checkpoint()
-                checkpoint_str = f'.cp{checkpoint_number}' if checkpoint_number > 0 else ''
-                json_path_fallback = Path(base_path, f'{requested_variant}{checkpoint_str}.json')
-                json_path_second_last = Path(base_path, f'{requested_variant}{checkpoint_str}.second_last.json')
+                json_path = Path(image.get_update_path(requested_variant))
+                json_path_fallback = Path(image.get_update_path(requested_variant, fallback=True))
+                json_path_second_last = Path(image.get_update_path(requested_variant, second_last=True))
 
                 if image.shadow_checkpoint:
                     if json_path.exists():

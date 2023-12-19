@@ -297,7 +297,8 @@ class Image:
 
         return urllib.parse.quote(string.replace('/', '_'))
 
-    def get_update_path(self, fallback=False) -> str:
+    def get_update_path(self, override_variant='', fallback=False,
+                        second_last=False) -> str:
         """Give an update path in the form of
         <product>/<arch>/<version>/<variant>/<buildid>.json
 
@@ -309,15 +310,23 @@ class Image:
         In this case the <checkpoint_number> is the max from requires and provides
         checkpoint, because it represents which checkpoint number this image
         will require for the subsequent updates.
+
+        Similarly, if `second_last` is true, the path for images that never
+        crossed a checkpoint and for the ones that did, will be
+        <product>/<arch>/<version>/<variant>.second_last.json and
+        <product>/<arch>/<version>/<variant>.cp<checkpoint_number>.second_last.json,
+        respectively.
         """
 
         bits = [self.product, self.arch, self.get_version_str(),
-                self.variant]
+                override_variant if override_variant else self.variant]
         path = '/'.join([self.quote(b) for b in bits])
 
-        if fallback:
+        if fallback or second_last:
             if self.get_image_checkpoint() > 0:
                 path += f'.cp{self.get_image_checkpoint()}'
+            if second_last:
+                path += '.second_last'
         else:
             path += '/' + str(self.buildid)
 
