@@ -510,23 +510,23 @@ class StaticServerTestCase(unittest.TestCase):
                     self.assertEqual(p.stdout, '')
                     self.assertEqual(p.returncode, 0)
 
-                    if daemon:
-                        # Now try to run a second instance and make sure the lockfile prevents it doing anything
-                        my_env = os.environ
-                        my_env["IN_SOURCE_TREE"] = "True"
-                        second_daemon = subprocess.Popen([sys.executable,
-                                                          steamos_atomupd_dir / 'bin/steamos-atomupd-staticserver',
-                                                          '--run-daemon', '--debug', '--config', tmp_config.name],
-                                                         env=my_env, cwd=meta_dir)
+                if daemon:
+                    # Now try to run a second instance and make sure the lockfile prevents it doing anything
+                    my_env = os.environ
+                    my_env["IN_SOURCE_TREE"] = "True"
+                    second_daemon = subprocess.Popen([sys.executable,
+                                                      steamos_atomupd_dir / 'bin/steamos-atomupd-staticserver',
+                                                      '--run-daemon', '--debug', '--config', tmp_config.name],
+                                                     env=my_env, cwd=meta_dir)
 
-                        output = second_daemon.communicate()[0]
-                        return_code = second_daemon.returncode
+                    output = second_daemon.communicate()[0]
+                    return_code = second_daemon.returncode
 
-                        # Now make sure it quit as expected
-                        self.assertEqual(return_code, 1)
+                    # Now make sure it quit as expected
+                    self.assertEqual(return_code, 1)
 
-                        log.info("TEST: daemon is running, so killing it")
-                        os.kill(daemon.pid, signal.SIGINT)
+                    log.info("TEST: daemon is running, so killing it")
+                    os.kill(daemon.pid, signal.SIGINT)
 
         images.cleanup()
 
