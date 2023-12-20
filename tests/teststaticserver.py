@@ -330,6 +330,25 @@ server_data = [
         ),
         expectation='branch1_expected',
     ),
+    ServerData(
+        msg='Images with the new branch parameter',
+        config=ServerConfig(
+            pool_dir='branch1',
+            branches=('stable', 'beta', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
+        ),
+        expectation='branch1_expected',
+        run_as_daemon=True,
+    ),
+    ServerData(
+        msg='Mix of old and new images',
+        config=ServerConfig(
+            pool_dir='branch-and-legacy-variant1',
+            branches=('stable', 'beta'),
+            branches_order=('stable', 'beta'),
+        ),
+        expectation='branch_and_legacy_variant1_expected',
+    ),
 ]
 
 

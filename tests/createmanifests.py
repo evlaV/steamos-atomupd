@@ -372,6 +372,21 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, '3.7.5', '20240120.100', branch=Branch.BETA, requires_checkpoint=1),
         ]
     ),
+
+    Hierarchy(
+        directory_name='branch-and-legacy-variant1',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.1', '20231103.1'),
+            Manifest(Variant.STEAMDECK, '3.6.1', '20231104.1'),
+            Manifest(Variant.STEAMDECK_BETA, '3.6.1', '20231105.100'),
+
+            Manifest(Variant.STEAMDECK, '3.6.8', '20240110.100', branch=Branch.BETA),
+            Manifest(Variant.STEAMDECK, '3.7.1', '20240115.100', branch=Branch.BETA,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.7.5', '20240120.100', branch=Branch.BETA, requires_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.7.6', '20240120.101', branch=Branch.BETA, requires_checkpoint=1),
+        ]
+    ),
 ]
 
 additional_images = [
