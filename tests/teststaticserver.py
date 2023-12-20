@@ -369,7 +369,6 @@ class StaticServerTestCase(unittest.TestCase):
             ]), file=sys.stderr)
             sys.exit(1)
 
-        daemon = None
         steamos_atomupd_dir = Path.cwd()
 
         for data in server_data:
@@ -398,6 +397,7 @@ class StaticServerTestCase(unittest.TestCase):
                     shutil.copytree(data.mock_leftovers, meta_dir, dirs_exist_ok=True)
 
                 updated_path = os.path.join(meta_dir, "steamos-updated.txt")
+                daemon: subprocess.Popen | None = None
 
                 if data.run_as_daemon:
                     # We don't grab the output when running as a daemon, so we can't do assumptions
@@ -527,7 +527,6 @@ class StaticServerTestCase(unittest.TestCase):
 
                         log.info("TEST: daemon is running, so killing it")
                         os.kill(daemon.pid, signal.SIGINT)
-                        daemon = None
 
         images.cleanup()
 
