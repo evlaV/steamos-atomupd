@@ -470,7 +470,6 @@ class StaticServerTestCase(unittest.TestCase):
                 if data.changed_expectation:
                     # Now add some updates
                     build_image_hierarchy(Path(images.name), only_additional_images=True)
-                    (Path(images.name) / 'releases' / 'steamos' / 'updated.txt').touch()
 
                     # Now compare result with previous expectation. since daemon
                     # should not have yet updated any metadata
@@ -487,7 +486,7 @@ class StaticServerTestCase(unittest.TestCase):
                     newmtime = lastmtime
 
                     # Trigger a new scan by touching trigger file again
-                    open(trigger_path, 'a').close()
+                    Path(trigger_path).touch()
 
                     # Wait for server to signal it has finished again by watching for updated.txt change again
                     while newmtime == lastmtime:
