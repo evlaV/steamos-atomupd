@@ -17,6 +17,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import configparser
+import contextlib
 import logging
 import os
 import shutil
@@ -34,7 +35,6 @@ from unittest.mock import patch
 from tests.createmanifests import build_image_hierarchy
 
 EXPECTATION_PARENT = Path('./tests')
-META_OUTPUT_DIR = Path('steamos')
 
 # Always add cwd to the sys path
 sys.path.insert(1, os.getcwd())
@@ -323,12 +323,24 @@ server_data = [
 ]
 
 
+@contextlib.contextmanager
+def cm_chdir(path: Path | str) -> None:
+    """Wrapper around os.chdir with context manager"""
+    old_cwd = Path.cwd()
+    os.chdir(path)
+
+    try:
+        yield
+    finally:
+        os.chdir(old_cwd)
+
+
 class StaticServerTestCase(unittest.TestCase):
 
     # Do not cut out the assertion error diff messages
     maxDiff = None
 
-    @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path('./tests/rauc/system.conf'))
+    @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path.cwd() / 'tests/rauc/system.conf')
     def test_static_server(self):
         # If necessary for debugging, the option `delete=False` can be used to prevent
         # automatic deletion of the temporary directory. Also remember to comment out
@@ -347,12 +359,16 @@ class StaticServerTestCase(unittest.TestCase):
             sys.exit(1)
 
         daemon = None
+        steamos_atomupd_dir = Path.cwd()
 
         for data in server_data:
-            with self.subTest(msg=data.msg), tempfile.NamedTemporaryFile(mode='w', buffering=1) as tmp_config:
-                subprocess.run(['rm', '-fR', META_OUTPUT_DIR])
-                Path(".lockfile.lock").unlink(missing_ok=True)
-
+            # If necessary for debugging, you can point meta_dir to a specific directory to avoid
+            # cleaning it up when the execution ends
+            with (
+                self.subTest(msg=data.msg),
+                tempfile.NamedTemporaryFile(mode='w', buffering=1) as tmp_config,
+                tempfile.TemporaryDirectory() as meta_dir
+            ):
                 config = configparser.RawConfigParser()
                 # Preserve case
                 config.optionxform = str
@@ -368,9 +384,9 @@ class StaticServerTestCase(unittest.TestCase):
                 config.write(tmp_config)
 
                 if data.mock_leftovers:
-                    shutil.copytree(data.mock_leftovers / META_OUTPUT_DIR, META_OUTPUT_DIR)
+                    shutil.copytree(data.mock_leftovers, meta_dir, dirs_exist_ok=True)
 
-                updated_path = os.path.join(".", "steamos-updated.txt")
+                updated_path = os.path.join(meta_dir, "steamos-updated.txt")
 
                 if data.run_as_daemon:
                     # We don't grab the output when running as a daemon, so we can't do assumptions
@@ -379,8 +395,8 @@ class StaticServerTestCase(unittest.TestCase):
 
                     my_env = os.environ
                     my_env["IN_SOURCE_TREE"] = "True"
-                    daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', tmp_config.name],
-                        env=my_env)
+                    daemon = subprocess.Popen([sys.executable, steamos_atomupd_dir / 'bin/steamos-atomupd-staticserver', '--run-daemon', '--debug', '--config', tmp_config.name],
+                                              env=my_env, cwd=meta_dir)
 
                     # Give the static server time to set up it's watch, etc.
                     time.sleep(2)
@@ -399,8 +415,10 @@ class StaticServerTestCase(unittest.TestCase):
                     newmtime = lastmtime
 
                     # Then compare result with expected result since running the daemon should parse the data
-                    p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
-                                        str(EXPECTATION_PARENT / data.expectation / META_OUTPUT_DIR)],
+                    p = subprocess.run(['diff', '-rq', meta_dir,
+                                        '--exclude', '.lockfile.lock',
+                                        '--exclude', '*updated.txt',
+                                        str(EXPECTATION_PARENT / data.expectation)],
                                        check=False,
                                        stderr=subprocess.STDOUT,
                                        stdout=subprocess.PIPE,
@@ -424,7 +442,7 @@ class StaticServerTestCase(unittest.TestCase):
                 else:
                     args = ['--debug', '--config', tmp_config.name]
 
-                    with self.assertLogs(level=logging.DEBUG) as lo:
+                    with self.assertLogs(level=logging.DEBUG) as lo, cm_chdir(meta_dir):
                         if data.exit_code != 0:
                             with self.assertRaises(SystemExit) as se:
                                 staticserver.main(args)
@@ -458,8 +476,10 @@ class StaticServerTestCase(unittest.TestCase):
                             self.assertIn(differences, output_string)
 
                 # Then compare result with expected result
-                p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
-                                    str(EXPECTATION_PARENT / data.expectation / META_OUTPUT_DIR)],
+                p = subprocess.run(['diff', '-rq', meta_dir,
+                                    '--exclude', '.lockfile.lock',
+                                    '--exclude', '*updated.txt',
+                                    str(EXPECTATION_PARENT / data.expectation)],
                                    check=False,
                                    stderr=subprocess.STDOUT,
                                    stdout=subprocess.PIPE,
@@ -473,8 +493,10 @@ class StaticServerTestCase(unittest.TestCase):
 
                     # Now compare result with previous expectation. since daemon
                     # should not have yet updated any metadata
-                    p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
-                                        str(EXPECTATION_PARENT / data.expectation / META_OUTPUT_DIR)],
+                    p = subprocess.run(['diff', '-rq', meta_dir,
+                                        '--exclude', '.lockfile.lock',
+                                        '--exclude', '*updated.txt',
+                                        str(EXPECTATION_PARENT / data.expectation)],
                                        check=False,
                                        stderr=subprocess.STDOUT,
                                        stdout=subprocess.PIPE,
@@ -494,12 +516,14 @@ class StaticServerTestCase(unittest.TestCase):
                         newmtime = os.path.getmtime(updated_path)
 
                     # Then compare result with expected result
-                    p = subprocess.run(['diff', '-rq', META_OUTPUT_DIR,
-                                    str(EXPECTATION_PARENT / data.changed_expectation / META_OUTPUT_DIR)],
-                                   check=False,
-                                   stderr=subprocess.STDOUT,
-                                   stdout=subprocess.PIPE,
-                                   text=True)
+                    p = subprocess.run(['diff', '-rq', meta_dir,
+                                        '--exclude', '.lockfile.lock',
+                                        '--exclude', '*updated.txt',
+                                        str(EXPECTATION_PARENT / data.changed_expectation)],
+                                       check=False,
+                                       stderr=subprocess.STDOUT,
+                                       stdout=subprocess.PIPE,
+                                       text=True)
                     self.assertEqual(p.stdout, '')
                     self.assertEqual(p.returncode, 0)
 
@@ -507,8 +531,10 @@ class StaticServerTestCase(unittest.TestCase):
                         # Now try to run a second instance and make sure the lockfile prevents it doing anything
                         my_env = os.environ
                         my_env["IN_SOURCE_TREE"] = "True"
-                        second_daemon = subprocess.Popen([sys.executable, os.path.join('.', 'bin/steamos-atomupd-staticserver'), '--run-daemon', '--debug', '--config', tmp_config.name],
-                            env=my_env)
+                        second_daemon = subprocess.Popen([sys.executable,
+                                                          steamos_atomupd_dir / 'bin/steamos-atomupd-staticserver',
+                                                          '--run-daemon', '--debug', '--config', tmp_config.name],
+                                                         env=my_env, cwd=meta_dir)
 
                         output = second_daemon.communicate()[0]
                         return_code = second_daemon.returncode

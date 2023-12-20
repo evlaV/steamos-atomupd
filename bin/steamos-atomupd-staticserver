@@ -22,7 +22,9 @@ import os
 import sys
 
 if os.environ.get('IN_SOURCE_TREE'):
-    sys.path.insert(1, os.getcwd())
+    # Append the root project directory from __file__, because this script could
+    # be called from different working directories.
+    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     sys.dont_write_bytecode = True
 
 if __name__ == "__main__":
