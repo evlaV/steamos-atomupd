@@ -321,6 +321,15 @@ server_data = [
         log_message='WARNING:steamosatomupd.imagepool:The pool has a checkpoint for (steamdeck_stable, 1) marked as '
                     '\'skip\', but there isn\'t a canonical checkpoint to replace it.',
     ),
+    ServerData(
+        msg='Images with the new branch parameter',
+        config=ServerConfig(
+            pool_dir='branch1',
+            branches=('stable', 'beta', 'rc'),
+            branches_order=('stable', 'rc', 'beta'),
+        ),
+        expectation='branch1_expected',
+    ),
 ]
 
 

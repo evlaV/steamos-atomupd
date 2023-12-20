@@ -31,11 +31,22 @@ class Variant(StrEnum):
     STEAMDECK_STAGING = 'steamdeck-staging'
 
 
+class Branch(StrEnum):
+    STABLE = 'stable'
+    RC = 'rc'
+    BETA = 'beta'
+    BC = 'bc'
+    MAIN = 'main'
+    STAGING = 'staging'
+    LEGACY = ''
+
+
 @dataclass
 class Manifest:
     variant: str
     version: str
     buildid: str
+    branch: str = Branch.LEGACY
     product: str = 'steamos'
     release: str = 'holo'
     arch: str = 'amd64'
@@ -344,6 +355,23 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK_BETA, '3.6.6', '20231205.100', requires_checkpoint=0, introduces_checkpoint=1),
         ]
     ),
+
+    Hierarchy(
+        directory_name='branch1',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.5', '20240104.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.6.6', '20240108.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.7.2', '20240115.1', branch=Branch.STABLE,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.7.3', '20240115.2', branch=Branch.STABLE, requires_checkpoint=1),
+
+            Manifest(Variant.STEAMDECK, '3.6.5', '20240107.1', branch=Branch.RC),
+
+            Manifest(Variant.STEAMDECK, '3.7.1', '20240115.100', branch=Branch.BETA,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.7.5', '20240120.100', branch=Branch.BETA, requires_checkpoint=1),
+        ]
+    ),
 ]
 
 additional_images = [
@@ -381,6 +409,9 @@ def build_image_hierarchy(path: Path, only_additional_images=False) -> None:
             json_data = {'product': manifest.product, 'release': manifest.release,
                          'variant': manifest.variant, 'arch': manifest.arch,
                          'version': manifest.version, 'buildid': manifest.buildid}
+
+            if manifest.branch != Branch.LEGACY:
+                json_data['branch'] = manifest.branch
 
             if manifest.requires_checkpoint > -1:
                 json_data['requires_checkpoint'] = manifest.requires_checkpoint
