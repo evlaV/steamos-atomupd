@@ -335,6 +335,17 @@ def cm_chdir(path: Path | str) -> None:
         os.chdir(old_cwd)
 
 
+def run_diff(meta_dir: str, expectation: str) -> subprocess.CompletedProcess:
+    return subprocess.run(['diff', '-rq', meta_dir,
+                           '--exclude', '.lockfile.lock',
+                           '--exclude', '*updated.txt',
+                          str(EXPECTATION_PARENT / expectation)],
+                          check=False,
+                          stderr=subprocess.STDOUT,
+                          stdout=subprocess.PIPE,
+                          text=True)
+
+
 class StaticServerTestCase(unittest.TestCase):
 
     # Do not cut out the assertion error diff messages
@@ -415,14 +426,7 @@ class StaticServerTestCase(unittest.TestCase):
                     newmtime = lastmtime
 
                     # Then compare result with expected result since running the daemon should parse the data
-                    p = subprocess.run(['diff', '-rq', meta_dir,
-                                        '--exclude', '.lockfile.lock',
-                                        '--exclude', '*updated.txt',
-                                        str(EXPECTATION_PARENT / data.expectation)],
-                                       check=False,
-                                       stderr=subprocess.STDOUT,
-                                       stdout=subprocess.PIPE,
-                                       text=True)
+                    p = run_diff(meta_dir, data.expectation)
                     self.assertEqual(p.stdout, '')
                     self.assertEqual(p.returncode, 0)
 
@@ -476,14 +480,7 @@ class StaticServerTestCase(unittest.TestCase):
                             self.assertIn(differences, output_string)
 
                 # Then compare result with expected result
-                p = subprocess.run(['diff', '-rq', meta_dir,
-                                    '--exclude', '.lockfile.lock',
-                                    '--exclude', '*updated.txt',
-                                    str(EXPECTATION_PARENT / data.expectation)],
-                                   check=False,
-                                   stderr=subprocess.STDOUT,
-                                   stdout=subprocess.PIPE,
-                                   text=True)
+                p = run_diff(meta_dir, data.expectation)
                 self.assertEqual(p.stdout, '')
                 self.assertEqual(p.returncode, 0)
 
@@ -493,14 +490,7 @@ class StaticServerTestCase(unittest.TestCase):
 
                     # Now compare result with previous expectation. since daemon
                     # should not have yet updated any metadata
-                    p = subprocess.run(['diff', '-rq', meta_dir,
-                                        '--exclude', '.lockfile.lock',
-                                        '--exclude', '*updated.txt',
-                                        str(EXPECTATION_PARENT / data.expectation)],
-                                       check=False,
-                                       stderr=subprocess.STDOUT,
-                                       stdout=subprocess.PIPE,
-                                       text=True)
+                    p = run_diff(meta_dir, data.expectation)
                     self.assertEqual(p.stdout, '')
                     self.assertEqual(p.returncode, 0)
 
@@ -516,14 +506,7 @@ class StaticServerTestCase(unittest.TestCase):
                         newmtime = os.path.getmtime(updated_path)
 
                     # Then compare result with expected result
-                    p = subprocess.run(['diff', '-rq', meta_dir,
-                                        '--exclude', '.lockfile.lock',
-                                        '--exclude', '*updated.txt',
-                                        str(EXPECTATION_PARENT / data.changed_expectation)],
-                                       check=False,
-                                       stderr=subprocess.STDOUT,
-                                       stdout=subprocess.PIPE,
-                                       text=True)
+                    p = run_diff(meta_dir, data.changed_expectation)
                     self.assertEqual(p.stdout, '')
                     self.assertEqual(p.returncode, 0)
 
