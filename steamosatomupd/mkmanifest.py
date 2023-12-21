@@ -34,6 +34,7 @@ def main(args=None):
     parser.add_argument('--product', default='')
     parser.add_argument('--release', default='')
     parser.add_argument('--variant', default='')
+    parser.add_argument('--branch', default='')
     parser.add_argument('--arch', default='')
     parser.add_argument('--version', default='')
     parser.add_argument('--buildid', default='')
@@ -43,7 +44,7 @@ def main(args=None):
     args = parser.parse_args(args)
 
     try:
-        image = Image.from_os(product=args.product, release=args.release, variant=args.variant,
+        image = Image.from_os(product=args.product, release=args.release, variant=args.variant, branch=args.branch,
                               arch=args.arch, version_str=args.version, buildid_str=args.buildid,
                               introduces_checkpoint=args.introduces_checkpoint,
                               requires_checkpoint=args.requires_checkpoint)

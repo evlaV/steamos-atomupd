@@ -54,6 +54,7 @@ class ManifestData:
     product_override: str = ''
     release_override: str = ''
     variant_override: str = ''
+    branch_override: str = ''
     arch_override: str = ''
     version_override: str = ''
     buildid_override: str = ''
@@ -175,6 +176,47 @@ manifest_data = [
               "estimated_size": 0
             }"""),
     ),
+
+    ManifestData(
+        os_release=OsReleaseData(
+            variant_id='steamdeck',
+            version_id='3.7.3',
+            build_id='20240120.1',
+        ),
+        branch_override='beta',
+        expected_manifest=textwrap.dedent("""\
+            {
+              "product": "steamos",
+              "release": "holo",
+              "variant": "steamdeck",
+              "branch": "beta",
+              "arch": "amd64",
+              "version": "3.7.3",
+              "buildid": "20240120.1",
+              "estimated_size": 0
+            }"""),
+    ),
+
+    ManifestData(
+        os_release=OsReleaseData(
+            variant_id='steamdeck',
+            version_id='3.7.5',
+            build_id='20240125.1',
+            branch_id='stable',
+        ),
+        branch_override='main',
+        expected_manifest=textwrap.dedent("""\
+            {
+              "product": "steamos",
+              "release": "holo",
+              "variant": "steamdeck",
+              "branch": "main",
+              "arch": "amd64",
+              "version": "3.7.5",
+              "buildid": "20240125.1",
+              "estimated_size": 0
+            }"""),
+    ),
 ]
 
 
@@ -206,6 +248,8 @@ class MkManifestsTestCase(unittest.TestCase):
                     args.extend(['--release', data.release_override])
                 if data.variant_override:
                     args.extend(['--variant', data.variant_override])
+                if data.branch_override:
+                    args.extend(['--branch', data.branch_override])
                 if data.arch_override:
                     args.extend(['--arch', data.arch_override])
                 if data.version_override:
