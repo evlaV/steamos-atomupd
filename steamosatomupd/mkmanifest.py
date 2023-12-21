@@ -17,9 +17,9 @@
 # <http://www.gnu.org/licenses/>.
 
 import argparse
+import json
 
 from steamosatomupd.image import Image
-from steamosatomupd.manifest import Manifest
 
 
 def main(args=None):
@@ -50,6 +50,5 @@ def main(args=None):
     except Exception as e:
         raise RuntimeError("Failed to create manifest") from e
 
-    manifest = Manifest(image)
-    manifest_string = manifest.to_string()
-    print("{}".format(manifest_string))
+    data = image.to_dict()
+    print(json.dumps(data, indent=2))

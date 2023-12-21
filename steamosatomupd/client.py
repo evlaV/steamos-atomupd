@@ -37,7 +37,6 @@ from functools import cache
 from pathlib import Path
 
 from steamosatomupd.image import Image
-from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import Update, UpdatePath
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb
 from steamosatomupd.utils import DEFAULT_RAUC_CONF, FALLBACK_RAUC_CONF, ROOTFS_INDEX
@@ -781,8 +780,10 @@ class UpdateClient:
 
         # Get details about the current image
         if manifest_file:
-            manifest = Manifest.from_file(manifest_file)
-            current_image = manifest.image
+            with open(manifest_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+
+            current_image = Image.from_dict(data)
         else:
             current_image = Image.from_os()
 

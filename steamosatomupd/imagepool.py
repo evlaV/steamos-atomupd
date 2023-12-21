@@ -17,6 +17,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import errno
+import json
 import logging
 import os
 import pprint
@@ -30,7 +31,6 @@ from copy import deepcopy
 from pathlib import Path
 
 from steamosatomupd.image import Image
-from steamosatomupd.manifest import Manifest
 from steamosatomupd.update import UpdateCandidate, UpdatePath, Update, UpdateType
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb
 
@@ -296,11 +296,12 @@ class ImagePool:
 
                 # Create an image instance
                 try:
-                    manifest = Manifest.from_file(manifest_path)
+                    with open(manifest_path, 'r', encoding='utf-8') as m:
+                        data = json.load(m)
+
+                    image = Image.from_dict(data)
                 except Exception as e:
                     raise RuntimeError('Failed to create image from manifest %s' % f) from e
-
-                image = manifest.image
 
                 if image in images_found:
                     raise RuntimeError("There are two images in the pool with the same version %s and buildid %s. "
