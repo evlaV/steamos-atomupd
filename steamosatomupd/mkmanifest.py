@@ -31,14 +31,14 @@ def main(args=None):
             "Feel free to use the optional arguments to override the values from",
             "the os-release file, in case you know better."
         ]))
-    parser.add_argument('--product')
-    parser.add_argument('--release')
-    parser.add_argument('--variant')
-    parser.add_argument('--arch')
-    parser.add_argument('--version')
-    parser.add_argument('--buildid')
-    parser.add_argument('--introduces-checkpoint', type=int)
-    parser.add_argument('--requires-checkpoint', type=int)
+    parser.add_argument('--product', default='')
+    parser.add_argument('--release', default='')
+    parser.add_argument('--variant', default='')
+    parser.add_argument('--arch', default='')
+    parser.add_argument('--version', default='')
+    parser.add_argument('--buildid', default='')
+    parser.add_argument('--introduces-checkpoint', type=int, default=0)
+    parser.add_argument('--requires-checkpoint', type=int, default=0)
 
     args = parser.parse_args(args)
 
