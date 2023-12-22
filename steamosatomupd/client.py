@@ -297,35 +297,6 @@ def download_update_from_rest_url(meta_url: str, image: Image) -> str:
     return ""
 
 
-def download_update_from_query_url(url: str) -> str:
-    """Download an update file from the server with a query URL
-
-    The parameters for the request are the details of the image that
-    the caller is running.
-
-    The server is expected to return a JSON string, which is then parsed
-    by the client, in order to validate it. Then it's printed out to a
-    temporary file, and the filename is returned.
-
-    An empty string will be returned if either the server unexpectedly sent us
-    an empty reply or if an error occurs.
-    """
-
-    log.debug("Downloading update file %s", url)
-
-    initialize_http_authentication(url)
-
-    try:
-        with urllib.request.urlopen(url) as response:
-            json_str = response.read()
-
-    except (urllib.error.HTTPError, urllib.error.URLError) as e:
-        log.warning("Unable to get JSON from server: %s", e)
-        return ""
-
-    return write_json_to_file(json_str)
-
-
 def ensure_index_exists(regenerate: bool) -> None:
     """ Ensure that the index file, and its symlink, are available
 
@@ -715,24 +686,18 @@ class UpdateClient:
         with open(args.config, 'r', encoding='utf-8') as f:
             config.read_file(f)
 
-        query_url = config.get('Server', 'QueryUrl', fallback="")
-        meta_url = config.get('Server', 'MetaUrl', fallback="")
-
-        # "NoOptionError" will be raised if this option is not available in
+        # "NoOptionError" will be raised if these options are not available in
         # the config file
+        meta_url = config.get('Server', 'MetaUrl')
         images_url = config.get('Server', 'ImagesUrl')
 
+        if not meta_url:
+            raise configparser.Error('The option "MetaUrl" cannot have an empty value')
         if not images_url:
-            raise configparser.Error(
-                'The option "ImagesUrl" cannot have an empty value')
+            raise configparser.Error('The option "ImagesUrl" cannot have an empty value')
 
         if not images_url.endswith('/'):
             images_url += '/'
-
-        if not query_url and not meta_url:
-            raise configparser.Error(
-                'Either one of "QueryUrl" or "MetaUrl" must be provided and '
-                'not with an empty value')
 
         runtime_dir = Path(config.get('Host', 'RuntimeDir',
                                       fallback=DEFAULT_RUNTIME_DIR))
@@ -796,22 +761,13 @@ class UpdateClient:
         if args.update_file:
             update_file = args.update_file
         else:
-            tmp_file = ""
             update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
 
             # Cleanup an eventual previously downloaded update file
             Path(update_file).unlink(missing_ok=True)
 
             # Download the update file to a tmp file
-            # If we have both MetaUrl and QueryUrl, try the meta first and use
-            # the query as a fallback
-            if meta_url:
-                tmp_file = download_update_from_rest_url(meta_url, current_image)
-            if images_url and not tmp_file:
-                log.info("MetaURL is either missing or not working, falling "
-                         "back to QueryURL")
-                url = query_url + '?' + urllib.parse.urlencode(current_image.to_dict())
-                tmp_file = download_update_from_query_url(url)
+            tmp_file = download_update_from_rest_url(meta_url, current_image)
 
             if not tmp_file:
                 return -1

@@ -308,16 +308,11 @@ class DownloadUpdateJSON(unittest.TestCase):
 
                 self.assertEqual(attempts, data.meta_attempts)
 
-                url = data.query_url + '?' + urllib.parse.urlencode(data.image_data)
-                query_update_file = client.download_update_from_query_url(url)
-                self.assertTrue(query_update_file)
+                with open(meta_update_file, 'r', encoding='utf-8') as f:
+                    update_json = json.load(f)
 
-                for update_file in [meta_update_file, query_update_file]:
-                    with open(update_file, 'r', encoding='utf-8') as f:
-                        update_json = json.load(f)
-
-                    self.assertTrue(update_json)
-                    self.assertTrue(Update.from_dict(update_json))
+                self.assertTrue(update_json)
+                self.assertTrue(Update.from_dict(update_json))
 
 
 if __name__ == '__main__':
