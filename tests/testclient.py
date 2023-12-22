@@ -255,6 +255,7 @@ class RaucProgressParsing(unittest.TestCase):
 class DownloadUpdateData:
     msg: str
     image_data: dict[str, str]
+    requested_variant: str = ''
     meta_attempts: int = 1
     # These are the production server that we use for Jupiter
     meta_url: str = 'https://steamdeck-atomupd.steamos.cloud/meta'
@@ -291,6 +292,21 @@ download_update_data = [
             'estimated_size': '0',
         },
     ),
+
+    DownloadUpdateData(
+        msg="Switch to a different variant",
+        requested_variant='steamdeck',
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck-beta',
+            'arch': 'amd64',
+            'version': '3.5.11',
+            'buildid': '20231213.2',
+            'checkpoint': 'false',
+            'estimated_size': '0',
+        },
+    ),
 ]
 
 
@@ -301,7 +317,9 @@ class DownloadUpdateJSON(unittest.TestCase):
                 image = Image.from_dict(data.image_data)
 
                 with self.assertLogs(level='DEBUG') as lo:
-                    meta_update_file = client.download_update_from_rest_url(data.meta_url, image)
+                    meta_update_file = client.download_update_from_rest_url(data.meta_url, image,
+                                                                            '',
+                                                                            data.requested_variant)
 
                 self.assertTrue(meta_update_file)
                 attempts = sum('Trying URL' in line for line in lo.output)
@@ -312,7 +330,18 @@ class DownloadUpdateJSON(unittest.TestCase):
                     update_json = json.load(f)
 
                 self.assertTrue(update_json)
-                self.assertTrue(Update.from_dict(update_json))
+
+                update = Update.from_dict(update_json)
+
+                self.assertTrue(update)
+                self.assertGreater(len(update.minor.candidates), 0)
+
+                if data.requested_variant == 'steamdeck':
+                    # Only for the stable steamdeck variant we can be 100% sure that
+                    # the server will propose an update for that same variant.
+                    # For the others, due to the VariantsOrder, we might receive
+                    # something different.
+                    self.assertEqual(update.minor.candidates[0].image.variant, data.requested_variant)
 
 
 if __name__ == '__main__':

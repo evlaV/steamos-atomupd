@@ -258,11 +258,15 @@ def write_json_to_file(json_str: str) -> str:
     return f.name
 
 
-def download_update_from_rest_url(meta_url: str, image: Image) -> str:
+def download_update_from_rest_url(meta_url: str, image: Image,
+                                  requested_branch='', requested_variant='') -> str:
     """Download an update file from the server
 
     The parameters for the request are the details of the image that
     the caller is running.
+
+    'requested_branch' and 'requested_variant' can be used to ask for a different branch
+    and variant respectively.
 
     The server is expected to return a JSON string, which is then parsed
     by the client, in order to validate it. Then it's printed out to a
@@ -277,7 +281,8 @@ def download_update_from_rest_url(meta_url: str, image: Image) -> str:
 
     # Try the canonical update URL. If that fails, we re-try with the generic
     # fallback URL.
-    for update_path in [image.get_update_path(), image.get_update_path(fallback=True)]:
+    for update_path in [image.get_update_path(requested_branch, requested_variant),
+                        image.get_update_path(requested_branch, requested_variant, fallback=True)]:
         url = meta_url + '/' + update_path
         log.debug("Trying URL: %s", url)
 
@@ -752,10 +757,6 @@ class UpdateClient:
         else:
             current_image = Image.from_os()
 
-        # Replace the variant value with the one provided as an argument
-        if args.variant:
-            current_image.variant = args.variant
-
         # Download update file, unless one is given in args
 
         if args.update_file:
@@ -767,7 +768,7 @@ class UpdateClient:
             Path(update_file).unlink(missing_ok=True)
 
             # Download the update file to a tmp file
-            tmp_file = download_update_from_rest_url(meta_url, current_image)
+            tmp_file = download_update_from_rest_url(meta_url, current_image, args.variant)
 
             if not tmp_file:
                 return -1
