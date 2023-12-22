@@ -378,6 +378,11 @@ class Image:
                 variant = override_variant if override_variant else self.legacy_variant
             bits = [self.product, self.arch, self.get_version_str(), variant]
         else:
+            if override_variant and override_variant != self.variant:
+                # If we want a different variant, we go directly to the general fallback JSON,
+                # otherwise we would have to ensure unique buildids even across all variants
+                fallback = True
+
             bits = [self.release, self.product, self.arch,
                     override_variant if override_variant else self.variant,
                     override_branch if override_branch else self.branch]
