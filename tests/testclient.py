@@ -20,6 +20,7 @@ import io
 import json
 import shutil
 import tempfile
+import urllib.parse
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
 import unittest
@@ -27,7 +28,7 @@ from pathlib import Path
 from typing import List
 from unittest.mock import patch
 
-from steamosatomupd.image import BuildId
+from steamosatomupd.image import BuildId, Image
 from steamosatomupd.update import Update
 from steamosatomupd import client
 
@@ -248,6 +249,75 @@ class RaucProgressParsing(unittest.TestCase):
             with redirect_stdout(io.StringIO()) as f:
                 client.parse_desync_progress(line)
             self.assertEqual(f.getvalue().strip(), parsed)
+
+
+@dataclass
+class DownloadUpdateData:
+    msg: str
+    image_data: dict[str, str]
+    meta_attempts: int = 1
+    # These are the production server that we use for Jupiter
+    meta_url: str = 'https://steamdeck-atomupd.steamos.cloud/meta'
+    query_url: str = 'https://steamdeck-atomupd.steamos.cloud/updates'
+
+
+download_update_data = [
+    DownloadUpdateData(
+        msg="Known valid image",
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck',
+            'arch': 'amd64',
+            'version': '3.5.5',
+            'buildid': '20231116.2',
+            'checkpoint': 'false',
+            'estimated_size': '0',
+        },
+    ),
+
+    DownloadUpdateData(
+        msg="Unknown image",
+        # The first URL should return 404, and the generic fallback should succeed
+        meta_attempts=2,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck',
+            'arch': 'amd64',
+            'version': '3.5.0',
+            'buildid': '20000101.9000',
+            'checkpoint': 'false',
+            'estimated_size': '0',
+        },
+    ),
+]
+
+
+class DownloadUpdateJSON(unittest.TestCase):
+    def test_update_request(self):
+        for data in download_update_data:
+            with self.subTest(msg=data.msg):
+                image = Image.from_dict(data.image_data)
+
+                with self.assertLogs(level='DEBUG') as lo:
+                    meta_update_file = client.download_update_from_rest_url(data.meta_url, image)
+
+                self.assertTrue(meta_update_file)
+                attempts = sum('Trying URL' in line for line in lo.output)
+
+                self.assertEqual(attempts, data.meta_attempts)
+
+                url = data.query_url + '?' + urllib.parse.urlencode(data.image_data)
+                query_update_file = client.download_update_from_query_url(url)
+                self.assertTrue(query_update_file)
+
+                for update_file in [meta_update_file, query_update_file]:
+                    with open(update_file, 'r', encoding='utf-8') as f:
+                        update_json = json.load(f)
+
+                    self.assertTrue(update_json)
+                    self.assertTrue(Update.from_dict(update_json))
 
 
 if __name__ == '__main__':
