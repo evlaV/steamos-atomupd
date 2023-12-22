@@ -658,8 +658,10 @@ class UpdateClient:
                                  "this buildid or if it requires a base image that "
                                  "is newer than the current one")
         parser.add_argument('--variant',
-                            help="use this 'variant' value instead of the one parsed "
-                                 "from the manifest file")
+                            help="switch to a different variant", default="")
+        parser.add_argument('--branch',
+                            help="request an image that is from that branch, instead of using the "
+                                 "default fallback value from the current image manifest", default="")
         parser.add_argument('--fallback-after-failed-attempts', type=int, default=3,
                             help="Number of previously failed attempts after which the RAUC "
                                  "conf will be switched to the fallback one, if available. "
@@ -768,7 +770,7 @@ class UpdateClient:
             Path(update_file).unlink(missing_ok=True)
 
             # Download the update file to a tmp file
-            tmp_file = download_update_from_rest_url(meta_url, current_image, args.variant)
+            tmp_file = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant)
 
             if not tmp_file:
                 return -1
