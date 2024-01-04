@@ -207,6 +207,8 @@ class ImageStatus:
     generic_update_path: str
     is_checkpoint: bool = False
     image_checkpoint: int = 0
+    request_variant: str = ''
+    request_branch: str = ''
 
 
 image_status = [
@@ -321,6 +323,96 @@ image_status = [
         is_checkpoint=True,
         image_checkpoint=2,
     ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            version='3.6.4',
+            buildid='20231201.1',
+        ),
+        request_variant='steamdeck-beta',
+        update_path='steamos/amd64/3.6.4/steamdeck-beta/20231201.1.json',
+        generic_update_path='steamos/amd64/3.6.4/steamdeck-beta.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            version='3.6.4',
+            buildid='20231201.1',
+        ),
+        # This is an old image, but we request the new "branch"
+        request_branch='main',
+        update_path='steamos/amd64/3.6.4/steamdeck-main/20231201.1.json',
+        generic_update_path='steamos/amd64/3.6.4/steamdeck-main.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            version='3.6.4',
+            buildid='20231201.1',
+        ),
+        # We request a switch to the new "branch" but also a hypothetical vanilla "variant"
+        # Given that this is an old image, the variant switch should be ignored
+        request_branch='main',
+        request_variant='vanilla',
+        update_path='steamos/amd64/3.6.4/steamdeck-main/20231201.1.json',
+        generic_update_path='steamos/amd64/3.6.4/steamdeck-main.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='beta',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        request_branch='stable',
+        update_path='holo/steamos/amd64/steamdeck/stable/3.6.7/20240101.100.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/stable.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='beta',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        request_branch='stable',
+        request_variant='vanilla',
+        # When switching variant we go directly to the generic meta JSON
+        update_path='holo/steamos/amd64/vanilla/stable.json',
+        generic_update_path='holo/steamos/amd64/vanilla/stable.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='beta',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        request_variant='vanilla',
+        # When switching variant we go directly to the generic meta JSON
+        update_path='holo/steamos/amd64/vanilla/beta.json',
+        generic_update_path='holo/steamos/amd64/vanilla/beta.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='beta',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        request_branch='stable',
+        # Explicit variant request, even if it's the same one we are currently using
+        request_variant='steamdeck',
+        update_path='holo/steamos/amd64/steamdeck/stable/3.6.7/20240101.100.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/stable.json',
+    ),
 ]
 
 
@@ -336,8 +428,9 @@ class ImageMethods(unittest.TestCase):
                                           shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)
 
                 self.assertEqual(i_d.version, image.get_version_str())
-                self.assertEqual(data.update_path, image.get_update_path())
-                self.assertEqual(data.generic_update_path, image.get_update_path(fallback=True))
+                self.assertEqual(data.update_path, image.get_update_path(data.request_branch, data.request_variant))
+                self.assertEqual(data.generic_update_path, image.get_update_path(data.request_branch,
+                                                                                 data.request_variant, fallback=True))
                 self.assertEqual(data.is_checkpoint, image.is_checkpoint())
                 self.assertEqual(data.image_checkpoint, image.get_image_checkpoint())
 
