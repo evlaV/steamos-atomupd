@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2024 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -18,7 +18,6 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-import argparse
 import os
 import sys
 
@@ -28,8 +27,7 @@ if os.environ.get('IN_SOURCE_TREE'):
 
 if __name__ == "__main__":
     try:
-        from steamosatomupd.image import Image
-        from steamosatomupd.manifest import Manifest
+        from steamosatomupd import mkmanifest
     except ModuleNotFoundError as e:
         print('\n'.join([
           "Module not found: {}.".format(e),
@@ -38,32 +36,4 @@ if __name__ == "__main__":
         ]), file=sys.stderr)
         sys.exit(1)
 
-    parser = argparse.ArgumentParser(
-        description='\n'.join([
-            "Create a manifest of the current system, using the os-release file.",
-            "Feel free to use the optional arguments to override the values from",
-            "the os-release file, in case you know better."
-        ]))
-    parser.add_argument('--product')
-    parser.add_argument('--release')
-    parser.add_argument('--variant')
-    parser.add_argument('--arch')
-    parser.add_argument('--version')
-    parser.add_argument('--buildid')
-    parser.add_argument('--introduces-checkpoint', type=int)
-    parser.add_argument('--requires-checkpoint', type=int)
-
-    args = parser.parse_args()
-
-    try:
-        image = Image.from_os(product=args.product, release=args.release, variant=args.variant,
-                              arch=args.arch, version_str=args.version, buildid_str=args.buildid,
-                              introduces_checkpoint=args.introduces_checkpoint,
-                              requires_checkpoint=args.requires_checkpoint)
-    except Exception as e:
-        print("Failed to create manifest: {}".format(e), file=sys.stderr)
-        sys.exit(1)
-
-    manifest = Manifest(image)
-    manifest_string = manifest.to_string()
-    print("{}".format(manifest_string))
+    mkmanifest.main()
