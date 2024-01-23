@@ -3,7 +3,6 @@
 binaries = [
   'steamos-atomupd-client',
   'steamos-atomupd-mkmanifest',
-  'steamos-atomupd-server',
   'steamos-atomupd-staticserver',
 ]
 
