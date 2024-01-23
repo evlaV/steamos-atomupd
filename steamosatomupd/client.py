@@ -840,15 +840,6 @@ class UpdateClient:
 
         # Apply update
 
-        # Ensure we're running from a read-only system
-
-        # TODO We probably want to check that the current release matches
-        #      our current release, just as a safety check
-        # TODO If we're supposed to run unattended, should we validate that?
-        #      (like, there should be no X/Wayland or something)
-        # TODO Should we check that the versions proposed by the server are
-        #      above our own version, or should we trust the server blindly?
-
         update_path = ""
         if update.major:
             candidate = update.major.candidates[0]
