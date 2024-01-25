@@ -259,7 +259,8 @@ def write_json_to_file(json_str: str) -> str:
 
 
 def download_update_from_rest_url(meta_url: str, image: Image,
-                                  requested_branch='', requested_variant='') -> str:
+                                  requested_branch='', requested_variant='',
+                                  second_last=False) -> str:
     """Download an update file from the server
 
     The parameters for the request are the details of the image that
@@ -279,10 +280,15 @@ def download_update_from_rest_url(meta_url: str, image: Image,
 
     initialize_http_authentication(meta_url)
 
-    # Try the canonical update URL. If that fails, we re-try with the generic
-    # fallback URL.
-    for update_path in [image.get_update_path(requested_branch, requested_variant),
-                        image.get_update_path(requested_branch, requested_variant, fallback=True)]:
+    if second_last:
+        update_paths = [image.get_update_path(requested_branch, requested_variant, second_last=True)]
+    else:
+        # Try the canonical update URL. If that fails, we re-try with the generic
+        # fallback URL.
+        update_paths = [image.get_update_path(requested_branch, requested_variant),
+                        image.get_update_path(requested_branch, requested_variant, fallback=True)]
+
+    for update_path in update_paths:
         url = meta_url + '/' + update_path
         log.debug("Trying URL: %s", url)
 
@@ -666,6 +672,8 @@ class UpdateClient:
                             help="Number of previously failed attempts after which the RAUC "
                                  "conf will be switched to the fallback one, if available. "
                                  "Set to 0 to disable the fallback")
+        parser.add_argument('--penultimate-update', action='store_true',
+                            help="request the second last update instead of the latest")
 
         manifest_group = parser.add_mutually_exclusive_group()
         manifest_group.add_argument('--manifest-file',
@@ -770,7 +778,8 @@ class UpdateClient:
             Path(update_file).unlink(missing_ok=True)
 
             # Download the update file to a tmp file
-            tmp_file = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant)
+            tmp_file = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant,
+                                                     args.penultimate_update)
 
             if not tmp_file:
                 return -1

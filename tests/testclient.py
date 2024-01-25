@@ -256,6 +256,7 @@ class DownloadUpdateData:
     msg: str
     image_data: dict[str, str]
     requested_variant: str = ''
+    second_last: bool = False
     meta_attempts: int = 1
     # These are the production server that we use for Jupiter
     meta_url: str = 'https://steamdeck-atomupd.steamos.cloud/meta'
@@ -307,6 +308,21 @@ download_update_data = [
             'estimated_size': '0',
         },
     ),
+
+    DownloadUpdateData(
+        msg="Request the penultimate update",
+        second_last=True,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck',
+            'arch': 'amd64',
+            'version': '3.5.5',
+            'buildid': '20231116.2',
+            'checkpoint': 'false',
+            'estimated_size': '0',
+        },
+    ),
 ]
 
 
@@ -319,7 +335,8 @@ class DownloadUpdateJSON(unittest.TestCase):
                 with self.assertLogs(level='DEBUG') as lo:
                     meta_update_file = client.download_update_from_rest_url(data.meta_url, image,
                                                                             '',
-                                                                            data.requested_variant)
+                                                                            data.requested_variant,
+                                                                            data.second_last)
 
                 self.assertTrue(meta_update_file)
                 attempts = sum('Trying URL' in line for line in lo.output)
