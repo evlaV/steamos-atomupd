@@ -29,6 +29,8 @@ class Variant(StrEnum):
     STEAMDECK_BC = 'steamdeck-bc'
     STEAMDECK_MAIN = 'steamdeck-main'
     STEAMDECK_STAGING = 'steamdeck-staging'
+    # Simulate a generic vanilla image type
+    VANILLA = 'vanilla'
 
 
 class Branch(StrEnum):
@@ -385,6 +387,23 @@ images_hierarchies = [
                      requires_checkpoint=0, introduces_checkpoint=1),
             Manifest(Variant.STEAMDECK, '3.7.5', '20240120.100', branch=Branch.BETA, requires_checkpoint=1),
             Manifest(Variant.STEAMDECK, '3.7.6', '20240120.101', branch=Branch.BETA, requires_checkpoint=1),
+        ]
+    ),
+
+    Hierarchy(
+        directory_name='branch2',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.6', '20240108.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.7.2', '20240115.1', branch=Branch.STABLE,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.7.3', '20240115.2', branch=Branch.STABLE, requires_checkpoint=1),
+
+            Manifest(Variant.STEAMDECK, '3.7.1', '20240115.100', branch=Branch.BETA,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.7.5', '20240120.100', branch=Branch.BETA, requires_checkpoint=1),
+
+            Manifest(Variant.VANILLA, '3.6.7', '20240109.50', branch=Branch.STABLE),
+            Manifest(Variant.VANILLA, '3.6.8', '20240109.55', branch=Branch.BETA),
         ]
     ),
 ]

@@ -1,0 +1,20 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "branch": "stable",
+                    "buildid": "20240109.50",
+                    "estimated_size": 0,
+                    "product": "steamos",
+                    "release": "holo",
+                    "variant": "vanilla",
+                    "version": "3.6.7"
+                },
+                "update_path": "steamos/holo/3.6.7/amd64/steamos-holo-20240109.50-3.6.7-amd64-vanilla.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}

@@ -349,6 +349,15 @@ server_data = [
         ),
         expectation='branch_and_legacy_variant1_expected',
     ),
+    ServerData(
+        msg='Multiple branches and variants',
+        config=ServerConfig(
+            pool_dir='branch2',
+            branches=('stable', 'beta'),
+            variants=('steamdeck', 'vanilla'),
+        ),
+        expectation='branch2_expected',
+    ),
 ]
 
 

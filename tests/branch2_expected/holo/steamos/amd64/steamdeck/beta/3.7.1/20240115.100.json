@@ -1,0 +1,21 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "branch": "beta",
+                    "buildid": "20240120.100",
+                    "estimated_size": 0,
+                    "product": "steamos",
+                    "release": "holo",
+                    "requires_checkpoint": 1,
+                    "variant": "steamdeck",
+                    "version": "3.7.5"
+                },
+                "update_path": "steamos/holo/3.7.5/amd64/steamos-holo-20240120.100-3.7.5-amd64-steamdeck.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}
