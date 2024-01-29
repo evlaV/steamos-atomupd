@@ -220,7 +220,8 @@ class ImagePool:
                           config['Images']['Variants'].split(),
                           config['Images']['Branches'].split(),
                           config.get('Images', 'BranchesOrder', fallback='').split(),
-                          config['Images']['Archs'].split())
+                          config['Images']['Archs'].split(),
+                          config['Images'].getboolean('StrictPoolValidation', True))
 
     @classmethod
     def validate_config(cls, config: ConfigParser) -> None:
@@ -247,7 +248,7 @@ class ImagePool:
 
     def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str], supported_branches: list[str],
-                     branches_order: list[str], supported_archs: list[str]) -> None:
+                     branches_order: list[str], supported_archs: list[str], strict_pool_validation: bool) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -267,6 +268,7 @@ class ImagePool:
         self.supported_branches = supported_branches
         self.branches_order = branches_order
         self.supported_archs = supported_archs
+        self.strict_pool_validation = strict_pool_validation
         self.image_updates_found: list[UpdateCandidate] = []
         self.extract_dir = tempfile.mkdtemp()
 
@@ -536,14 +538,21 @@ class ImagePool:
 
         if update_type == UpdateType.unexpected_buildid:
             if not all_candidates:
-                # This can be caused by a configuration error, e.g. we don't have a single image in
-                # the image pool for one of the branches listed in "Branches".
-                # In those cases it's better to exit with an error to avoid ending up producing
-                # unexpected JSON files.
-                log.error("There is not a single valid candidate for the branch %s. This can be "
-                          "caused by having unexpected branches in the server configuration",
-                          requested_branch)
-                sys.exit(1)
+                if self.strict_pool_validation:
+                    # This can be caused by a configuration error, e.g. the image pool is pointing at the wrong
+                    # directory. In those cases it's better to exit with an error to avoid ending up producing
+                    # unexpected JSON files.
+                    log.error("There is not a single valid candidate for the branch %s. This can be "
+                              "caused by having unexpected branches in the server configuration.\nIf you are "
+                              "bootstrapping a new server, you might consider the option AllowAbsentImageTypes.",
+                              requested_branch)
+                    sys.exit(1)
+                else:
+                    # Even if we don't have a single image in the pool for one of the branches listed in "Branches",
+                    # we don't consider this an error and continue anyway. This is a common situation when you are
+                    # bootstrapping a new server, and you don't have yet all the image types you expect.
+                    log.debug("There is not a valid candidate for the branch %s. Continuing...")
+                    return None
             else:
                 log.debug("There isn't a fallback update for [%i, %s]",
                           image.requires_checkpoint, requested_branch)

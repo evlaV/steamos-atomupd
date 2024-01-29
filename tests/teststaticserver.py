@@ -48,6 +48,7 @@ class ServerConfig:
     branches: tuple[str, ...]
     branches_order: tuple[str, ...] = ()
     unstable: bool = True
+    strict_pool_validation: bool = True
     variants: tuple[str, ...] = ('steamdeck',)
     products: tuple[str, ...] = ('steamos',)
     releases: tuple[str, ...] = ('holo',)
@@ -358,6 +359,17 @@ server_data = [
         ),
         expectation='branch2_expected',
     ),
+    ServerData(
+        msg='Pool that still does not have all image branches',
+        config=ServerConfig(
+            pool_dir='branch1',
+            branches=('stable', 'beta', 'rc', 'future'),
+            branches_order=('stable', 'rc', 'beta'),
+            strict_pool_validation=False,
+            variants=('steamdeck', 'handheld')
+        ),
+        expectation='branch1_future_expected',
+    ),
 ]
 
 
@@ -429,6 +441,10 @@ class StaticServerTestCase(unittest.TestCase):
                                     'Archs': ' '.join(data.config.archs)}
                 if data.config.branches_order:
                     config['Images']['BranchesOrder'] = ' '.join(data.config.branches_order)
+
+                if not data.config.strict_pool_validation:
+                    # Write it only if set to 'False' to test its default value
+                    config['Images']['StrictPoolValidation'] = str(data.config.strict_pool_validation)
 
                 config.write(tmp_config)
 
