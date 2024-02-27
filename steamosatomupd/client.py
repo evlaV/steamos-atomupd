@@ -27,7 +27,6 @@ import shutil
 import signal
 import subprocess
 import sys
-import tempfile
 import netrc
 import urllib.error
 import urllib.parse
@@ -238,26 +237,6 @@ def initialize_http_authentication(url: str):
             urllib.request.install_opener(opener)
 
 
-def write_json_to_file(json_str: str) -> str:
-    """Write a JSON string to a temporary file
-
-    The filename of the temporary file will be returned.
-    """
-
-    try:
-        update_data = json.loads(json_str)
-    except json.JSONDecodeError as e:
-        log.warning("Unable to parse JSON from server: %s", e)
-        return ""
-
-    update = Update.from_dict(update_data)
-
-    with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
-        f.write(update.to_string())
-
-    return f.name
-
-
 def download_update_from_rest_url(meta_url: str, image: Image,
                                   requested_branch='', requested_variant='',
                                   second_last=False) -> str:
@@ -293,10 +272,8 @@ def download_update_from_rest_url(meta_url: str, image: Image,
         log.debug("Trying URL: %s", url)
 
         try:
-            with urllib.request.urlopen(url) as response:
-                json_str = response.read()
-                if json_str:
-                    return write_json_to_file(json_str)
+            json_file, _ = urllib.request.urlretrieve(url)
+            return json_file
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             if isinstance(e, urllib.error.HTTPError) and e.code == 404:
                 log.debug("Got 404 from server")
