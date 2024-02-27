@@ -761,7 +761,6 @@ class UpdateClient:
             if not tmp_file:
                 return -1
 
-            log.info("Server returned something, guess an update is available")
             shutil.move(tmp_file, update_file)
 
         # Parse update file
@@ -775,6 +774,8 @@ class UpdateClient:
             # With no available updates the server returns an empty JSON
             log.debug("We are up to date")
             return 0
+
+        log.info("Server returned something, guess an update is available")
 
         update = Update.from_dict(update_data)
 
