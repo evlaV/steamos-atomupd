@@ -777,7 +777,12 @@ class UpdateClient:
 
         log.info("Server returned something, guess an update is available")
 
-        update = Update.from_dict(update_data)
+        try:
+            update = Update.from_dict(update_data)
+        except KeyError as e:
+            log.error("The server returned an unexpected update file, please inspect '%s': %s",
+                      update_file, e)
+            return -1
 
         if not update:
             log.debug("No update candidate, even though the server returned something")
