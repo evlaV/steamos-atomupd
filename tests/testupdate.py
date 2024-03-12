@@ -19,8 +19,7 @@
 import semantic_version
 import unittest
 
-from steamosatomupd.image import Image
-from steamosatomupd.update import Update
+from steamosatomupd.update import UpdatePath
 
 oldimgdata = {
     'product': 'steamos',
@@ -70,8 +69,8 @@ class UpdateTestCase(unittest.TestCase):
         self.assertTrue(v1 > v2)
 
         # An update object MUST contain a SORTED array of update candidates.
-        update = Update.from_dict(d)
-        candidates = update.minor.candidates
+        update = UpdatePath.from_dict(d)
+        candidates = update.candidates
         self.assertTrue(sorted(candidates, key=lambda c: c.image) == candidates)
         self.assertTrue(candidates[0].image < candidates[1].image)
 

@@ -36,7 +36,7 @@ from functools import cache
 from pathlib import Path
 
 from steamosatomupd.image import Image
-from steamosatomupd.update import Update, UpdatePath
+from steamosatomupd.update import UpdatePath
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb
 from steamosatomupd.utils import DEFAULT_RAUC_CONF, FALLBACK_RAUC_CONF, ROOTFS_INDEX
 
@@ -439,8 +439,6 @@ def prevent_update_loop(update_path: UpdatePath,
     If the server included the current image as the first update candidate, we
     remove it to avoid a possible infinite update loop.
     """
-    if not update_path:
-        return update_path
 
     skip_first_candidate = False
 
@@ -778,7 +776,7 @@ class UpdateClient:
         log.info("Server returned something, guess an update is available")
 
         try:
-            update = Update.from_dict(update_data)
+            update = UpdatePath.from_dict(update_data)
         except KeyError as e:
             log.error("The server returned an unexpected update file, please inspect '%s': %s",
                       update_file, e)
@@ -789,38 +787,25 @@ class UpdateClient:
             log.debug("This is very unexpected, please inspect '%s'", update_file)
             return -1
 
-        update.minor = prevent_update_loop(update.minor, current_image)
-        update.major = prevent_update_loop(update.major, current_image)
+        update = prevent_update_loop(update, current_image)
 
-        # Log a bit
+        if not update:
+            log.debug("The server proposed an update that we are already using, nothing to do...")
+            return 0
 
-        def log_update(upd):
-            log.debug("An update is available for release '%s'", upd.release)
-            n_imgs = len(upd.candidates)
-            if n_imgs > 0:
-                cand = upd.candidates[0]
-                img = cand.image
-                log.debug("> going to version: %s (%s)", img.version, img.buildid)
-                log.debug("> update path: %s", cand.update_path)
-            if n_imgs > 1:
-                cand = upd.candidates[-1]
-                img = cand.image
-                log.debug("> final destination: %s (%s)", img.version, img.buildid)
-                log.debug("> total number of updates: %i", n_imgs)
+        candidate = update.candidates[0]
 
-        if update.minor:
-            log_update(update.minor)
-
-        if update.major:
-            log_update(update.major)
+        log.debug("An update is available for release '%s'", update.release)
+        log.debug("> going to version: %s (%s)", candidate.image.version, candidate.image.buildid)
+        log.debug("> update path: %s", candidate.update_path)
+        if len(update.candidates) > 1:
+            final_candidate = update.candidates[-1]
+            log.debug("> final destination: %s (%s)",
+                      final_candidate.image.version, final_candidate.image.buildid)
+            log.debug("> total number of updates: %i", len(update.candidates))
 
         if args.estimate_download_size:
-            update.minor = ensure_estimated_download_size(update.minor,
-                                                          images_url,
-                                                          runtime_dir)
-            update.major = ensure_estimated_download_size(update.major,
-                                                          images_url,
-                                                          runtime_dir)
+            update = ensure_estimated_download_size(update, images_url, runtime_dir)
 
         # Bail out if needed
 
@@ -832,29 +817,20 @@ class UpdateClient:
 
         # Apply update
 
-        update_path = ""
-        if update.major:
-            candidate = update.major.candidates[0]
-            if not args.update_version or args.update_version == str(candidate.image.buildid):
-                update_path = candidate.update_path
+        if args.update_version and args.update_version != str(candidate.image.buildid):
+            log.error("The requested update version is not a valid option, the server proposed "
+                      "the buildid update %s", candidate.image.buildid)
+            return -1
 
-        if not update_path and update.minor:
-            candidate = update.minor.candidates[0]
-            if not args.update_version or args.update_version == str(candidate.image.buildid):
-                update_path = candidate.update_path
-
-        if not update_path:
-            if args.update_version:
-                log.error("The requested update version is not a valid option")
-                return -1
-
-            log.debug("No update")
-            return 0
+        if not candidate.update_path:
+            log.debug("Apparently the server provided an update candidate without a valid path")
+            log.debug("This is very unexpected, please inspect '%s'", update_file)
+            return -1
 
         log.debug("Applying update NOW")
 
         try:
-            update_url = urllib.parse.urljoin(images_url, update_path)
+            update_url = urllib.parse.urljoin(images_url, candidate.update_path)
             do_update(attempts_log, update_url, args.quiet)
         except Exception as e:
             log.error("Failed to install update file: %s", e)

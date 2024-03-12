@@ -29,7 +29,7 @@ from typing import List
 from unittest.mock import patch
 
 from steamosatomupd.image import BuildId, Image
-from steamosatomupd.update import Update
+from steamosatomupd.update import UpdatePath
 from steamosatomupd import client
 
 data_path = Path(__file__).parent.resolve() / 'client_data'
@@ -42,8 +42,7 @@ class UpdateData:
     update_file: Path
     config: Path = data_path / 'client.conf'
     manifest: Path = data_path / '20211225_manifest.json'
-    minor_updates: List[BuildId] = field(default_factory=list)
-    major_updates: List[BuildId] = field(default_factory=list)
+    updates: List[BuildId] = field(default_factory=list)
     return_code: int = 0
     impossible_update: bool = False
 
@@ -59,33 +58,18 @@ update_data = [
         impossible_update=True,
     ),
     UpdateData(
-        msg='One major update',
-        update_file=data_path / 'update_one_major.json',
-        major_updates=[BuildId.from_string('20220307.5')],
-    ),
-    UpdateData(
         msg='One minor update',
         update_file=data_path / 'update_one_minor.json',
-        minor_updates=[BuildId.from_string('20220227.3')],
-    ),
-    UpdateData(
-        msg='One minor and one major update',
-        update_file=data_path / 'update_one_minor_one_major.json',
-        minor_updates=[BuildId.from_string('20220120.1')],
-        major_updates=[BuildId.from_string('20220202.1')],
+        updates=[BuildId.from_string('20220227.3')],
     ),
     UpdateData(
         msg='Update to the same version',
         update_file=data_path / 'update_same_version.json',
     ),
     UpdateData(
-        msg='Update to the same version for both minor and major',
-        update_file=data_path / 'update_same_version_minor_and_major.json',
-    ),
-    UpdateData(
-        msg='Three minor updates, the first if for the same version',
+        msg='Three updates, the first is for the same version',
         update_file=data_path / 'update_three_minors.json',
-        minor_updates=[
+        updates=[
             BuildId.from_string('20220101.1'),
             BuildId.from_string('20220227.3'),
         ],
@@ -93,7 +77,7 @@ update_data = [
     UpdateData(
         msg='Same version update plus another minor updates',
         update_file=data_path / 'update_two_minors.json',
-        minor_updates=[BuildId.from_string('20220227.3')],
+        updates=[BuildId.from_string('20220227.3')],
     )
 ]
 
@@ -131,24 +115,18 @@ class LoopPrevention(unittest.TestCase):
                 out = f.getvalue()
 
                 if not out:
-                    self.assertFalse(data.minor_updates)
-                    self.assertFalse(data.major_updates)
+                    self.assertFalse(data.updates)
                     continue
 
                 update_json = json.loads(out)
                 self.assertIsNotNone(update_json)
 
-                update = Update.from_dict(update_json)
+                update = UpdatePath.from_dict(update_json)
 
-                candidates = update.minor.candidates if update.minor else []
-                self.assertEqual(len(data.minor_updates), len(candidates))
+                candidates = update.candidates if update else []
+                self.assertEqual(len(data.updates), len(candidates))
                 for i, c in enumerate(candidates):
-                    self.assertEqual(data.minor_updates[i], c.image.buildid)
-
-                candidates = update.major.candidates if update.major else []
-                self.assertEqual(len(data.major_updates), len(candidates))
-                for i, c in enumerate(candidates):
-                    self.assertEqual(data.major_updates[i], c.image.buildid)
+                    self.assertEqual(data.updates[i], c.image.buildid)
 
 
 @dataclass
@@ -348,17 +326,17 @@ class DownloadUpdateJSON(unittest.TestCase):
 
                 self.assertTrue(update_json)
 
-                update = Update.from_dict(update_json)
+                update = UpdatePath.from_dict(update_json)
 
                 self.assertTrue(update)
-                self.assertGreater(len(update.minor.candidates), 0)
+                self.assertGreater(len(update.candidates), 0)
 
                 if data.requested_variant == 'steamdeck':
                     # Only for the stable steamdeck variant we can be 100% sure that
                     # the server will propose an update for that same variant.
                     # For the others, due to the VariantsOrder, we might receive
                     # something different.
-                    self.assertEqual(update.minor.candidates[0].image.variant, data.requested_variant)
+                    self.assertEqual(update.candidates[0].image.variant, data.requested_variant)
 
 
 if __name__ == '__main__':

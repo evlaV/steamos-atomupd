@@ -31,7 +31,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from steamosatomupd.image import Image
-from steamosatomupd.update import UpdateCandidate, UpdatePath, Update, UpdateType
+from steamosatomupd.update import UpdateCandidate, UpdatePath, UpdateType
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb
 
 log = logging.getLogger(__name__)
@@ -59,29 +59,6 @@ def _get_rauc_update_path(images_dir: str, manifest_path: str) -> str:
     return rauc_bundle_relpath
 
 # Image pool
-
-
-def _get_next_release(release: str, releases: list[str]) -> str:
-    """Get the next release in a list of releases.
-
-    Releases are expected to be strings, sorted alphabetically, ie:
-
-      [ 'brewmaster', 'clockwerk', 'doom' ]
-
-    Cycling is not supported, ie. we won't go from 'zeus' to 'abaddon'.
-    """
-
-    try:
-        idx = releases.index(release)
-    except ValueError:
-        return ''
-
-    try:
-        next_release = releases[idx + 1]
-    except IndexError:
-        return ''
-
-    return next_release
 
 
 def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
@@ -235,17 +212,6 @@ class ImagePool:
                 log.error("Please provide a valid configuration file, the option '%s' is missing", option)
                 sys.exit(1)
 
-        # We strongly expect releases to be an ordered list. We could sort
-        # it ourselves, but we can also just refuse an unsorted list, and
-        # take this chance to warn user that we care about releases being
-        # ordered (because we might use release names to compare to image,
-        # and a clockwerk image (3.x) is below a doom (4.x) image).
-
-        releases = config['Images']['Releases'].split()
-        if sorted(releases) != releases:
-            log.error("Releases in configuration file must be ordered!")
-            sys.exit(1)
-
     def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str], supported_branches: list[str],
                      branches_order: list[str], supported_archs: list[str], strict_pool_validation: bool) -> None:
@@ -254,10 +220,6 @@ class ImagePool:
         images_dir = os.path.abspath(images_dir)
         if not os.path.isdir(images_dir):
             raise RuntimeError("Images dir '{}' does not exist".format(images_dir))
-
-        # Make sure releases are sorted
-        if not sorted(supported_releases) == supported_releases:
-            raise RuntimeError("Release list '{}' is not sorted".format(supported_releases))
 
         # Our variables
         self.images_dir = images_dir
@@ -404,31 +366,28 @@ class ImagePool:
             '{}'.format(pprint.pformat(self.candidates))
         ])
 
-    def _get_candidate_list(self, image: Image, override_release='',
-                            override_branch='') -> list[UpdateCandidate]:
+    def _get_candidate_list(self, image: Image, override_branch='') -> list[UpdateCandidate]:
         """Return the list of update candidates that an image belong to
 
-        The optional 'override_release' and 'override_branch' fields are used to respectively
-        override the image release and the image branch.
+        The optional 'override_branch' field is used to override the image branch.
 
         This method also does sanity check, to ensure the image is supported.
         We might raise exceptions if the image is not supported.
         """
 
-        release = override_release if override_release else image.release
         branch = override_branch if override_branch else image.branch
 
         if (image.product not in self.supported_products
                 or image.arch not in self.supported_archs
-                or release not in self.supported_releases
+                or image.release not in self.supported_releases
                 or image.variant not in self.supported_variants
                 or branch not in self.supported_branches):
-            raise ValueError(f'Image ({image.product}, {image.arch}, {release}, {image.variant}, {branch}) '
+            raise ValueError(f'Image ({image.product}, {image.arch}, {image.release}, {image.variant}, {branch}) '
                              'is not supported')
 
-        return self.candidates[f'{image.product}_{image.arch}_{release}_{image.variant}_{branch}']
+        return self.candidates[f'{image.product}_{image.arch}_{image.release}_{image.variant}_{branch}']
 
-    def get_all_allowed_candidates(self, image: Image, release: str,
+    def get_all_allowed_candidates(self, image: Image,
                                    requested_branch: str) -> tuple[list[UpdateCandidate], list[UpdateCandidate]]:
         """Get a list of UpdateCandidate that are potentially valid updates for the image
 
@@ -448,14 +407,14 @@ class ImagePool:
             additional_branches = self.branches_order[:branch_index]
 
         try:
-            all_candidates.extend(self._get_candidate_list(image, release, requested_branch))
+            all_candidates.extend(self._get_candidate_list(image, requested_branch))
         except ValueError as err:
             # Continue to check the additional branches, if any
             log.debug(err)
 
         for additional_branch in additional_branches:
             try:
-                additional_candidates = self._get_candidate_list(image, release, additional_branch)
+                additional_candidates = self._get_candidate_list(image, additional_branch)
                 # Remove all additional candidates that are still unversioned. We can't reliably
                 # consider additional images for different branches, if they are old snapshot
                 # images (no way to really order them). So we just skip over those.
@@ -472,7 +431,7 @@ class ImagePool:
         return all_candidates, same_branch_candidates
 
     def get_updatepath(self, image: Image, relative_update_path: Path | None,
-                       requested_branch: str, release: str, candidates: list[UpdateCandidate],
+                       requested_branch: str, candidates: list[UpdateCandidate],
                        estimate_download_size: bool) -> UpdatePath | None:
         """Get an UpdatePath from a given UpdateCandidate list
 
@@ -491,15 +450,14 @@ class ImagePool:
         if estimate_download_size and relative_update_path:
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
-        return UpdatePath(release, candidates)
+        return UpdatePath(image.release, candidates)
 
     def get_updates(self, image: Image, relative_update_path: Path,
                     requested_branch: str, update_type=UpdateType.standard,
-                    estimate_download_size=False) -> Update | None:
+                    estimate_download_size=False) -> UpdatePath | None:
         """Get updates
 
-        We look for update candidates in the same release as the image,
-        and in the next release (if any).
+        Look for available update candidates.
         "requested_branch" is used to request updates for a specific branch, which may be the
         same string as "image.branch".
         "relative_update_path" is used to estimate the download size of the updates. The path
@@ -509,9 +467,7 @@ class ImagePool:
         Return an Update object, or None if no updates available.
         """
 
-        curr_release = image.release
-        all_candidates, same_branch_candidates = self.get_all_allowed_candidates(image, image.release,
-                                                                                 requested_branch)
+        all_candidates, same_branch_candidates = self.get_all_allowed_candidates(image, requested_branch)
         candidates = _get_update_candidates(all_candidates, image, update_type)
         if not candidates:
             # If we were not able to find a valid update candidate we retry with only candidates
@@ -519,22 +475,11 @@ class ImagePool:
             # might attempt to go to a more stable branch, but sometimes that could not be possible.
             candidates = _get_update_candidates(same_branch_candidates, image, update_type)
 
-        minor_update = self.get_updatepath(image, relative_update_path, requested_branch,
-                                           curr_release, candidates, estimate_download_size)
+        update_path = self.get_updatepath(image, relative_update_path, requested_branch,
+                                          candidates, estimate_download_size)
 
-        next_release = _get_next_release(curr_release, self.supported_releases)
-        major_update = None
-        if next_release:
-            all_candidates_next, sv_candidates_next = self.get_all_allowed_candidates(image, next_release,
-                                                                                      requested_branch)
-            candidates_next = _get_update_candidates(all_candidates_next, image, update_type)
-            if not candidates_next:
-                candidates_next = _get_update_candidates(sv_candidates_next, image, update_type)
-            major_update = self.get_updatepath(image, relative_update_path, requested_branch,
-                                               next_release, candidates_next, estimate_download_size)
-
-        if minor_update or major_update:
-            return Update(minor_update, major_update)
+        if update_path:
+            return update_path
 
         if update_type == UpdateType.unexpected_buildid:
             if not all_candidates:
@@ -587,16 +532,14 @@ class ImagePool:
                 update_type = UpdateType.forced
 
         if update_type == UpdateType.forced:
-            # Force only a minor update. We don't propose a downgrade from a major update because
-            # that is not supported and will likely cause unexpected issues.
             candidates_forced = _get_update_candidates(all_candidates, image, update_type)
             if not candidates_forced:
                 candidates_forced = _get_update_candidates(same_branch_candidates, image, update_type)
 
-            minor_update = self.get_updatepath(image, relative_update_path, requested_branch,
-                                               curr_release, candidates_forced, estimate_download_size)
-            if minor_update:
-                return Update(minor_update, major_update)
+            update_path = self.get_updatepath(image, relative_update_path, requested_branch,
+                                              candidates_forced, estimate_download_size)
+            if update_path:
+                return update_path
 
             log.warning("Failed to force an update from '%s' (%s) to '%s'",
                         image.branch, image.buildid, requested_branch)

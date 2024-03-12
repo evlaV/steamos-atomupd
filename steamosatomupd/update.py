@@ -20,7 +20,6 @@
 # (scheduled for Python 3.13)
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
@@ -70,8 +69,10 @@ class UpdatePath:
     An update path can be imported/exported as a dictionary:
 
       {
-        'release': 'clockwerk',
-        'candidates': [ CANDIDATE1, CANDIDATE2, ... ]
+        'minor': {
+          'release': 'holo',
+          'candidates': [ CANDIDATE1, CANDIDATE2, ... ]
+        }
       }
     """
 
@@ -92,6 +93,8 @@ class UpdatePath:
         or if values are not valid.
         """
 
+        # We expect the UpdatePath to be under the "minor" key for legacy reasons
+        data = data.get('minor', data)
         release = data['release']
         candidates = []
 
@@ -104,68 +107,18 @@ class UpdatePath:
     def to_dict(self) -> dict[str, Any]:
         """Export an UpdatePath to a dictionary"""
 
+        data = {}
         array = []
         for candidate in self.candidates:
             cdata = candidate.to_dict()
             array.append(cdata)
 
-        return {'release': self.release, 'candidates': array}
-
-
-@dataclass
-class Update:
-    """An update
-
-    An update lists the update paths possible for an image. It's just
-    made of two update paths, both optionals:
-    - minor, for updates available within the same release
-    - major, for updates available in the next release
-
-    An update file can be imported/exported as a dictionary:
-
-      {
-        'minor': { UPDATE_PATH },
-        'major': { UPDATE_PATH },
-      }
-    """
-
-    minor: UpdatePath | None
-    major: UpdatePath | None
-
-    @classmethod
-    def from_dict(cls, data) -> Update:
-        """Create an Update from a dictionary
-
-        Raise exceptions if the dictionary doesn't contain the expected keys,
-        or if values are not valid.
-        """
-
-        minor: UpdatePath | None = None
-        if 'minor' in data:
-            minor = UpdatePath.from_dict(data['minor'])
-
-        major: UpdatePath | None = None
-        if 'major' in data:
-            major = UpdatePath.from_dict(data['major'])
-
-        return cls(minor, major)
-
-    def to_dict(self) -> dict[str, Any]:
-        """Export an Update to a dictionary"""
-
-        data = {}
-        if self.minor:
-            data['minor'] = self.minor.to_dict()
-        if self.major:
-            data['major'] = self.major.to_dict()
-
+        # For legacy reasons we need to wrap the list of update candidates around "minor".
+        # Initially the update system was designed with support for both "minor" and "major"
+        # upgrades. However, that design has been deprecated in favor of gating major upgrades
+        # behind checkpoints.
+        data['minor'] = {'release': self.release, 'candidates': array}
         return data
-
-    def to_string(self) -> str:
-        """Export an Update to string"""
-
-        data = self.to_dict()
-        return json.dumps(data, indent=2)
 
 
 class UpdateType(Enum):
