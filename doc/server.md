@@ -9,10 +9,11 @@ Overview
 The server requires a configuration file with a bunch of mandatory params:
 - the directory where images live
 - whether images are snapshots or not
-- the list of supported products (eg. `steamos`)
-- the list of supported releases (eg. `clockwerk`)
-- the list of supported variants (eg. `atomic`)
-- the list of supported architectures (eg. `amd64`)
+- the list of supported products (e.g. `steamos`)
+- the list of supported releases (e.g. `holo`)
+- the list of supported variants (e.g. `steamdeck`)
+- the list of supported branches (e.g. `stable`)
+- the list of supported architectures (e.g. `amd64`)
 
 An update server is stateless, and several update servers can run on the same
 machine, serving different sets of images, possibly all of them living in the
@@ -23,68 +24,47 @@ Each image should have a manifest file, with the extension `.manifest.json`.
 These files are parsed, and the server decides if the image is counted in, or
 discarded (based on product, release, arch, variant, etc...).
 
-The server does not care about how images are organized (ie. a hierarchy like
-`/steamos/clockwerk/3.1/amd64`) or named (ie. `steamos-3.0-amd64-atomic.img`).
+The server does not care about how images are organized (e.g. a hierarchy like
+`/steamos/holo/3.1/amd64`) or named (e.g. `steamos-3.0-amd64-steamdeck.img`).
 However, the server expects that all the build artifacts for an image have the
 same filename, and only the extension should differ. More precisely, there
 should be a RAUC bundle with the extension `.raucb`, and a CASync store with
 the extensions `.castr`.
 
-The server is configured to work either with **snapshot images**, either with
-**versioned images**. Both kind of images can't be mixed. If the server is
-configured for snapshot images, it will discard every versioned images it
-finds in the image directory, and it will reply nothing to clients that come
-with a versioned image. If the server is configured for versioned images, the
-opposite happens: snapshots are discarded, and clients that run a snapshot
-won't be proposed an update.
+The server is able to mix and match snapshots and versioned images.
 
 Internally, versioned images are compared according to their versions, which
-follows semantic versioning. Snapshot images, for which the version is null,
-are compared according to their release and build ids.
-
-The server is **release aware**, ie. it makes an assumption that releases are
-strings, and they grow alphabetically, so they can be compared. It means that
-`brewmaster < clockwerk < doom` (note that cycling from `z...` to `a...` is not
-implemented). This is needed in order to compare build ids (which are dates).
+follow semantic versioning, and the buildid. Snapshot images, for which the
+version is null, are compared only with their buildid.
 
 
-
-Version selection
+Update selection
 -----------------
 
-When a client shows up and asks the server about available updates, it says
-what image it's running. It gives all the  details that are in the manifest
-file: which *product* it's running, on which *arch*, and the current *release*,
-*variant*, *version* and *buildid*. In a first pass, the server selects all the
-images for this (product,release,variant,arch) tuple that are newer: these are
-all update candidates.
+A typical update request from a client is in the form of:
+`<release>/<product>/<arch>/<variant>/<branch>/<version>/<buildid>.json`
 
-However, among all these candidates, not all of them are relevant. The server
-must refine this list, and only provide to the client updates **that must be
-applied in order to be up-to-date**. Intermediary updates that are not needed
-must not be part of the answer.
+*release*, *product*, *arch*, *version* and *buildid* are all values that
+identify the image that the client is currently using. Those values are taken
+from the manifest file.
 
-For example, if the client runs `3.0`, and the versions `3.1`, `3.2` and `3.3`
-are available, then the server should only answer with the `3.3` version, as
-there's no point upgrading to intermediary versions.
+Instead, *variant* and *branch* can be used to request different images, respectively
+to jump to a different variant or ask for a different branch.
 
-Unless some of these versions are checkpoints: in the example above, if `3.1`
-is a checkpoint, then the answer will answer with `3.1` and `3.3`, so that the
-client knows that it has two updates to apply in order to be up-to-date.
+The server also provides generic fallback responses, useful when the client is running
+an unknown version and buildid, e.g. an old image that was removed from the server
+without using the `skip: True` option.
+The generic fallback response is in the form of:
+`<release>/<product>/<arch>/<variant>/<branch>.json`
+If the client is past a checkpoint N, the JSON file that will be requested is going
+to be `<branch>.cpN.json` instead.
 
-Additionally, the client can theoretically say whether it's interested in
-unstable updates, in such case the server considers images such as `3.4-rc1`
-(versions strings are expected to follow semantic versioning). However there
-isn't yet a proper way for the client to signal its interest in unstable
-updates.
+One exception is for old legacy images prior to the introduction of branches.
+For them, the update request is in the form of:
+`<product>/<arch>/<version>/<variant>/<buildid>.json`
 
-Additionally, there could be a new *release* available. In this case, the
-server will return a second list of relevant updates, for the next release.
-
-In the end, the answer from a server could be something like this:
-
-    minor: 3.1(C), 3.4
-    major: 4.2
+Among all the matching possible image updates, the server only proposes the latest
+one. It skips all the intermediary updates, unless there are checkpoints involved.
 
 #### Additional thoughts
 
@@ -145,9 +125,13 @@ When an update is available, the JSON *object* has the following keys:
             :   The same **release** explained before
 
             **variant**
-            :   A short machine-readable string identifying the variant or
-                edition of the operating system, for example **jupiter**.
+            :   A short machine-readable string identifying the flavor/type
+                of the operating system, for example **steamdeck**.
                 This is usually the **VARIANT_ID** from **os-release**(5).
+
+            **branch**
+            :   A short machine-readable string identifying in which branch
+                the operating system is at, for example **stable**.
 
             **arch**
             :   A string identifying the image architecture, for example
@@ -167,43 +151,25 @@ When an update is available, the JSON *object* has the following keys:
                 value is zero, the estimated size should be assumed to be
                 unknown.
 
-            **checkpoint**
-            :   A boolean value indicating whether this image is a checkpoint
-                or not.
+            **requires_checkpoint**
+            :   An integer indicating which checkpoint the client must be past
+                in order to install this image. If missing, it implicitly means
+                that the image doesn't require to be past any checkpoint.
+
+            **introduces_checkpoint**
+            :   An integer that, if greater than zero, indicates that this image
+                is a checkpoint. If missing, it implicitly means that this
+                image is not a checkpoint.
+
+            **shadow_checkpoint**
+            :   A boolean value indicating whether this image is a shadow
+                checkpoint or not.
 
 **major**
 :   An object describing major system updates.
     If there are no minor update, this object will be omitted.
     The keys are the same as **minor**.
 ```
-
-Knowing details about the client
---------------------------------
-
-As said above, we try to make decisions server-side, as much as possible. The
-server can make an informed decision only if it knows enough about the client.
-
-For that purpose, the client gives the details of the image it's running,
-according to the manifest file installed in `/usr`. Additionally, it says
-whether it wants unstable images.
-
-However, I believe this might not be enough, especially for major updates. What
-if we want to ship a new release, however it's been tested only with device A,
-but it's not yet ready for device B? In this case, we must know if the client
-is running on device A or device B, in order to propose a major update or not.
-
-So I think it would be useful if the client can provide some basic hardware
-details as well, at least to identify the SteamOS devices we support.
-
-For users running SteamOS on their own hardware, maybe we could at least
-provide details about the graphics hardware in the request? As it's probably
-the most relevant information, and we might know that a particular, new release
-ships with a new version of the NVidia drivers, and that this version dropped
-support for this particular GPU.
-
-**This is still an open question and needs to be discussed**
-
-
 
 The image pool
 --------------

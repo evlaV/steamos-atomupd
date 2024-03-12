@@ -220,12 +220,9 @@ know how many updates are needed for the client to be up-to-date. For example:
 
 **Distinction between minor and major**
 
-The server separates updates in two: the `minor` updates (i.e. updates within
-the same release) and the `major` updates (i.e. updates to the next release).
+For legacy reasons the client receives the update candidates in a JSON object
+called `minor`. Initially the update system was designed to support both
+`minor` and `major` upgrades. However, this distinction has been deprecated.
 
-Why? Because if we know that there's a user at the other end, we might want to
-ask him before doing a major update of his device. Major updates take time and
-can break things, so doing so without warning is not super nice.
-
-This way, we can have a GUI showing up client-side, telling the client that
-a major update is available, and does he want to install it or not?
+Now all updates are `minor` updates. Bigger updates that brings breaking changes
+should instead introduce a checkpoint, to mark the point of no return.
