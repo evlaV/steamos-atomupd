@@ -812,7 +812,8 @@ class UpdateClient:
         if args.query_only:
             if not args.quiet:
                 print(json.dumps(update.to_dict(), indent=2))
-            os.remove(update_file)
+            if not args.update_file:
+                os.remove(update_file)
             return 0
 
         # Apply update
