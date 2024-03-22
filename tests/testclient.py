@@ -311,18 +311,17 @@ class DownloadUpdateJSON(unittest.TestCase):
                 image = Image.from_dict(data.image_data)
 
                 with self.assertLogs(level='DEBUG') as lo:
-                    meta_update_file = client.download_update_from_rest_url(data.meta_url, image,
-                                                                            '',
-                                                                            data.requested_variant,
-                                                                            data.second_last)
+                    meta_update_response = client.download_update_from_rest_url(data.meta_url, image,
+                                                                                '',
+                                                                                data.requested_variant,
+                                                                                data.second_last)
 
-                self.assertTrue(meta_update_file)
+                self.assertTrue(meta_update_response)
                 attempts = sum('Trying URL' in line for line in lo.output)
 
                 self.assertEqual(attempts, data.meta_attempts)
 
-                with open(meta_update_file, 'r', encoding='utf-8') as f:
-                    update_json = json.load(f)
+                update_json = json.loads(meta_update_response)
 
                 self.assertTrue(update_json)
 

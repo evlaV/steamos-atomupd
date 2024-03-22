@@ -23,7 +23,6 @@ import json
 import logging
 import os
 import shlex
-import shutil
 import signal
 import subprocess
 import sys
@@ -44,7 +43,6 @@ logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
 
 # Hard-coded defaults
-UPDATE_FILENAME = 'update.json'
 FAILED_ATTEMPTS_FILENAME = 'failed_attempts.log'
 FAILED_UPDATE_LOG_ENTRY = 'FAILED UPDATE'
 
@@ -240,7 +238,7 @@ def initialize_http_authentication(url: str):
 def download_update_from_rest_url(meta_url: str, image: Image,
                                   requested_branch='', requested_variant='',
                                   second_last=False) -> str:
-    """Download an update file from the server
+    """Download an update file from the server and return its content
 
     The parameters for the request are the details of the image that
     the caller is running.
@@ -249,8 +247,7 @@ def download_update_from_rest_url(meta_url: str, image: Image,
     and variant respectively.
 
     The server is expected to return a JSON string, which is then parsed
-    by the client, in order to validate it. Then it's printed out to a
-    temporary file, and the filename is returned.
+    by the client, in order to validate it.
 
     An empty string will be returned if an error occurs.
     """
@@ -272,8 +269,11 @@ def download_update_from_rest_url(meta_url: str, image: Image,
         log.debug("Trying URL: %s", url)
 
         try:
-            json_file, _ = urllib.request.urlretrieve(url)
-            return json_file
+            with urllib.request.urlopen(url) as response:
+                content = response.read().decode('utf-8')
+                if not content:
+                    log.warning("The server returned an empty JSON file")
+                return content
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
             if isinstance(e, urllib.error.HTTPError) and e.code == 404:
                 log.debug("Got 404 from server")
@@ -746,27 +746,19 @@ class UpdateClient:
 
         if args.update_file:
             update_file = args.update_file
+            log.debug("Parsing update file: %s", update_file)
+            with open(update_file, 'r', encoding='utf-8') as f:
+                server_response = f.read()
+            if not server_response:
+                log.warning("The provided file seems to be empty")
         else:
-            update_file = os.path.join(runtime_dir, UPDATE_FILENAME)
+            server_response = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant,
+                                                            args.penultimate_update)
 
-            # Cleanup an eventual previously downloaded update file
-            Path(update_file).unlink(missing_ok=True)
+        if not server_response:
+            return -1
 
-            # Download the update file to a tmp file
-            tmp_file = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant,
-                                                     args.penultimate_update)
-
-            if not tmp_file:
-                return -1
-
-            shutil.move(tmp_file, update_file)
-
-        # Parse update file
-
-        log.debug("Parsing update file: %s", update_file)
-
-        with open(update_file, 'r', encoding='utf-8') as f:
-            update_data = json.load(f)
+        update_data = json.loads(server_response)
 
         if not update_data:
             # With no available updates the server returns an empty JSON
@@ -778,13 +770,13 @@ class UpdateClient:
         try:
             update = UpdatePath.from_dict(update_data)
         except KeyError as e:
-            log.error("The server returned an unexpected update file, please inspect '%s': %s",
-                      update_file, e)
+            log.error("The server returned an unexpected update file: %s, with the content:\n '%s'",
+                      e, server_response)
             return -1
 
         if not update:
             log.debug("No update candidate, even though the server returned something")
-            log.debug("This is very unexpected, please inspect '%s'", update_file)
+            log.debug("This is very unexpected, the server response was:\n '%s'", server_response)
             return -1
 
         update = prevent_update_loop(update, current_image)
@@ -812,8 +804,6 @@ class UpdateClient:
         if args.query_only:
             if not args.quiet:
                 print(json.dumps(update.to_dict(), indent=2))
-            if not args.update_file:
-                os.remove(update_file)
             return 0
 
         # Apply update
@@ -825,7 +815,7 @@ class UpdateClient:
 
         if not candidate.update_path:
             log.debug("Apparently the server provided an update candidate without a valid path")
-            log.debug("This is very unexpected, please inspect '%s'", update_file)
+            log.debug("This is very unexpected, the server response was:\n '%s'", server_response)
             return -1
 
         log.debug("Applying update NOW")
