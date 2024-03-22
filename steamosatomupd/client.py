@@ -397,7 +397,13 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
     else:
         # This image can be installed directly, use the current active
         # partition as a seed
-        ensure_index_exists(regenerate=False)
+        try:
+            ensure_index_exists(regenerate=False)
+        except subprocess.CalledProcessError as e:
+            log.debug("Unable to estimate the download size because creating the index file failed: %s", e)
+            log.debug("Continuing...")
+            return 0
+
         seed = get_active_slot_index()
 
     return get_update_size(seed, update_index)
