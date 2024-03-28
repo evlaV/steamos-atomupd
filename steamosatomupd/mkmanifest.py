@@ -52,4 +52,9 @@ def main(args=None):
         raise RuntimeError("Failed to create manifest") from e
 
     data = image.to_dict()
+
+    # In the manifest describing an image, the estimated size value is not used. There
+    # is no need to write it.
+    data.pop('estimated_size')
+
     print(json.dumps(data, indent=2))

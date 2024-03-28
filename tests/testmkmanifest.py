@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2023 Collabora Ltd
+# Copyright © 2023-2024 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -76,8 +76,7 @@ manifest_data = [
               "variant": "steamdeck-main",
               "arch": "amd64",
               "version": "3.6.0",
-              "buildid": "20231213.1000",
-              "estimated_size": 0
+              "buildid": "20231213.1000"
             }"""),
     ),
 
@@ -98,8 +97,7 @@ manifest_data = [
               "version": "3.6.5",
               "buildid": "20240103.100",
               "introduces_checkpoint": 2,
-              "requires_checkpoint": 1,
-              "estimated_size": 0
+              "requires_checkpoint": 1
             }"""),
     ),
 
@@ -124,8 +122,7 @@ manifest_data = [
               "arch": "i386",
               "version": "snapshot",
               "buildid": "20240103.101",
-              "requires_checkpoint": 1,
-              "estimated_size": 0
+              "requires_checkpoint": 1
             }"""),
     ),
 
@@ -152,8 +149,7 @@ manifest_data = [
               "arch": "i386",
               "version": "snapshot",
               "buildid": "20240103.101",
-              "requires_checkpoint": 1,
-              "estimated_size": 0
+              "requires_checkpoint": 1
             }"""),
     ),
 
@@ -172,8 +168,7 @@ manifest_data = [
               "branch": "stable",
               "arch": "amd64",
               "version": "3.7.3",
-              "buildid": "20240120.1",
-              "estimated_size": 0
+              "buildid": "20240120.1"
             }"""),
     ),
 
@@ -192,8 +187,7 @@ manifest_data = [
               "branch": "beta",
               "arch": "amd64",
               "version": "3.7.3",
-              "buildid": "20240120.1",
-              "estimated_size": 0
+              "buildid": "20240120.1"
             }"""),
     ),
 
@@ -213,8 +207,7 @@ manifest_data = [
               "branch": "main",
               "arch": "amd64",
               "version": "3.7.5",
-              "buildid": "20240125.1",
-              "estimated_size": 0
+              "buildid": "20240125.1"
             }"""),
     ),
 ]
