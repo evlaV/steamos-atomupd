@@ -243,31 +243,31 @@ class MkManifestsTestCase(unittest.TestCase):
             if data.os_release.branch_id:
                 os_release += f'{data.os_release.id.upper()}_DEFAULT_BRANCH={data.os_release.branch_id}\n'
 
-            with self.subTest(), patch('builtins.open', mock_open(read_data=os_release)):
-                args = []
-                if data.product_override:
-                    args.extend(['--product', data.product_override])
-                if data.release_override:
-                    args.extend(['--release', data.release_override])
-                if data.variant_override:
-                    args.extend(['--variant', data.variant_override])
-                if data.branch_override:
-                    args.extend(['--branch', data.branch_override])
-                if data.default_update_branch:
-                    args.extend(['--default-update-branch', data.default_update_branch])
-                if data.arch_override:
-                    args.extend(['--arch', data.arch_override])
-                if data.version_override:
-                    args.extend(['--version', data.version_override])
-                if data.buildid_override:
-                    args.extend(['--buildid', data.buildid_override])
-                if data.introduces_checkpoint_override > 0:
-                    args.extend(['--introduces-checkpoint', str(data.introduces_checkpoint_override)])
-                if data.requires_checkpoint_override > 0:
-                    args.extend(['--requires-checkpoint', str(data.requires_checkpoint_override)])
-                if data.server_manifest:
-                    args.extend(['--server-manifest'])
+            args = []
+            if data.product_override:
+                args.extend(['--product', data.product_override])
+            if data.release_override:
+                args.extend(['--release', data.release_override])
+            if data.variant_override:
+                args.extend(['--variant', data.variant_override])
+            if data.branch_override:
+                args.extend(['--branch', data.branch_override])
+            if data.default_update_branch:
+                args.extend(['--default-update-branch', data.default_update_branch])
+            if data.arch_override:
+                args.extend(['--arch', data.arch_override])
+            if data.version_override:
+                args.extend(['--version', data.version_override])
+            if data.buildid_override:
+                args.extend(['--buildid', data.buildid_override])
+            if data.introduces_checkpoint_override > 0:
+                args.extend(['--introduces-checkpoint', str(data.introduces_checkpoint_override)])
+            if data.requires_checkpoint_override > 0:
+                args.extend(['--requires-checkpoint', str(data.requires_checkpoint_override)])
+            if data.server_manifest:
+                args.extend(['--server-manifest'])
 
+            with self.subTest(), patch('builtins.open', mock_open(read_data=os_release)):
                 f = io.StringIO()
                 with redirect_stdout(f):
                     mkmanifest.main(args)
