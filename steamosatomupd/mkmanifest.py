@@ -35,17 +35,21 @@ def main(args=None):
     parser.add_argument('--release', default='')
     parser.add_argument('--variant', default='')
     parser.add_argument('--branch', default='')
+    parser.add_argument('--default-update-branch', default='')
     parser.add_argument('--arch', default='')
     parser.add_argument('--version', default='')
     parser.add_argument('--buildid', default='')
     parser.add_argument('--introduces-checkpoint', type=int, default=0)
     parser.add_argument('--requires-checkpoint', type=int, default=0)
+    parser.add_argument('--server-manifest', action='store_true',
+                        help='Create a manifest for the image server pool')
 
     args = parser.parse_args(args)
 
     try:
         image = Image.from_os(product=args.product, release=args.release, variant=args.variant, branch=args.branch,
-                              arch=args.arch, version_str=args.version, buildid_str=args.buildid,
+                              default_update_branch=args.default_update_branch, arch=args.arch,
+                              version_str=args.version, buildid_str=args.buildid,
                               introduces_checkpoint=args.introduces_checkpoint,
                               requires_checkpoint=args.requires_checkpoint)
     except Exception as e:
@@ -56,5 +60,10 @@ def main(args=None):
     # In the manifest describing an image, the estimated size value is not used. There
     # is no need to write it.
     data.pop('estimated_size')
+
+    if not args.server_manifest:
+        # Do not hardcode the branch field inside an image manifest. Even after building an image, it is possible
+        # to promote it to a different branch, so there are no guarantees that this value doesn't become outdated.
+        data.pop('branch', '')
 
     print(json.dumps(data, indent=2))

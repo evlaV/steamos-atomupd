@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2024 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -194,6 +194,7 @@ class ImageData:
     release: str = 'holo'
     arch: str = 'amd64'
     branch: str = ''
+    default_update_branch: str = ''
     introduces_checkpoint: int = 0
     requires_checkpoint: int = 0
     shadow_checkpoint: bool = False
@@ -288,6 +289,32 @@ image_status = [
         image_data=ImageData(
             variant='steamdeck',
             branch='beta',
+            default_update_branch='stable',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        update_path='holo/steamos/amd64/steamdeck/stable/3.6.7/20240101.100.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/stable.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            branch='beta',
+            default_update_branch='stable',
+            version='3.6.7',
+            buildid='20240101.100',
+        ),
+        # Explicitly requesting a branch overrides the default update branch
+        request_branch='beta',
+        update_path='holo/steamos/amd64/steamdeck/beta/3.6.7/20240101.100.json',
+        generic_update_path='holo/steamos/amd64/steamdeck/beta.json',
+    ),
+
+    ImageStatus(
+        image_data=ImageData(
+            variant='steamdeck',
+            default_update_branch='beta',
             version='3.6.7',
             buildid='20240101.100',
         ),
@@ -421,9 +448,12 @@ class ImageMethods(unittest.TestCase):
         for data in image_status:
             with self.subTest(msg=data.image_data.buildid):
                 i_d = data.image_data
+                branch = i_d.branch if i_d.branch else i_d.default_update_branch
+                default_update_branch = i_d.default_update_branch if i_d.default_update_branch else i_d.branch
                 image = Image.from_values(product=i_d.product, release=i_d.release, variant=i_d.variant,
-                                          branch=i_d.branch, arch=i_d.arch, version_str=i_d.version,
-                                          buildid_str=i_d.buildid, introduces_checkpoint=i_d.introduces_checkpoint,
+                                          branch=branch, default_update_branch=default_update_branch, arch=i_d.arch,
+                                          version_str=i_d.version, buildid_str=i_d.buildid,
+                                          introduces_checkpoint=i_d.introduces_checkpoint,
                                           requires_checkpoint=i_d.requires_checkpoint,
                                           shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)
 

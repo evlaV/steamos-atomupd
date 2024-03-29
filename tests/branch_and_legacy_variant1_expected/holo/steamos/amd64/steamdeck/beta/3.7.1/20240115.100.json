@@ -6,6 +6,7 @@
                     "arch": "amd64",
                     "branch": "beta",
                     "buildid": "20240120.101",
+                    "default_update_branch": "beta",
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",

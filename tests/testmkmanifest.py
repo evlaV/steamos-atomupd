@@ -55,11 +55,13 @@ class ManifestData:
     release_override: str = ''
     variant_override: str = ''
     branch_override: str = ''
+    default_update_branch: str = ''
     arch_override: str = ''
     version_override: str = ''
     buildid_override: str = ''
     introduces_checkpoint_override: int = 0
     requires_checkpoint_override: int = 0
+    server_manifest: bool = False
 
 
 manifest_data = [
@@ -114,6 +116,7 @@ manifest_data = [
         version_override='snapshot',
         buildid_override='20240103.101',
         requires_checkpoint_override=1,
+        server_manifest=True,
         expected_manifest=textwrap.dedent("""\
             {
               "product": "steamos_episode2",
@@ -160,12 +163,15 @@ manifest_data = [
             build_id='20240120.1',
             branch_id='stable',
         ),
+        default_update_branch='stable',
+        server_manifest=True,
         expected_manifest=textwrap.dedent("""\
             {
               "product": "steamos",
               "release": "holo",
               "variant": "steamdeck",
               "branch": "stable",
+              "default_update_branch": "stable",
               "arch": "amd64",
               "version": "3.7.3",
               "buildid": "20240120.1"
@@ -179,12 +185,15 @@ manifest_data = [
             build_id='20240120.1',
         ),
         branch_override='beta',
+        default_update_branch='stable',
+        server_manifest=True,
         expected_manifest=textwrap.dedent("""\
             {
               "product": "steamos",
               "release": "holo",
               "variant": "steamdeck",
               "branch": "beta",
+              "default_update_branch": "stable",
               "arch": "amd64",
               "version": "3.7.3",
               "buildid": "20240120.1"
@@ -199,12 +208,13 @@ manifest_data = [
             branch_id='stable',
         ),
         branch_override='main',
+        default_update_branch='main',
         expected_manifest=textwrap.dedent("""\
             {
               "product": "steamos",
               "release": "holo",
               "variant": "steamdeck",
-              "branch": "main",
+              "default_update_branch": "main",
               "arch": "amd64",
               "version": "3.7.5",
               "buildid": "20240125.1"
@@ -243,6 +253,8 @@ class MkManifestsTestCase(unittest.TestCase):
                     args.extend(['--variant', data.variant_override])
                 if data.branch_override:
                     args.extend(['--branch', data.branch_override])
+                if data.default_update_branch:
+                    args.extend(['--default-update-branch', data.default_update_branch])
                 if data.arch_override:
                     args.extend(['--arch', data.arch_override])
                 if data.version_override:
@@ -253,6 +265,8 @@ class MkManifestsTestCase(unittest.TestCase):
                     args.extend(['--introduces-checkpoint', str(data.introduces_checkpoint_override)])
                 if data.requires_checkpoint_override > 0:
                     args.extend(['--requires-checkpoint', str(data.requires_checkpoint_override)])
+                if data.server_manifest:
+                    args.extend(['--server-manifest'])
 
                 f = io.StringIO()
                 with redirect_stdout(f):

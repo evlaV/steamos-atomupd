@@ -6,6 +6,7 @@
                     "arch": "amd64",
                     "branch": "stable",
                     "buildid": "20240115.1",
+                    "default_update_branch": "stable",
                     "estimated_size": 0,
                     "introduces_checkpoint": 1,
                     "product": "steamos",

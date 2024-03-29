@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2024 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -117,6 +117,7 @@ class Image:
     release: str
     variant: str
     branch: str
+    default_update_branch: str
     arch: str
     version: semantic_version.Version
     buildid: BuildId
@@ -130,7 +131,7 @@ class Image:
     legacy_variant: str
 
     @classmethod
-    def from_values(cls, product: str, release: str, variant: str, branch: str, arch: str,
+    def from_values(cls, product: str, release: str, variant: str, branch: str, default_update_branch: str, arch: str,
                     version_str: str, buildid_str: str, introduces_checkpoint: int,
                     requires_checkpoint: int, shadow_checkpoint: bool, estimated_size: int, skip: bool) -> Image:
         """Create an Image from mandatory values
@@ -158,13 +159,21 @@ class Image:
             legacy_variant = variant
             variant, branch = cls.convert_from_legacy_variant(legacy_variant)
 
+            if default_update_branch:
+                log.warning('The image (%s - %s) manifest has a legacy variant but uses the new '
+                            '"default_update_branch", this is unexpected', version_str, buildid_str)
+
+        if not default_update_branch:
+            # Ensure we have a default update branch
+            default_update_branch = branch
+
         # Tweak architecture a bit
         if arch == 'x86_64':
             arch = 'amd64'
 
         # Return an instance
-        return cls(product, release, variant, branch, arch, version, buildid, introduces_checkpoint,
-                   requires_checkpoint, shadow_checkpoint, estimated_size, skip, legacy_variant)
+        return cls(product, release, variant, branch, default_update_branch, arch, version, buildid,
+                   introduces_checkpoint, requires_checkpoint, shadow_checkpoint, estimated_size, skip, legacy_variant)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Image:
@@ -185,8 +194,12 @@ class Image:
         version_str = data_copy.pop('version')
         buildid_str = data_copy.pop('buildid')
 
-        # This is technically a mandatory field. But old legacy images don't have it.
+        # Having "branch" and/or "default_update_branch" are technically a mandatory. But old legacy
+        # images don't have them.
         branch = data_copy.pop('branch', '')
+        default_update_branch = data_copy.pop('default_update_branch', branch)
+        if default_update_branch and not branch:
+            branch = default_update_branch
 
         # Get optional fields
         introduces_checkpoint = data_copy.pop('introduces_checkpoint', 0)
@@ -220,12 +233,12 @@ class Image:
             log.warning('The image manifest has some unknown key-values: %s', data_copy)
 
         # Return an instance
-        return cls.from_values(product, release, variant, branch, arch, version_str, buildid_str,
+        return cls.from_values(product, release, variant, branch, default_update_branch, arch, version_str, buildid_str,
                                introduces_checkpoint, requires_checkpoint, shadow_checkpoint,
                                estimated_size, skip)
 
     @classmethod
-    def from_os(cls, product='', release='', variant='', branch='', arch='',
+    def from_os(cls, product='', release='', variant='', branch='', default_update_branch='', arch='',
                 version_str='', buildid_str='', introduces_checkpoint=0,
                 requires_checkpoint=0, shadow_checkpoint=False, estimated_size: int = 0, skip=False) -> Image:
         """Create an Image with parameters, use running OS for defaults.
@@ -235,6 +248,9 @@ class Image:
 
         '*_BRANCH' do not exist in any standard place, hence we use a custom additional
         field called ${PRODUCT}_DEFAULT_BRANCH.
+
+        'branch' is not stored in the os-release file because images can be promoted
+        to different branches after they have been built.
 
         If a value is not specified and can't be found in the os-release, we raise
         a RuntimeError exception.
@@ -263,12 +279,15 @@ class Image:
         if not arch:
             arch = platform.machine()
 
-        if not branch:
+        if not default_update_branch:
             # This is technically a mandatory field. But old legacy images don't have it.
-            branch = osrel.get(product.upper() + '_DEFAULT_BRANCH', '')
+            default_update_branch = osrel.get(product.upper() + '_DEFAULT_UPDATE_BRANCH', branch)
+
+        if default_update_branch and not branch:
+            branch = default_update_branch
 
         # Return an instance, might raise exceptions
-        return cls.from_values(product, release, variant, branch, arch, version_str,
+        return cls.from_values(product, release, variant, branch, default_update_branch, arch, version_str,
                                buildid_str, introduces_checkpoint, requires_checkpoint,
                                shadow_checkpoint, estimated_size, skip)
 
@@ -303,6 +322,7 @@ class Image:
             # Backward compatibility with the legacy variant
             data['variant'] = self.legacy_variant
             data.pop('branch')
+            data.pop('default_update_branch')
 
         return data
 
@@ -385,7 +405,7 @@ class Image:
 
             bits = [self.release, self.product, self.arch,
                     override_variant if override_variant else self.variant,
-                    override_branch if override_branch else self.branch]
+                    override_branch if override_branch else self.default_update_branch]
 
         path = '/'.join([self.quote(b) for b in bits])
 
@@ -490,8 +510,8 @@ class Image:
         return (self.release, self.buildid) >= (other.release, other.buildid)
 
     def __repr__(self) -> str:
-        return "{{ {}, {}, {}, {}, {}, {}, {}, {}, {} }}".format(
-            self.product, self.release, self.variant, self.branch, self.arch,
+        return "{{ {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }}".format(
+            self.product, self.release, self.variant, self.branch, self.default_update_branch, self.arch,
             self.version, self.buildid, self.introduces_checkpoint, self.requires_checkpoint)
 
     def __hash__(self) -> int:

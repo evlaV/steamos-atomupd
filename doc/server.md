@@ -133,6 +133,11 @@ When an update is available, the JSON *object* has the following keys:
             :   A short machine-readable string identifying in which branch
                 the operating system is at, for example **stable**.
 
+            **default_update_branch**
+            :   A short machine-readable string identifying which branch this image
+                will default to, unless the users explicitly selects a branch,
+                for example **stable**.
+
             **arch**
             :   A string identifying the image architecture, for example
                 **amd64** or **i386**.
