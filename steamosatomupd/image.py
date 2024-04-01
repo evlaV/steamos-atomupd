@@ -32,13 +32,18 @@ import semantic_version
 
 log = logging.getLogger(__name__)
 
-def _load_os_release():
-    """Load /etc/os-release in a dictionary"""
+
+def _load_os_release(os_release_path=''):
+    """Load /etc/os-release in a dictionary
+
+    Use `os_release_path` to override the default os-release path
+    """
 
     envre = re.compile(r'''^([^\s=]+)=(?:[\s"']*)(.+?)(?:[\s"']*)$''')
     data = {}
+    os_path = os_release_path if os_release_path else '/etc/os-release'
 
-    with open('/etc/os-release', encoding='utf-8') as f:
+    with open(os_path, encoding='utf-8') as f:
         for line in f:
             match = envre.match(line)
             if match is not None:
@@ -240,7 +245,8 @@ class Image:
     @classmethod
     def from_os(cls, product='', release='', variant='', branch='', default_update_branch='', arch='',
                 version_str='', buildid_str='', introduces_checkpoint=0,
-                requires_checkpoint=0, shadow_checkpoint=False, estimated_size: int = 0, skip=False) -> Image:
+                requires_checkpoint=0, shadow_checkpoint=False, estimated_size: int = 0, skip=False,
+                os_release_path='') -> Image:
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
@@ -257,7 +263,7 @@ class Image:
         """
 
         # Load the os-release file
-        osrel = _load_os_release()
+        osrel = _load_os_release(os_release_path)
 
         # All these parameters are mandatory. If they're not specified, they
         # must have a default value in the os-release file.

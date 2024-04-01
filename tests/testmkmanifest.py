@@ -17,6 +17,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import io
+import tempfile
 import textwrap
 import unittest
 from contextlib import redirect_stdout
@@ -268,6 +269,19 @@ class MkManifestsTestCase(unittest.TestCase):
                 args.extend(['--server-manifest'])
 
             with self.subTest(), patch('builtins.open', mock_open(read_data=os_release)):
+                f = io.StringIO()
+                with redirect_stdout(f):
+                    mkmanifest.main(args)
+                manifest = f.getvalue()
+                self.assertEqual(data.expected_manifest.strip('\n'), manifest.strip('\n'))
+
+            # Redo the same test, this time by using the `--os-release-path` option
+            with (
+                self.subTest(),
+                tempfile.NamedTemporaryFile(mode='w', buffering=1) as os_release_file,
+            ):
+                os_release_file.write(os_release)
+                args.extend(['--os-release-path', os_release_file.name])
                 f = io.StringIO()
                 with redirect_stdout(f):
                     mkmanifest.main(args)

@@ -43,6 +43,8 @@ def main(args=None):
     parser.add_argument('--requires-checkpoint', type=int, default=0)
     parser.add_argument('--server-manifest', action='store_true',
                         help='Create a manifest for the image server pool')
+    parser.add_argument('--os-release-path', default='',
+                        help='Force a different os-release path instead of /etc/os-release')
 
     args = parser.parse_args(args)
 
@@ -51,7 +53,8 @@ def main(args=None):
                               default_update_branch=args.default_update_branch, arch=args.arch,
                               version_str=args.version, buildid_str=args.buildid,
                               introduces_checkpoint=args.introduces_checkpoint,
-                              requires_checkpoint=args.requires_checkpoint)
+                              requires_checkpoint=args.requires_checkpoint,
+                              os_release_path=args.os_release_path)
     except Exception as e:
         raise RuntimeError("Failed to create manifest") from e
 
