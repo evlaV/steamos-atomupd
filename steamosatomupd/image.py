@@ -253,7 +253,7 @@ class Image:
         current system. The os-release file provides for most of the default values.
 
         '*_BRANCH' do not exist in any standard place, hence we use a custom additional
-        field called ${PRODUCT}_DEFAULT_BRANCH.
+        field called ${PRODUCT}_DEFAULT_UPDATE_BRANCH.
 
         'branch' is not stored in the os-release file because images can be promoted
         to different branches after they have been built.
