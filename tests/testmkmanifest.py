@@ -38,7 +38,7 @@ class OsReleaseData:
     variant_id: str
     version_id: str
     build_id: str
-    branch_id: str = ''
+    default_branch: str = ''
     name: str = 'SteamOS'
     pretty_name: str = 'SteamOS'
     version_codename: str = 'holo'
@@ -162,7 +162,7 @@ manifest_data = [
             variant_id='steamdeck',
             version_id='3.7.3',
             build_id='20240120.1',
-            branch_id='stable',
+            default_branch='stable',
         ),
         default_update_branch='stable',
         server_manifest=True,
@@ -206,7 +206,7 @@ manifest_data = [
             variant_id='steamdeck',
             version_id='3.7.5',
             build_id='20240125.1',
-            branch_id='stable',
+            default_branch='stable',
         ),
         branch_override='main',
         default_update_branch='main',
@@ -220,6 +220,26 @@ manifest_data = [
               "version": "3.7.5",
               "buildid": "20240125.1"
             }"""),
+    ),
+
+    ManifestData(
+        os_release=OsReleaseData(
+            variant_id='steamdeck',
+            version_id='3.7.7',
+            build_id='20240404.1000',
+            default_branch='beta',
+        ),
+        branch_override='main',
+        expected_manifest=textwrap.dedent("""\
+        {
+          "product": "steamos",
+          "release": "holo",
+          "variant": "steamdeck",
+          "default_update_branch": "beta",
+          "arch": "amd64",
+          "version": "3.7.7",
+          "buildid": "20240404.1000"
+        }"""),
     ),
 ]
 
@@ -241,8 +261,8 @@ class MkManifestsTestCase(unittest.TestCase):
                 os_release += f'VERSION_ID={data.os_release.version_id}\n'
             if data.os_release.build_id:
                 os_release += f'BUILD_ID={data.os_release.build_id}\n'
-            if data.os_release.branch_id:
-                os_release += f'{data.os_release.id.upper()}_DEFAULT_BRANCH={data.os_release.branch_id}\n'
+            if data.os_release.default_branch:
+                os_release += f'{data.os_release.id.upper()}_DEFAULT_UPDATE_BRANCH={data.os_release.default_branch}\n'
 
             args = []
             if data.product_override:
