@@ -16,6 +16,7 @@ default:
   tags:
     - docker
     - linux
+    - isolated
 
 .test_template:
     stage: test
@@ -23,6 +24,7 @@ default:
     tags:
         - docker
         - linux
+        - isolated
     script:
         - meson setup _build/tests
         - meson compile -C _build/tests || ninja -C _build/tests
