@@ -14,17 +14,13 @@ stages:
 
 default:
   tags:
-    - docker
-    - linux
-    - isolated
+    - x86_64-linux-kvm-docker
 
 .test_template:
     stage: test
     needs: []
     tags:
-        - docker
-        - linux
-        - isolated
+        - x86_64-linux-kvm-docker
     script:
         - meson setup _build/tests
         - meson compile -C _build/tests || ninja -C _build/tests
