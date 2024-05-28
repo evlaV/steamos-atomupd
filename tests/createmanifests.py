@@ -31,6 +31,8 @@ class Variant(StrEnum):
     STEAMDECK_STAGING = 'steamdeck-staging'
     # Simulate a generic vanilla image type
     VANILLA = 'vanilla'
+    # Simulate yet another variant type
+    FEATURE_X = 'feature-x'
 
 
 class Branch(StrEnum):
@@ -404,6 +406,19 @@ images_hierarchies = [
 
             Manifest(Variant.VANILLA, '3.6.7', '20240109.50', branch=Branch.STABLE),
             Manifest(Variant.VANILLA, '3.6.8', '20240109.55', branch=Branch.BETA),
+        ]
+    ),
+
+    Hierarchy(
+        directory_name='branch3_eol',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.6', '20240108.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.7.1', '20240115.1', branch=Branch.STABLE),
+
+            Manifest(Variant.VANILLA, '3.6.7', '20240109.50', branch=Branch.STABLE),
+            Manifest(Variant.VANILLA, '3.7.5', '20240401.50', branch=Branch.STABLE),
+
+            Manifest(Variant.FEATURE_X, '3.6.8', '20240320.60', branch=Branch.STABLE),
         ]
     ),
 ]

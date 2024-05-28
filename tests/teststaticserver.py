@@ -50,6 +50,7 @@ class ServerConfig:
     unstable: bool = True
     strict_pool_validation: bool = True
     variants: tuple[str, ...] = ('steamdeck',)
+    variants_eol: tuple[str, ...] = ()
     products: tuple[str, ...] = ('steamos',)
     releases: tuple[str, ...] = ('holo',)
     archs: tuple[str, ...] = ('amd64',)
@@ -360,6 +361,26 @@ server_data = [
         expectation='branch2_expected',
     ),
     ServerData(
+        msg='Same pool dir as before, with a variant marked as EOL',
+        config=ServerConfig(
+            pool_dir='branch2',
+            branches=('stable', 'beta'),
+            variants=('steamdeck', 'vanilla'),
+            variants_eol=('vanilla:steamdeck',),
+        ),
+        expectation='branch2_eol_expected',
+    ),
+    ServerData(
+        msg='Variant marked as EOL, even if is newer',
+        config=ServerConfig(
+            pool_dir='branch3_eol',
+            branches=('stable',),
+            variants=('steamdeck', 'vanilla', 'feature-x'),
+            variants_eol=('vanilla:steamdeck', 'feature-x:steamdeck'),
+        ),
+        expectation='branch3_eol_expected',
+    ),
+    ServerData(
         msg='Pool that still does not have all image branches',
         config=ServerConfig(
             pool_dir='branch1',
@@ -445,6 +466,9 @@ class StaticServerTestCase(unittest.TestCase):
                 if not data.config.strict_pool_validation:
                     # Write it only if set to 'False' to test its default value
                     config['Images']['StrictPoolValidation'] = str(data.config.strict_pool_validation)
+
+                if data.config.variants_eol:
+                    config['Images']['VariantsEol'] = ' '.join(data.config.variants_eol)
 
                 config.write(tmp_config)
 

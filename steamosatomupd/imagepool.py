@@ -27,7 +27,7 @@ import tempfile
 import weakref
 from collections import defaultdict
 from configparser import ConfigParser
-from copy import deepcopy
+from copy import deepcopy, copy
 from pathlib import Path
 
 from steamosatomupd.image import Image
@@ -190,11 +190,13 @@ class ImagePool:
     """
 
     def __init__(self, config):
+        variants_eol = config.get('Images', 'VariantsEOL', fallback='').split()
         self._create_pool(config['Images']['PoolDir'],
                           config['Images'].getboolean('Unstable'),
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
+                          dict((pair.split(':') for pair in variants_eol)),
                           config['Images']['Branches'].split(),
                           config.get('Images', 'BranchesOrder', fallback='').split(),
                           config['Images']['Archs'].split(),
@@ -213,8 +215,9 @@ class ImagePool:
                 sys.exit(1)
 
     def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
-                     supported_releases: list[str], supported_variants: list[str], supported_branches: list[str],
-                     branches_order: list[str], supported_archs: list[str], strict_pool_validation: bool) -> None:
+                     supported_releases: list[str], supported_variants: list[str], variants_eol: dict[str, str],
+                     supported_branches: list[str], branches_order: list[str], supported_archs: list[str],
+                     strict_pool_validation: bool) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -227,6 +230,7 @@ class ImagePool:
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
+        self.variants_eol = variants_eol
         self.supported_branches = supported_branches
         self.branches_order = branches_order
         self.supported_archs = supported_archs
@@ -359,6 +363,7 @@ class ImagePool:
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
+            'Variants EOL: {}'.format(self.variants_eol),
             'Branches  : {}'.format(self.supported_branches),
             'Branches order: {}'.format(self.branches_order),
             'Archs     : {}'.format(self.supported_archs),
@@ -432,7 +437,7 @@ class ImagePool:
 
     def get_updatepath(self, image: Image, relative_update_path: Path | None,
                        requested_branch: str, candidates: list[UpdateCandidate],
-                       estimate_download_size: bool) -> UpdatePath | None:
+                       estimate_download_size: bool, replacement_eol_variant: str) -> UpdatePath | None:
         """Get an UpdatePath from a given UpdateCandidate list
 
         Return an UpdatePath object, or None if no updates available.
@@ -450,7 +455,7 @@ class ImagePool:
         if estimate_download_size and relative_update_path:
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
-        return UpdatePath(image.release, candidates)
+        return UpdatePath(image.release, replacement_eol_variant, candidates)
 
     def get_updates(self, image: Image, relative_update_path: Path,
                     requested_branch: str, update_type=UpdateType.standard,
@@ -467,6 +472,19 @@ class ImagePool:
         Return an Update object, or None if no updates available.
         """
 
+        replacement_eol_variant = self.variants_eol.get(image.variant, '')
+
+        if replacement_eol_variant:
+            log.info("The requested variant '%s' is EOL, going to '%s' instead",
+                     image.variant, replacement_eol_variant)
+            image = copy(image)
+            image.variant = replacement_eol_variant
+            if update_type != UpdateType.second_last:
+                # Except for the penultimate update, which can be considered a special case,
+                # we want to force users out of that image because their original variant
+                # was marked as EOL
+                update_type = UpdateType.forced
+
         all_candidates, same_branch_candidates = self.get_all_allowed_candidates(image, requested_branch)
         candidates = _get_update_candidates(all_candidates, image, update_type)
         if not candidates:
@@ -476,7 +494,7 @@ class ImagePool:
             candidates = _get_update_candidates(same_branch_candidates, image, update_type)
 
         update_path = self.get_updatepath(image, relative_update_path, requested_branch,
-                                          candidates, estimate_download_size)
+                                          candidates, estimate_download_size, replacement_eol_variant)
 
         if update_path:
             return update_path
@@ -537,7 +555,7 @@ class ImagePool:
                 candidates_forced = _get_update_candidates(same_branch_candidates, image, update_type)
 
             update_path = self.get_updatepath(image, relative_update_path, requested_branch,
-                                              candidates_forced, estimate_download_size)
+                                              candidates_forced, estimate_download_size, replacement_eol_variant)
             if update_path:
                 return update_path
 

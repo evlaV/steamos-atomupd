@@ -76,8 +76,9 @@ class UpdatePath:
       }
     """
 
-    def __init__(self, release: str, candidates: list[UpdateCandidate]):
+    def __init__(self, release: str, replacement_eol_variant: str, candidates: list[UpdateCandidate]):
         self.release = release
+        self.replacement_eol_variant = replacement_eol_variant
         self.candidates = []
 
         if not candidates:
@@ -96,13 +97,14 @@ class UpdatePath:
         # We expect the UpdatePath to be under the "minor" key for legacy reasons
         data = data.get('minor', data)
         release = data['release']
+        replacement_eol_variant = data.get('replacement_eol_variant', '')
         candidates = []
 
         for cdata in data['candidates']:
             candidate = UpdateCandidate.from_dict(cdata)
             candidates.append(candidate)
 
-        return cls(release, candidates)
+        return cls(release, replacement_eol_variant, candidates)
 
     def to_dict(self) -> dict[str, Any]:
         """Export an UpdatePath to a dictionary"""
@@ -118,6 +120,9 @@ class UpdatePath:
         # upgrades. However, that design has been deprecated in favor of gating major upgrades
         # behind checkpoints.
         data['minor'] = {'release': self.release, 'candidates': array}
+        if self.replacement_eol_variant:
+            data['minor']['replacement_eol_variant'] = self.replacement_eol_variant
+
         return data
 
 
