@@ -673,6 +673,12 @@ class UpdateClient:
             log.error("This script can only be executed with root privileges.")
             return -1
 
+        if not args.update_version and not (args.variant and args.branch) and not args.update_from_url:
+            # Unless we are manually pointing to the update that we want to apply, show a warning that this
+            # is probably not the CLI that should be used.
+            log.warning("This script doesn't take into consideration the user preferences. It may propose you an "
+                        "unexpected update. You should use atomupd-manager instead.")
+
         # Config file
 
         log.debug("Parsing config from file: %s", args.config)
