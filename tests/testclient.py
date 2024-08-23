@@ -20,6 +20,7 @@ import io
 import json
 import shutil
 import tempfile
+import urllib.error
 import urllib.parse
 from contextlib import redirect_stdout
 from dataclasses import dataclass, field
@@ -234,8 +235,10 @@ class DownloadUpdateData:
     msg: str
     image_data: dict[str, str]
     requested_variant: str = ''
+    requested_branch: str = ''
     second_last: bool = False
     meta_attempts: int = 1
+    error_code: int = 0
     # These are the production server that we use for Jupiter
     meta_url: str = 'https://steamdeck-atomupd.steamos.cloud/meta'
     query_url: str = 'https://steamdeck-atomupd.steamos.cloud/updates'
@@ -303,6 +306,68 @@ download_update_data = [
     ),
 ]
 
+download_update_data_4xx = [
+    DownloadUpdateData(
+        msg="Variant not known to the server",
+        requested_variant='steammissing',
+        # When requesting unknown variants we go outside the allowed paths, and the server is expected to return
+        # an HTTP 401 error
+        error_code=401,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck',
+            'default_update_branch': 'stable',
+            'arch': 'amd64',
+            'version': '3.7.5',
+            'buildid': '20241116.100',
+        },
+    ),
+
+    DownloadUpdateData(
+        msg="Default Variant not known to the server",
+        error_code=401,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steammissing',
+            'default_update_branch': 'beta',
+            'arch': 'amd64',
+            'version': '3.7.5',
+            'buildid': '20241117.100',
+        },
+    ),
+
+    DownloadUpdateData(
+        msg="Branch not known to the server",
+        requested_branch='nightlymissing',
+        error_code=404,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck',
+            'default_update_branch': 'stable',
+            'arch': 'amd64',
+            'version': '3.7.0',
+            'buildid': '20241016.1',
+        },
+    ),
+
+    DownloadUpdateData(
+        msg="Default branch not known to the server",
+        error_code=404,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdeck',
+            'default_update_branch': 'nightlymissing',
+            'arch': 'amd64',
+            'version': '3.7.0',
+            'buildid': '20241016.1',
+        },
+    ),
+]
+
 
 class DownloadUpdateJSON(unittest.TestCase):
     def test_update_request(self):
@@ -336,6 +401,23 @@ class DownloadUpdateJSON(unittest.TestCase):
                     # For the others, due to the VariantsOrder, we might receive
                     # something different.
                     self.assertEqual(update.candidates[0].image.variant, data.requested_variant)
+
+    def test_update_request_4xx(self):
+        for data in download_update_data_4xx:
+            with self.subTest(msg=data.msg):
+                image = Image.from_dict(data.image_data)
+
+                with self.assertLogs(level='DEBUG') as lo, self.assertRaises(urllib.error.HTTPError) as he:
+                    client.download_update_from_rest_url(data.meta_url, image,
+                                                         data.requested_branch,
+                                                         data.requested_variant,
+                                                         data.second_last)
+
+                attempts = sum('Trying URL' in line for line in lo.output)
+                # Assume we also tried the fallback URL before giving up
+                self.assertEqual(attempts, 2)
+
+                self.assertEqual(he.exception.code, data.error_code)
 
 
 if __name__ == '__main__':

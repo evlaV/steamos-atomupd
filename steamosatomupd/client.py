@@ -249,7 +249,7 @@ def download_update_from_rest_url(meta_url: str, image: Image,
     The server is expected to return a JSON string, which is then parsed
     by the client, in order to validate it.
 
-    An empty string will be returned if an error occurs.
+    An urllib.error may be raised if it is not possible to download the update file.
     """
 
     log.debug("Downloading update file from %s", meta_url)
@@ -264,6 +264,8 @@ def download_update_from_rest_url(meta_url: str, image: Image,
         update_paths = [image.get_update_path(requested_branch, requested_variant),
                         image.get_update_path(requested_branch, requested_variant, fallback=True)]
 
+    request_error: BaseException | None = None
+
     for update_path in update_paths:
         url = meta_url + '/' + update_path
         log.debug("Trying URL: %s", url)
@@ -275,14 +277,19 @@ def download_update_from_rest_url(meta_url: str, image: Image,
                     log.warning("The server returned an empty JSON file")
                 return content
         except (urllib.error.HTTPError, urllib.error.URLError) as e:
-            if isinstance(e, urllib.error.HTTPError) and e.code == 404:
-                log.debug("Got 404 from server")
+            request_error = e
+            if isinstance(e, urllib.error.HTTPError) and (399 < e.code < 500):
+                # Continue with the fallback path, if available
+                log.debug("Got an HTTP %i error from the server", e.code)
             else:
-                log.warning("Unable to get JSON from server: %s", e)
-                return ""
+                break
 
-    log.warning("Unable to get JSON from server")
-    return ""
+    # Assert here, otherwise mypy complains that request_error might be None.
+    # However, that should never happen, because we either return early with the query response or
+    # assign the urllib error to request_error
+    assert isinstance(request_error, BaseException)
+
+    raise request_error
 
 
 def ensure_index_exists(regenerate: bool) -> None:
@@ -764,8 +771,15 @@ class UpdateClient:
             if not server_response:
                 log.warning("The provided file seems to be empty")
         else:
-            server_response = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant,
-                                                            args.penultimate_update)
+            try:
+                server_response = download_update_from_rest_url(meta_url, current_image, args.branch, args.variant,
+                                                                args.penultimate_update)
+            except (urllib.error.HTTPError, urllib.error.URLError) as e:
+                if isinstance(e, urllib.error.HTTPError) and (399 < e.code < 500):
+                    log.warning("All attempts failed due to an HTTP %i error", e.code)
+                    return -2
+
+                log.warning("Unable to get JSON from server: %s", e)
 
         if not server_response:
             return -1
