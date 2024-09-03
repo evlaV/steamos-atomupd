@@ -1,0 +1,9 @@
+# Copyright 2024 Collabora Ltd
+# SPDX-License-Identifier: MIT
+
+option(
+  'tests_coverage',
+  type : 'boolean',
+  value : false,
+  description : 'Enable tests coverage',
+)

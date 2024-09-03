@@ -22,8 +22,15 @@ install_subdir('completions',
 )
 
 python = find_program('python3', required: false)
+
+if get_option('tests_coverage')
+    unit_args = ['-m', 'coverage', 'run', '-m', 'unittest', '-v']
+else
+    unit_args = ['-m', 'unittest', '-v']
+endif
+
 test('Unit tests', python,
-  args: ['-m', 'unittest', '-v'],
+  args: unit_args,
   workdir: meson.current_source_dir(),
 )
 

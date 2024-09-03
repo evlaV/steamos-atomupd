@@ -1,4 +1,4 @@
-# Copyright 2021-2022 Collabora Ltd
+# Copyright 2021-2024 Collabora Ltd
 # SPDX-License-Identifier: MIT
 
 workflow:
@@ -22,7 +22,7 @@ default:
     tags:
         - x86_64-linux-kvm-docker
     script:
-        - meson setup _build/tests
+        - meson setup -Dtests_coverage=${COVERAGE:-false} _build/tests
         - meson compile -C _build/tests || ninja -C _build/tests
         - meson test -C _build/tests
 
@@ -47,10 +47,25 @@ test:debian-12:
 test:jupiter:
     extends: .test_template
     image: registry.gitlab.steamos.cloud/steam/steamos-docker-images/jupiter-main/base-devel:latest
+    variables:
+      COVERAGE: "true"
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
-          desync git json-glib meson python-flask
+          desync git json-glib meson python-coverage python-flask
           python-semantic-version python-pyinotify rauc squashfs-tools
+    after_script:
+      - coverage report -m
+      - coverage xml -o _build/tests/meson-logs/coverage.xml
+    coverage: '/TOTAL.+ ([0-9]{1,3}%)/'
+    artifacts:
+      paths:
+        - _build/tests/meson-logs
+      when: always
+      reports:
+        coverage_report:
+          coverage_format: cobertura
+          path: _build/tests/meson-logs/coverage.xml
+
 
 .lint_template:
     stage: lint
