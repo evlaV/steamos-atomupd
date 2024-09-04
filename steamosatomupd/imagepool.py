@@ -191,6 +191,10 @@ class ImagePool:
 
     def __init__(self, config):
         variants_eol = config.get('Images', 'VariantsEOL', fallback='').split()
+        if config.has_section('Images.BranchesToConsider'):
+            branches_to_consider = dict(config['Images.BranchesToConsider'])
+        else:
+            branches_to_consider = {}
         self._create_pool(config['Images']['PoolDir'],
                           config['Images'].getboolean('Unstable'),
                           config['Images']['Products'].split(),
@@ -198,7 +202,7 @@ class ImagePool:
                           config['Images']['Variants'].split(),
                           dict((pair.split(':') for pair in variants_eol)),
                           config['Images']['Branches'].split(),
-                          config.get('Images', 'BranchesOrder', fallback='').split(),
+                          branches_to_consider,
                           config['Images']['Archs'].split(),
                           config['Images'].getboolean('StrictPoolValidation', True))
 
@@ -216,8 +220,8 @@ class ImagePool:
 
     def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str], variants_eol: dict[str, str],
-                     supported_branches: list[str], branches_order: list[str], supported_archs: list[str],
-                     strict_pool_validation: bool) -> None:
+                     supported_branches: list[str], branches_to_consider: dict[str, str],
+                     supported_archs: list[str], strict_pool_validation: bool) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -232,11 +236,14 @@ class ImagePool:
         self.supported_variants = supported_variants
         self.variants_eol = variants_eol
         self.supported_branches = supported_branches
-        self.branches_order = branches_order
         self.supported_archs = supported_archs
         self.strict_pool_validation = strict_pool_validation
         self.image_updates_found: list[UpdateCandidate] = []
         self.extract_dir = tempfile.mkdtemp()
+
+        self.branches_to_consider: dict[str, list[str]] = {}
+        for branch in branches_to_consider:
+            self.branches_to_consider[branch] = branches_to_consider[branch].split()
 
         self._finalizer = weakref.finalize(self, shutil.rmtree, self.extract_dir)
 
@@ -365,7 +372,7 @@ class ImagePool:
             'Variants  : {}'.format(self.supported_variants),
             'Variants EOL: {}'.format(self.variants_eol),
             'Branches  : {}'.format(self.supported_branches),
-            'Branches order: {}'.format(self.branches_order),
+            'Branches order: {}'.format(self.branches_to_consider),
             'Archs     : {}'.format(self.supported_archs),
             'Candidates: (see below)',
             '{}'.format(pprint.pformat(self.candidates))
@@ -404,12 +411,9 @@ class ImagePool:
         The returned lists are sorted in ascending order.
         """
         all_candidates: list[UpdateCandidate] = []
-        additional_branches: list[str] = []
 
-        if requested_branch in self.branches_order:
-            # Take into consideration all the more stable branches too
-            branch_index = self.branches_order.index(requested_branch)
-            additional_branches = self.branches_order[:branch_index]
+        # Take into consideration all the more stable branches too
+        additional_branches: list[str] = self.branches_to_consider.get(requested_branch, [])
 
         try:
             all_candidates.extend(self._get_candidate_list(image, requested_branch))
@@ -531,22 +535,19 @@ class ImagePool:
             # avoid leaving it with its, probably borked, image.
             update_type = UpdateType.forced
         elif requested_branch != image.branch:
-            try:
-                # Force an update if we are in an unstable branch, and we want to switch back to a
-                # more stable branch. By reaching this point it means that there isn't a proper
-                # update because our current version is already newer. For this reason we force the
-                # update, that will effectively be a downgrade.
-                if self.branches_order.index(requested_branch) < self.branches_order.index(image.branch):
-                    update_type = UpdateType.forced
+            # Force an update if we are in an unstable branch, and we want to switch back to a
+            # more stable branch. By reaching this point it means that there isn't a proper
+            # update because our current version is already newer. For this reason we force the
+            # update, that will effectively be a downgrade.
+            # We do the same even if there isn't an order between the two branches
+            if (requested_branch in self.branches_to_consider.get(image.branch, []) or
+                    image.branch not in self.branches_to_consider.get(requested_branch, [])):
+                update_type = UpdateType.forced
 
-                # If we reached this point, we had a valid branch order. However, for unversioned
-                # images we can't reliably consider more stable branches. So we force an update
-                # regardless, to allow the requested branch switch.
-                if update_type != UpdateType.forced and not image.version:
-                    update_type = UpdateType.forced
-            except ValueError:
-                # At least one of those images is not ordered, there is
-                # no way of knowing which one is more stable.
+            # If we reached this point, we had a valid branch order. However, for unversioned
+            # images we can't reliably consider more stable branches. So we force an update
+            # regardless, to allow the requested branch switch.
+            if update_type != UpdateType.forced and not image.version:
                 update_type = UpdateType.forced
 
         if update_type == UpdateType.forced:

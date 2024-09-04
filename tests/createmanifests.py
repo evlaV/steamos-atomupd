@@ -421,6 +421,19 @@ images_hierarchies = [
             Manifest(Variant.FEATURE_X, '3.6.8', '20240320.60', branch=Branch.STABLE),
         ]
     ),
+
+    Hierarchy(
+        directory_name='branch4',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.6', '20240801.1', branch=Branch.STABLE),
+
+            Manifest(Variant.STEAMDECK, '3.6.7', '20240802.1', branch=Branch.RC),
+
+            Manifest(Variant.STEAMDECK, '3.6.8', '20240805.100', branch=Branch.BETA),
+
+            Manifest(Variant.STEAMDECK, '3.5.0', '20240707.111', branch=Branch.BC),
+        ]
+    ),
 ]
 
 additional_images = [

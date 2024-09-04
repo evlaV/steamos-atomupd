@@ -22,7 +22,7 @@ import logging
 import os
 import shutil
 import tempfile
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import signal
 import subprocess
 import sys
@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 class ServerConfig:
     pool_dir: str
     branches: tuple[str, ...]
-    branches_order: tuple[str, ...] = ()
+    branches_to_consider: dict[str, list[str]] = field(default_factory=dict)
     unstable: bool = True
     strict_pool_validation: bool = True
     variants: tuple[str, ...] = ('steamdeck',)
@@ -78,7 +78,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases',
             branches=('stable', 'beta', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
@@ -99,7 +102,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps',
             branches=('stable', 'beta', 'main', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='static_rel_and_snap_expected',
         mock_leftovers=EXPECTATION_PARENT / 'static_rel_and_snap_mock_leftover',
@@ -112,7 +118,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases',
             branches=('stable', 'beta', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='staticexpected',
         changed_expectation='staticdaemonexpected2',
@@ -126,7 +135,7 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps2',
             branches=('stable', 'beta'),
-            branches_order=('stable', 'beta'),
+            branches_to_consider={'beta': ['stable']},
         ),
         expectation='static_rel_and_snap2_expected',
     ),
@@ -135,7 +144,12 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps3',
             branches=('stable', 'beta', 'main', 'rc', 'bc'),
-            branches_order=('stable', 'rc', 'beta', 'bc', 'main'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+                'bc': ['stable', 'rc', 'beta'],
+                'main': ['stable', 'rc', 'beta', 'bc'],
+            },
         ),
         expectation='static_rel_and_snap3_expected',
     ),
@@ -144,7 +158,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps4',
             branches=('stable', 'beta', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='static_rel_and_snap4_expected',
     ),
@@ -153,7 +170,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
             branches=('stable', 'beta', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='static_rel_and_snap5_expected',
     ),
@@ -162,7 +182,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
             branches=('stable', 'beta', 'rc', 'missing'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='',
         exit_code=1,
@@ -172,7 +195,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
             branches=('stable', 'beta', 'rc', 'missing'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='',
         run_as_daemon=True,
@@ -183,7 +209,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases-checkpoints',
             branches=('stable', 'beta'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='static_rel_checkpoints_expected',
     ),
@@ -200,7 +229,7 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases2',
             branches=('stable', 'beta'),
-            branches_order=('stable', 'beta'),
+            branches_to_consider={'beta': ['stable']},
         ),
         expectation='staticexpected2',
     ),
@@ -209,7 +238,7 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases2',
             branches=('stable', 'beta'),
-            branches_order=('stable', 'beta'),
+            branches_to_consider={'beta': ['stable']},
         ),
         expectation='staticexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected2_mock_leftover',
@@ -220,7 +249,7 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases3',
             branches=('stable', 'staging'),
-            branches_order=('stable', 'staging'),
+            branches_to_consider={'staging': ['stable']},
         ),
         expectation='staticexpected3',
     ),
@@ -229,7 +258,7 @@ server_data = [
         config=ServerConfig(
             pool_dir='releases4',
             branches=('stable', 'staging'),
-            branches_order=('stable', 'staging'),
+            branches_to_consider={'staging': ['stable']},
         ),
         expectation='staticexpected4',
     ),
@@ -328,7 +357,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='branch1',
             branches=('stable', 'beta', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='branch1_expected',
     ),
@@ -337,7 +369,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='branch1',
             branches=('stable', 'beta', 'rc'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
         ),
         expectation='branch1_expected',
         run_as_daemon=True,
@@ -347,7 +382,7 @@ server_data = [
         config=ServerConfig(
             pool_dir='branch-and-legacy-variant1',
             branches=('stable', 'beta'),
-            branches_order=('stable', 'beta'),
+            branches_to_consider={'beta': ['stable']},
         ),
         expectation='branch_and_legacy_variant1_expected',
     ),
@@ -385,11 +420,41 @@ server_data = [
         config=ServerConfig(
             pool_dir='branch1',
             branches=('stable', 'beta', 'rc', 'future'),
-            branches_order=('stable', 'rc', 'beta'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable', 'rc'],
+            },
             strict_pool_validation=False,
             variants=('steamdeck', 'handheld')
         ),
         expectation='branch1_future_expected',
+    ),
+    ServerData(
+        msg='There isn\'t a linear branches order',
+        config=ServerConfig(
+            pool_dir='branch4',
+            branches=('stable', 'beta', 'rc', 'bc'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable'],
+                'bc': ['stable', 'beta'],
+            },
+        ),
+        expectation='branch4_expected',
+    ),
+    ServerData(
+        msg='There isn\'t a linear branches order',
+        config=ServerConfig(
+            pool_dir='branch4',
+            branches=('stable', 'beta', 'rc', 'bc'),
+            branches_to_consider={
+                'rc': ['stable'],
+                'beta': ['stable'],
+                # This is a list of additional branches to consider, the order doesn't matter
+                'bc': ['beta', 'stable'],
+            },
+        ),
+        expectation='branch4_expected',
     ),
 ]
 
@@ -460,8 +525,10 @@ class StaticServerTestCase(unittest.TestCase):
                                     'Variants': ' '.join(data.config.variants),
                                     'Branches': ' '.join(data.config.branches),
                                     'Archs': ' '.join(data.config.archs)}
-                if data.config.branches_order:
-                    config['Images']['BranchesOrder'] = ' '.join(data.config.branches_order)
+                if data.config.branches_to_consider is not {}:
+                    config['Images.BranchesToConsider'] = {}
+                    for branch in data.config.branches_to_consider:
+                        config['Images.BranchesToConsider'][branch] = ' '.join(data.config.branches_to_consider[branch])
 
                 if not data.config.strict_pool_validation:
                     # Write it only if set to 'False' to test its default value
