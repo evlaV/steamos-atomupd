@@ -8,26 +8,19 @@ Overview
 
 Basically, the update client does two things:
 - query the update server for available updates
-- then, apply the update (i.e. download and write the data)
+- apply the eventual update (i.e. download and write the data)
 
-To query the server, the clients sends a request with a few arguments to
-introduce himself and say what image he's running. The arguments are taken from
-the manifest file, basically: *product*, *release*, *variant*, *arch*,
-*buildid* and *version*. Additionally, in theory the client could say that it
-wants to receive unstable updates, even if currently the only way to achieve
-that is by setting *version* to the special value `snapshot`, effectively
-preventing the client to ask for versioned unstable updates.
+To query the server, the client sends a request in the form of:
+`<release>/<product>/<arch>/<variant>/<branch>/<version>/<buildid>.json`
 
-The server looks among the images that are available, and then decides if
-there's an update path for the client or not. If so, it answers some JSON
-data describing the available updates (there might be more than one). If no
-updates are available, it replies with an empty JSON object (i.e. `{}`) or if
-the request is malformed (e.g. missing an expected argument) it replies with an
-HTTP 400 response status code.
+If the server replies with an HTTP 404 error, the client will retry
+with the generic fallback request `<release>/<product>/<arch>/<variant>/<branch>.json`
+or `<release>/<product>/<arch>/<variant>/<branch>.cpN.json` in case the current
+image is past the checkpoint N.
 
-Among the possible updates offered by the server, the client should be able
-to decide which one to apply by itself (especially if it runs unattended), or
-prompt the user if needed (for example, in case a major update is available).
+The server replies with a JSON that describes the available updates (there might be
+more than one). If no updates are available, it replies with an empty JSON object,
+i.e. `{}`.
 
 Applying the update, then, boils down to invoking rauc with the given url.
 
@@ -53,16 +46,12 @@ sections, each of which contains keys with values.
 #### Mandatory sections and keys
 
 The only mandatory section is `Server`, and it must contain at least the
-keys `QueryUrl` and `ImagesUrl`.
+following keys:
 
-When the client asks for updates it will use the URL specified in `QueryUrl`.
-Instead, when the actual image update needs to be downloaded, it will use the
-URL in `ImagesUrl`.
-
-Check [Query request details][] and [Update request details][] for more info.
-
-[Query request details]: #query-request-details
-[Update request details]: #update-request-details
+- `MetaUrl`: The base URL used to query for updates
+- `ImagesUrl`: The base URL used to download image updates
+- `Variants`: List of known variants, separated by a semicolon
+- `Branches`: List of know branches, separated by a semicolon
 
 #### Optional sections and keys
 
@@ -82,28 +71,18 @@ Query request details
 To query the update server an HTTP `GET` request is sent.
 
 For example a request will look like this:
-`https://example.com/update?product=steamos&release=holo&variant=jupiter&arch=amd64&version=snapshot&buildid=20211022.4`
+`https://steamdeck-atomupd.steamos.cloud/meta/holo/steamos/amd64/steamdeck/stable/3.6.0/20240124.1.json`
 
-To the base server URL, taken from the `QueryUrl` field in the
-[configuration file][], is appended a question mark followed by multiple "query"
-parameters, in the form of "key=value", separated by an ampersand (following
-the [RFC 3986][] specification).
+The base server URL is taken from the `MetaUrl` field in the
+[configuration file][].
 
-`product`, `release`, `variant`, `arch`, `version` and `buildid`
-are all guaranteed to be present as "query" parameters.
-Their values are taken from the [image manifest][].
+All the values that follows identify the image that the client is currently using.
+Those values are taken from the [image manifest][].
 
-However, if the `manifest.json` has an empty value for one of these parameters,
-e.g. `"product": ""`, the client will not throw any error while parsing that
-JSON, and the resulting `GET` request will have `[...]?product=&release=[...]`.
-
-If an image is past at least a single checkpoint, the request will also contain
-the parameter `requires_checkpoint`.
-If an image introduces a new checkpoint, it will include the parameter
-`introduces_checkpoint`.
+The only exception are the variant and branch, which can be used to request different images,
+respectively to jump to a different variant or ask for a different branch.
 
 [configuration file]: #the-client-configuration-file
-[RFC 3986]: https://datatracker.ietf.org/doc/html/rfc3986#section-3
 
 
 Update request details
@@ -112,7 +91,7 @@ Update request details
 To download the actual update an HTTP `GET` request is sent.
 
 For example a request will look like this:
-`https://example.com/jupiter/20211022.4/jupiter-20211022.4-snapshot.raucb`
+`https://steamdeck-images.steamos.cloud/steamdeck/20240104.1/steamdeck-20240104.1-3.5.13.raucb`
 
 The URL is composed by two parts:
 
@@ -128,7 +107,7 @@ casync chunk store in the same URL location (with the `.castr` extension
 instead of `.raucb`).
 So in the example used before, the client expects the casync chunk store to be
 located in:
-`https://example.com/jupiter/20211022.4/jupiter-20211022.4-snapshot.castr`
+`https://steamdeck-images.steamos.cloud/steamdeck/20240104.1/steamdeck-20240104.1-3.5.13.castr`
 
 
 [JSON that the server provided]: server.md#structure-of-update-candidates

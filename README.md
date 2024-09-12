@@ -31,14 +31,9 @@ Run locally:
     # Create the images hierarchy. If you want mock images you can look at
     # `tests/createmanifests.py`
 
-    # Shell #1
+    # Create the meta JSON files
     export IN_SOURCE_TREE=1
-    ./bin/steamos-atomupd-server -d -c examples/server-snapshots.conf
-
-    # Shell #2
-    export IN_SOURCE_TREE=1
-    ./bin/steamos-atomupd-client -d -c examples/client.conf --query-only
-
+    ./bin/steamos-atomupd-staticserver --debug --config examples/server-releases.conf
 
 
 Integration
@@ -56,7 +51,7 @@ Create a configuration file at `/etc/steamos-atomupd/client.conf`:
     vi /etc/steamos-atomupd/client.conf
     ----
     [Server]
-    QueryUrl = http://localhost:5000
+    MetaUrl = http://localhost:5000
     ImagesUrl = http://localhost:8000
 
 Test the communication with the server:
@@ -65,31 +60,20 @@ Test the communication with the server:
 
 #### Server-side
 
-Install the server:
+One way to let the meta server automatically notice changes to the images pool is to create
+a systemd path unit, for example:
+```ini
+[Unit]
+Description=Atomic-update image monitoring
 
-    apt install steamos-atomupd-server
+[Path]
+PathChanged=/[...]/steamdeck/updated.txt
+```
 
-Create a configuration file in `/etc/steamos-atomupd/server/`. In this example
-we name the config file `snapshots`:
+With a corresponding `.service` that executes the static server.
 
-    mkdir -p /etc/steamos-atomupd/server
-    vi /etc/steamos-atomupd/server/snapshots.conf
-    ----
-    # see `examples/server-snapshots.conf`
-
-Start the server for this `snapshots` configuration file (notice that we use
-systemd "instanciated" services here, hence the `@snapshots` suffix):
-
-    systemctl start steamos-atomupd-server@snapshots.service
-
-If it all works, you might want to enable this service persistently:
-
-    systemctl enable steamos-atomupd-server@snapshots.service
-
-During operation, send `SIGUSR1` to the server to make it log its state.
-
-During operation, send `SIGUSR2` to the server to make it reload its pool.
-
+Finally, when you want to refresh the meta JSON files, you can just touch the `updated.txt`
+file.
 
 
 Improvements and TODOs
