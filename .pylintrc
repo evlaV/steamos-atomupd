@@ -42,6 +42,8 @@ good-names=e,
 
 # Maximum number of characters on a single line.
 max-line-length=120
+# Maximum number of positional arguments for function / method (default=5)
+max-positional-arguments = 20
 
 
 [TYPECHECK]
