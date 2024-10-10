@@ -665,9 +665,8 @@ class UpdateClient:
 
         manifest_group = parser.add_mutually_exclusive_group()
         manifest_group.add_argument('--manifest-file',
-                                    metavar='FILE',  # can't use default= here, see below
-                                    help="manifest file (default: {})".format(
-                                        DEFAULT_MANIFEST_FILE))
+                                    metavar='FILE', default=DEFAULT_MANIFEST_FILE,
+                                    help="manifest file")
         manifest_group.add_argument('--mk-manifest-file', action='store_true',
                                     help="don't use existing manifest file, make one instead")
 
@@ -741,20 +740,13 @@ class UpdateClient:
         # Handle the manifest file logic
 
         if args.mk_manifest_file:
-            manifest_file = None
+            args.manifest_file = None
             log.debug("Not using any manifest file, making one instead")
-        else:
-            if args.manifest_file:
-                manifest_file = args.manifest_file
-            elif config.has_option('Host', 'Manifest'):
-                manifest_file = config['Host']['Manifest']
-            else:
-                manifest_file = DEFAULT_MANIFEST_FILE
-            log.debug("Using manifest file '%s'", manifest_file)
 
         # Get details about the current image
-        if manifest_file:
-            with open(manifest_file, 'r', encoding='utf-8') as f:
+        if args.manifest_file:
+            log.debug("Using manifest file '%s'", args.manifest_file)
+            with open(args.manifest_file, 'r', encoding='utf-8') as f:
                 data = json.load(f)
 
             current_image = Image.from_dict(data)

@@ -55,11 +55,9 @@ following keys:
 
 #### Optional sections and keys
 
-A configuration file might also have the `Host` section with the keys
-`Manifest` and/or `RuntimeDir`.
+A configuration file might also have the `Host` section with the key `RuntimeDir`.
 
-`Manifest` is used to specify the path to the [image manifest][] and
-`RuntimeDir` the path to the directory where the downloaded JSON file will be
+`RuntimeDir` is used to specify the path to the directory where the downloaded JSON file will be
 stored.
 
 [image manifest]: overview.md#the-image-manifest
