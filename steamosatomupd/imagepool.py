@@ -204,7 +204,8 @@ class ImagePool:
                           config['Images']['Branches'].split(),
                           branches_to_consider,
                           config['Images']['Archs'].split(),
-                          config['Images'].getboolean('StrictPoolValidation', True))
+                          config['Images'].getboolean('StrictPoolValidation', True),
+                          config['Images'].getboolean('GenerateRemoteInfoConfig', False))
 
     @classmethod
     def validate_config(cls, config: ConfigParser) -> None:
@@ -221,7 +222,8 @@ class ImagePool:
     def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str], variants_eol: dict[str, str],
                      supported_branches: list[str], branches_to_consider: dict[str, str],
-                     supported_archs: list[str], strict_pool_validation: bool) -> None:
+                     supported_archs: list[str], strict_pool_validation: bool,
+                     generate_remote_info_config: bool) -> None:
 
         # Make sure the images directory exist
         images_dir = os.path.abspath(images_dir)
@@ -238,6 +240,7 @@ class ImagePool:
         self.supported_branches = supported_branches
         self.supported_archs = supported_archs
         self.strict_pool_validation = strict_pool_validation
+        self.generate_remote_info_conf = generate_remote_info_config
         self.image_updates_found: list[UpdateCandidate] = []
         self.extract_dir = tempfile.mkdtemp()
 

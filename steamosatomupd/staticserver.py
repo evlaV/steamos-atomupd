@@ -35,6 +35,7 @@ from pathlib import Path
 
 import pyinotify # type: ignore
 
+from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
 from steamosatomupd.update import UpdateCandidate, UpdateType
 
@@ -45,6 +46,8 @@ wm = pyinotify.WatchManager()
 # Default config
 DEFAULT_SERVE_UNSTABLE = False
 TRIGGER_FILE = "updated.txt"
+# Please keep this in sync with atomupd-daemon
+REMOTE_INFO_FILE = "remote-info.conf"
 
 
 @contextlib.contextmanager
@@ -198,6 +201,28 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         self._write_update_for_image(json.dumps(update_dict, sort_keys=True, indent=4), json_path)
 
+    def _write_remote_info_config(self, remote_info_written: set[Path], image: Image):
+        remote_info = Path(image.get_update_path(fallback=True)).parent / REMOTE_INFO_FILE
+
+        # Do not write these same files over and over again
+        if remote_info not in remote_info_written:
+            config = configparser.ConfigParser()
+            # Prevent entries to be converted to lower-case
+            # `type: ignore` is to workaround mypy bug https://github.com/python/mypy/issues/708
+            config.optionxform = str  # type: ignore
+
+            remote_info_written.add(remote_info)
+            supported_variants = self.image_pool.get_supported_variants()
+            supported_branches = self.image_pool.get_supported_branches()
+            config['Server'] = {
+                'Variants': ';'.join(supported_variants),
+                'Branches': ';'.join(supported_branches),
+            }
+
+            remote_info.parent.mkdir(parents=True, exist_ok=True)
+            with open(remote_info, 'w', encoding='utf-8') as file:
+                config.write(file)
+
     @staticmethod
     def _warn_json_leftovers(update_jsons: set[Path]) -> None:
         """Warn about any eventual JSON leftovers from images that are not available anymore
@@ -250,6 +275,8 @@ class UpdateParser(pyinotify.ProcessEvent):
         # The ${variant}.second_last.json will be written up one level, compared to the usual
         # directory
         second_last_update_jsons: set[Path] = set()
+        # List of remote-info.conf file that have been already written
+        remote_info_written: set[Path] = set()
 
         # Number of images for which we should pre-estimate the download size.
         # This is an arbitrary number chosen to be not big enough to slow down the static
@@ -267,6 +294,9 @@ class UpdateParser(pyinotify.ProcessEvent):
             # If this is a checkpoint, we include the estimated download size regardless of how old
             # it is, because it's likely a considerable amount of devices will pass through this one.
             estimate_download_size = index < index_cutoff or image.is_checkpoint()
+
+            if self.image_pool.generate_remote_info_conf:
+                self._write_remote_info_config(remote_info_written, image)
 
             for requested_branch in supported_branches:
                 json_path = Path(image.get_update_path(requested_branch))

@@ -81,6 +81,23 @@ there's an user that can confirm if he wants to apply a major update).
 That's why we provide two update paths, minor and major: to allow the client
 to make a decision in this particular case.
 
+Additional remote config info
+-----------------------------
+
+Clients have a hardcoded list of known branches and variants that the server is
+supposed to provide. However, those lists can also be updated using the `remote-info.conf`
+file on the server side.
+
+That file is stored in `<release>/<product>/<arch>/<variant>/remote-info.conf` and has
+the following structure:
+```ini
+[Server]
+Variants = steamdeck
+Branches = stable;rc;beta;bc;preview;pc;main
+```
+
+To let the server automatically generate this file, you can use the option
+`GenerateRemoteInfoConfig` in the server configuration file.
 
 Structure of update candidates
 ------------------------------

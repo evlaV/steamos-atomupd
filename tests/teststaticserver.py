@@ -49,6 +49,7 @@ class ServerConfig:
     branches_to_consider: dict[str, list[str]] = field(default_factory=dict)
     unstable: bool = True
     strict_pool_validation: bool = True
+    generate_remote_info_config: bool = False
     variants: tuple[str, ...] = ('steamdeck',)
     variants_eol: tuple[str, ...] = ()
     products: tuple[str, ...] = ('steamos',)
@@ -82,6 +83,7 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
+            generate_remote_info_config=True,
         ),
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
@@ -93,7 +95,8 @@ server_data = [
         msg='Static server with snapshot images',
         config=ServerConfig(
             pool_dir='snapshots',
-            branches=('stable', 'beta')
+            branches=('stable', 'beta'),
+            generate_remote_info_config=True,
         ),
         expectation='staticsnapexpected',
     ),
@@ -122,6 +125,7 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
+            generate_remote_info_config=True,
         ),
         expectation='staticexpected',
         changed_expectation='staticdaemonexpected2',
@@ -136,6 +140,7 @@ server_data = [
             pool_dir='releases-and-snaps2',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
+            generate_remote_info_config=True,
         ),
         expectation='static_rel_and_snap2_expected',
     ),
@@ -230,6 +235,7 @@ server_data = [
             pool_dir='releases2',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
+            generate_remote_info_config=True,
         ),
         expectation='staticexpected2',
     ),
@@ -239,6 +245,7 @@ server_data = [
             pool_dir='releases2',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
+            generate_remote_info_config=True,
         ),
         expectation='staticexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected2_mock_leftover',
@@ -361,6 +368,7 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
+            generate_remote_info_config=True,
         ),
         expectation='branch1_expected',
     ),
@@ -373,6 +381,7 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
+            generate_remote_info_config=True,
         ),
         expectation='branch1_expected',
         run_as_daemon=True,
@@ -383,6 +392,7 @@ server_data = [
             pool_dir='branch-and-legacy-variant1',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
+            generate_remote_info_config=True,
         ),
         expectation='branch_and_legacy_variant1_expected',
     ),
@@ -533,6 +543,9 @@ class StaticServerTestCase(unittest.TestCase):
                 if not data.config.strict_pool_validation:
                     # Write it only if set to 'False' to test its default value
                     config['Images']['StrictPoolValidation'] = str(data.config.strict_pool_validation)
+
+                if data.config.generate_remote_info_config:
+                    config['Images']['GenerateRemoteInfoConfig'] = str(data.config.generate_remote_info_config)
 
                 if data.config.variants_eol:
                     config['Images']['VariantsEol'] = ' '.join(data.config.variants_eol)
