@@ -43,13 +43,19 @@ log = logging.getLogger(__name__)
 
 
 @dataclass
+class RemoteInfoConfig:
+    variants: tuple[str, ...] = ()
+    branches: tuple[str, ...] = ()
+
+
+@dataclass
 class ServerConfig:
     pool_dir: str
     branches: tuple[str, ...]
     branches_to_consider: dict[str, list[str]] = field(default_factory=dict)
     unstable: bool = True
     strict_pool_validation: bool = True
-    generate_remote_info_config: bool = False
+    remote_info_config: RemoteInfoConfig = field(default_factory=RemoteInfoConfig)
     variants: tuple[str, ...] = ('steamdeck',)
     variants_eol: tuple[str, ...] = ()
     products: tuple[str, ...] = ('steamos',)
@@ -83,7 +89,10 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta', 'rc'),
+            ),
         ),
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
@@ -96,7 +105,10 @@ server_data = [
         config=ServerConfig(
             pool_dir='snapshots',
             branches=('stable', 'beta'),
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta'),
+            ),
         ),
         expectation='staticsnapexpected',
     ),
@@ -125,7 +137,10 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta', 'rc'),
+            ),
         ),
         expectation='staticexpected',
         changed_expectation='staticdaemonexpected2',
@@ -140,7 +155,10 @@ server_data = [
             pool_dir='releases-and-snaps2',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta'),
+            ),
         ),
         expectation='static_rel_and_snap2_expected',
     ),
@@ -235,7 +253,10 @@ server_data = [
             pool_dir='releases2',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta'),
+            ),
         ),
         expectation='staticexpected2',
     ),
@@ -245,7 +266,10 @@ server_data = [
             pool_dir='releases2',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta'),
+            ),
         ),
         expectation='staticexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected2_mock_leftover',
@@ -368,7 +392,10 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta', 'rc'),
+            ),
         ),
         expectation='branch1_expected',
     ),
@@ -381,7 +408,10 @@ server_data = [
                 'rc': ['stable'],
                 'beta': ['stable', 'rc'],
             },
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta', 'rc'),
+            ),
         ),
         expectation='branch1_expected',
         run_as_daemon=True,
@@ -392,7 +422,10 @@ server_data = [
             pool_dir='branch-and-legacy-variant1',
             branches=('stable', 'beta'),
             branches_to_consider={'beta': ['stable']},
-            generate_remote_info_config=True,
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck',),
+                branches=('stable', 'beta'),
+            ),
         ),
         expectation='branch_and_legacy_variant1_expected',
     ),
@@ -422,6 +455,10 @@ server_data = [
             branches=('stable',),
             variants=('steamdeck', 'vanilla', 'feature-x'),
             variants_eol=('vanilla:steamdeck', 'feature-x:steamdeck'),
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck', 'vanilla', 'feature-x'),
+                branches=('stable',),
+            ),
         ),
         expectation='branch3_eol_expected',
     ),
@@ -465,6 +502,30 @@ server_data = [
             },
         ),
         expectation='branch4_expected',
+    ),
+    ServerData(
+        msg='Configuration missing the remote info branches list',
+        config=ServerConfig(
+            pool_dir='branch4',
+            branches=('stable',),
+            remote_info_config=RemoteInfoConfig(
+                variants=('steamdeck', 'vanilla', 'feature-x'),
+            ),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Configuration missing the remote info variants list',
+        config=ServerConfig(
+            pool_dir='branch4',
+            branches=('stable',),
+            remote_info_config=RemoteInfoConfig(
+                branches=('stable', 'beta'),
+            ),
+        ),
+        expectation='',
+        exit_code=1,
     ),
 ]
 
@@ -544,8 +605,10 @@ class StaticServerTestCase(unittest.TestCase):
                     # Write it only if set to 'False' to test its default value
                     config['Images']['StrictPoolValidation'] = str(data.config.strict_pool_validation)
 
-                if data.config.generate_remote_info_config:
-                    config['Images']['GenerateRemoteInfoConfig'] = str(data.config.generate_remote_info_config)
+                if data.config.remote_info_config.variants or data.config.remote_info_config.branches:
+                    config['Images.ProvideRemoteInfoConfig'] = {}
+                    config['Images.ProvideRemoteInfoConfig']['Variants'] = ' '.join(data.config.remote_info_config.variants)
+                    config['Images.ProvideRemoteInfoConfig']['Branches'] = ' '.join(data.config.remote_info_config.branches)
 
                 if data.config.variants_eol:
                     config['Images']['VariantsEol'] = ' '.join(data.config.variants_eol)

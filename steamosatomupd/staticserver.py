@@ -212,11 +212,23 @@ class UpdateParser(pyinotify.ProcessEvent):
             config.optionxform = str  # type: ignore
 
             remote_info_written.add(remote_info)
-            supported_variants = self.image_pool.get_supported_variants()
-            supported_branches = self.image_pool.get_supported_branches()
+
+            known_variants = self.image_pool.remote_info_config_variants
+            known_variants_without_eols = known_variants.copy()
+            known_branches = self.image_pool.remote_info_config_branches
+
+            # Remove all EOLs variants.
+            # The only exception is for remote-info.conf files for EOL variants. In those cases we don't want to
+            # suddenly remove the primary variant from the options list.
+            for eol_variant in self.image_pool.variants_eol.keys():
+                if image.variant == eol_variant:
+                    continue
+                if eol_variant in known_variants_without_eols:
+                    known_variants_without_eols.remove(eol_variant)
+
             config['Server'] = {
-                'Variants': ';'.join(supported_variants),
-                'Branches': ';'.join(supported_branches),
+                'Variants': ';'.join(known_variants_without_eols),
+                'Branches': ';'.join(known_branches),
             }
 
             remote_info.parent.mkdir(parents=True, exist_ok=True)
@@ -295,7 +307,7 @@ class UpdateParser(pyinotify.ProcessEvent):
             # it is, because it's likely a considerable amount of devices will pass through this one.
             estimate_download_size = index < index_cutoff or image.is_checkpoint()
 
-            if self.image_pool.generate_remote_info_conf:
+            if self.image_pool.generate_remote_info_config():
                 self._write_remote_info_config(remote_info_written, image)
 
             for requested_branch in supported_branches:
