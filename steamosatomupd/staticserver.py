@@ -162,25 +162,6 @@ class UpdateParser(pyinotify.ProcessEvent):
         log.info(self.image_pool)
         log.info("------------------")
 
-    @staticmethod
-    def _write_update_for_image(update_json: str, json_path: Path):
-        json_path.parent.mkdir(parents=True, exist_ok=True)
-
-        if json_path.is_file():
-            with open(json_path, 'r', encoding='utf-8') as old:
-                old_lines = old.readlines()
-                new_lines = update_json.splitlines(keepends=True)
-                if old_lines == new_lines:
-                    log.debug('"%s" has not changed, skipping...', json_path)
-                    return
-                if log.level <= logging.INFO:
-                    ndiff_out = ndiff(old_lines, new_lines)
-                    differences = [li for li in ndiff_out if li[0] != ' ']
-                    log.info('Replacing "%s":\n%s', json_path, ''.join(differences))
-
-        with open(json_path, 'w', encoding='utf-8') as file:
-            file.write(update_json)
-
     def _write_update_json(self, image_update: UpdateCandidate, requested_branch: str,
                            json_path: Path, update_jsons: set[Path],
                            update_type=UpdateType.standard, estimate_download_size=False) -> None:
@@ -199,7 +180,23 @@ class UpdateParser(pyinotify.ProcessEvent):
                                              estimate_download_size)
         update_dict = update.to_dict() if update else {}
 
-        self._write_update_for_image(json.dumps(update_dict, sort_keys=True, indent=4), json_path)
+        update_json = json.dumps(update_dict, sort_keys=True, indent=4)
+        json_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if json_path.is_file():
+            with open(json_path, 'r', encoding='utf-8') as old:
+                old_lines = old.readlines()
+                new_lines = update_json.splitlines(keepends=True)
+                if old_lines == new_lines:
+                    log.debug('"%s" has not changed, skipping...', json_path)
+                    return
+                if log.level <= logging.INFO:
+                    ndiff_out = ndiff(old_lines, new_lines)
+                    differences = [li for li in ndiff_out if li[0] != ' ']
+                    log.info('Replacing "%s":\n%s', json_path, ''.join(differences))
+
+        with open(json_path, 'w', encoding='utf-8') as file:
+            file.write(update_json)
 
     def _write_remote_info_config(self, remote_info_written: set[Path], image: Image):
         remote_info = Path(image.get_update_path(fallback=True)).parent / REMOTE_INFO_FILE
