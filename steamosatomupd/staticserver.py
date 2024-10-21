@@ -176,25 +176,48 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         update_jsons.add(json_path)
 
-        update = self.image_pool.get_updates(image, update_path, requested_branch, update_type,
-                                             estimate_download_size)
+        update = self.image_pool.get_updates(image, update_path, requested_branch, update_type, False)
         update_dict = update.to_dict() if update else {}
 
-        update_json = json.dumps(update_dict, sort_keys=True, indent=4)
+        old_lines: list[str] = []
 
         if json_path.is_file():
             with open(json_path, 'r', encoding='utf-8') as old:
-                old_lines = old.readlines()
-                new_lines = update_json.splitlines(keepends=True)
-                if old_lines == new_lines:
+                old_data = json.load(old)
+                if old_data:
+                    # Compare the existing (old) data with the new update
+                    # In order to do the comparison we need to filter out the estimated download size,
+                    # because at this stage we didn't calculate it yet.
+                    old_update = update.from_dict(old_data)
+                    for candidate in old_update.candidates:
+                        candidate.image.estimated_size = 0
+
+                    old_data = old_update.to_dict()
+
+                if old_data == update_dict:
                     log.debug('"%s" has not changed, skipping...', json_path)
                     return
+
                 if log.level <= logging.INFO:
-                    ndiff_out = ndiff(old_lines, new_lines)
-                    differences = [li for li in ndiff_out if li[0] != ' ']
-                    log.info('Replacing "%s":\n%s', json_path, ''.join(differences))
+                    old.seek(0)
+                    old_lines = old.readlines()
         else:
             json_path.parent.mkdir(parents=True, exist_ok=True)
+
+        if estimate_download_size:
+            # If we need to estimate the download size, re-get the available updates with that option enabled
+            update = self.image_pool.get_updates(image, update_path, requested_branch, update_type,
+                                                 estimate_download_size)
+            update_dict = update.to_dict() if update else {}
+
+        update_json = json.dumps(update_dict, sort_keys=True, indent=4)
+
+        if old_lines:
+            # We have this only if the old JSON file changed, and also the logging level is at least INFO
+            new_lines = update_json.splitlines(keepends=True)
+            ndiff_out = ndiff(old_lines, new_lines)
+            differences = [li for li in ndiff_out if li[0] != ' ']
+            log.info('Replacing "%s":\n%s', json_path, ''.join(differences))
 
         with open(json_path, 'w', encoding='utf-8') as file:
             file.write(update_json)
