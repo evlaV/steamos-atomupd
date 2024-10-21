@@ -24,7 +24,7 @@ default:
     script:
         - meson setup -Dtests_coverage=${COVERAGE:-false} _build/tests
         - meson compile -C _build/tests || ninja -C _build/tests
-        - meson test -C _build/tests
+        - meson test -C _build/tests --verbose
 
     artifacts:
         paths:
