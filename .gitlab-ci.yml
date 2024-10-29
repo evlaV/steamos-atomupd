@@ -35,7 +35,7 @@ default:
     extends: .test_template
     before_script:
     - apt-get update
-    - apt-get install -y meson python3-flask python3-semantic-version
+    - apt-get install -y meson python3-flask python3-semantic-version python3-setuptools
     - apt-get install -y git golang
     - apt-get install -y rauc squashfs-tools
     - ./build/build-deps.sh
@@ -52,7 +52,7 @@ test:jupiter:
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-coverage python-flask
-          python-semantic-version python-pyinotify rauc squashfs-tools
+          python-semantic-version python-setuptools python-pyinotify rauc squashfs-tools
     after_script:
       - coverage report -m
       - coverage xml -o _build/tests/meson-logs/coverage.xml
@@ -73,7 +73,7 @@ test:jupiter:
     image: archlinux:base-devel
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
-          python-flask python-semantic-version python-pyinotify python-pylint mypy
+          python-flask python-semantic-version python-setuptools python-pyinotify python-pylint mypy
 
 lint:pylint:
     extends: .lint_template

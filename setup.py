@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: LGPL-2.1+
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(name='SteamOS Atomic Updater',
       version='0.20190711.0',
