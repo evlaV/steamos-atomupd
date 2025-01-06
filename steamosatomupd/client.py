@@ -547,7 +547,9 @@ def parse_rauc_install_args() -> argparse.Namespace:
     if 'casync' not in config:
         raise RuntimeError("The RAUC config doesn't have the expected 'casync' entry")
 
-    install_args_values = config['casync'].get('install-args', fallback='')
+    # Don't use the `fallback` option to always return a str, even in the improbable case where
+    # `install-args` explicitly had a `None` value
+    install_args_values = config['casync'].get('install-args') or ''
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--seed')
