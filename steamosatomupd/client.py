@@ -603,7 +603,7 @@ def desync_has_regenerate_argument() -> bool:
 
 
 def set_rauc_conf():
-    """Set the RAUC configuration path and restart the service"""
+    """Set the RAUC configuration path and HTTP proxy and restart the service"""
 
     # Set, or unset, the 'STEAMOS_CUSTOM_RAUC_CONF' environment variable to
     # ensure that the RAUC service will be restarted with the correct configuration
@@ -614,6 +614,9 @@ def set_rauc_conf():
         subprocess.run(['systemctl', 'set-environment',
                         f'STEAMOS_CUSTOM_RAUC_CONF={rauc_conf_path}'],
                        check=True)
+
+    # Import the current HTTP/HTTPS proxy settings, if any
+    subprocess.run(['systemctl', 'import-environment', 'http_proxy', 'https_proxy'], check=True)
 
     # The service needs to be restarted to pick up the eventual new configuration
     subprocess.run(['systemctl', 'restart', 'rauc'], check=True)
