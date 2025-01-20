@@ -757,6 +757,7 @@ class UpdateClient:
 
         # Download update file, unless one is given in args
 
+        server_response: str | None = None
         if args.update_file:
             update_file = args.update_file
             log.debug("Parsing update file: %s", update_file)
