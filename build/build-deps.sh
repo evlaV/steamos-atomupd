@@ -27,7 +27,7 @@ else
     git clone https://github.com/folbricht/desync.git /tmp/desync
     cd /tmp/desync/cmd/desync
     # Latest commit on master, bump if necessary
-    git checkout 45fc6e3e4fed5d1db6f6b0981a4b1d376a7a10c5
+    git checkout b4b3981cd074fd73977bf29fc0ffbc15e6a92773
     go install
     cp /go/bin/desync /usr/bin/desync
     cd -
