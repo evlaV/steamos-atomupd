@@ -347,6 +347,9 @@ class UpdateParser(pyinotify.ProcessEvent):
                     # It is not possible for users to be running them.
                     continue
 
+                log.info('Generating info for image "%s" when requesting the branch "%s"', image.buildid,
+                         requested_branch)
+
                 self._write_update_json(image_update, requested_branch, json_path, update_jsons,
                                         UpdateType.standard, estimate_download_size)
 
