@@ -37,7 +37,7 @@ import pyinotify # type: ignore
 
 from steamosatomupd.image import Image
 from steamosatomupd.imagepool import ImagePool
-from steamosatomupd.update import UpdateCandidate, UpdateType
+from steamosatomupd.update import UpdateCandidate, UpdateType, UpdatePath
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -188,7 +188,7 @@ class UpdateParser(pyinotify.ProcessEvent):
                     # Compare the existing (old) data with the new update
                     # In order to do the comparison we need to filter out the estimated download size,
                     # because at this stage we didn't calculate it yet.
-                    old_update = update.from_dict(old_data)
+                    old_update = UpdatePath.from_dict(old_data)
                     for candidate in old_update.candidates:
                         candidate.image.estimated_size = 0
 
