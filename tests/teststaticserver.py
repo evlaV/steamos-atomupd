@@ -302,6 +302,17 @@ server_data = [
         expectation='staticexpected5',
     ),
     ServerData(
+        msg='Static server with release images 5 and corrupted lefovers',
+        config=ServerConfig(
+            pool_dir='releases5',
+            branches=('stable',),
+        ),
+        expectation='staticexpected5',
+        # We expect the server to log a warning and continue anyway
+        mock_leftovers=EXPECTATION_PARENT / 'staticexpected5_mock_corrupted_leftover',
+        replaced_leftovers=True,
+    ),
+    ServerData(
         msg='Image with a broken manifest',
         config=ServerConfig(
             pool_dir='unexpected-manifest',

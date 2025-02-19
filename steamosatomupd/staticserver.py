@@ -188,11 +188,16 @@ class UpdateParser(pyinotify.ProcessEvent):
                     # Compare the existing (old) data with the new update
                     # In order to do the comparison we need to filter out the estimated download size,
                     # because at this stage we didn't calculate it yet.
-                    old_update = UpdatePath.from_dict(old_data)
-                    for candidate in old_update.candidates:
-                        candidate.image.estimated_size = 0
+                    try:
+                        old_update = UpdatePath.from_dict(old_data)
+                        for candidate in old_update.candidates:
+                            candidate.image.estimated_size = 0
 
-                    old_data = old_update.to_dict()
+                        old_data = old_update.to_dict()
+                    except KeyError as e:
+                        # If we can't parse the existing (old) json data, we log a warning and
+                        # just replace it with the new data
+                        log.warning('Unable to parse old update data %s: %s', json_path, e)
 
                 if old_data == update_dict:
                     log.debug('"%s" has not changed, skipping...', json_path)
