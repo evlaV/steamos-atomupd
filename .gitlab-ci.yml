@@ -44,7 +44,7 @@ default:
 
 test:debian-12:
     extends: .test_debian_template
-    image: debian:bookworm-slim
+    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/debian:bookworm-slim
 
 test:jupiter:
     extends: .test_template
@@ -72,7 +72,7 @@ test:jupiter:
 .lint_template:
     stage: lint
     needs: [ ]
-    image: archlinux:base-devel
+    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/archlinux:base-devel
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           python-flask python-semantic-version python-setuptools python-pyinotify python-pylint mypy
@@ -91,7 +91,7 @@ lint:mypy:
 # doesn't have git, therefore no `git describe`
 prepare:
     stage: docker-prepare
-    image: debian:bookworm-slim
+    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/debian:bookworm-slim
     script:
         - ci/prepare.sh > VERSION
     artifacts:
