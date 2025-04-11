@@ -266,9 +266,10 @@ images_hierarchies = [
         manifests=[
             Manifest(Variant.STEAMDECK, 'snapshot', '20230801.1'),
 
-            Manifest(Variant.STEAMDECK_RC, 'snapshot', '20220303.1'),
+            Manifest(Variant.STEAMDECK_RC, '3.0', '20220303.1'),
 
             Manifest(Variant.STEAMDECK_BETA, '3.5', '20230815.100'),
+            Manifest(Variant.STEAMDECK_BETA, '3.5', '20250411.100'),
         ]
     ),
 
@@ -460,6 +461,8 @@ def build_image_hierarchy(path: Path, only_additional_images=False) -> None:
             img_name = f'{manifest.product}-{manifest.release}-{manifest.buildid}-{manifest.version}-{manifest.arch}-{manifest.variant}'
             img_manifest = img_dir / f'{img_name}.manifest.json'
             img_raucb = img_dir / f'{img_name}.raucb'
+            chunks_details = img_dir / f'{img_name}.chunks_details.json'
+            mock_chunks_details = Path(__file__).parent.absolute() / 'rauc' / f'{img_name}.chunks_details.json'
             mock_raucb = Path(__file__).parent.absolute() / 'rauc' / f'{img_name}.raucb'
 
             img_dir.mkdir(parents=True, exist_ok=True)
@@ -500,5 +503,8 @@ def build_image_hierarchy(path: Path, only_additional_images=False) -> None:
             else:
                 # Otherwise create an empty file as a placeholder
                 img_raucb.touch()
+
+            if mock_chunks_details.is_file():
+                chunks_details.symlink_to(mock_chunks_details)
 
             (img_dir / f'{img_name}.castr').mkdir()

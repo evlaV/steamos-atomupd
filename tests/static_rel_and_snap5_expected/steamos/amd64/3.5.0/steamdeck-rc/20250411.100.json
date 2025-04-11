@@ -1,0 +1,19 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "amd64",
+                    "buildid": "20220303.1",
+                    "estimated_size": 1837808163,
+                    "product": "steamos",
+                    "release": "holo",
+                    "variant": "steamdeck-rc",
+                    "version": "3.0.0"
+                },
+                "update_path": "steamos/holo/3.0/amd64/steamos-holo-20220303.1-3.0-amd64-steamdeck-rc.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}

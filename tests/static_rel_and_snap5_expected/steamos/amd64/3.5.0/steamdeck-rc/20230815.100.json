@@ -9,9 +9,9 @@
                     "product": "steamos",
                     "release": "holo",
                     "variant": "steamdeck-rc",
-                    "version": "snapshot"
+                    "version": "3.0.0"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20220303.1-snapshot-amd64-steamdeck-rc.raucb"
+                "update_path": "steamos/holo/3.0/amd64/steamos-holo-20220303.1-3.0-amd64-steamdeck-rc.raucb"
             }
         ],
         "release": "holo"

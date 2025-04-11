@@ -32,6 +32,34 @@ ROOTFS_INDEX = Path('rootfs.img.caibx')
 COMPRESSION_RATIO = 1.33
 
 
+def get_precise_update_size(seed_index: Path, update_index: Path, chunks_details: Path) -> int:
+    """Get the precise update download size
+
+    If we have the chunks details JSON file, we know exactly what's the size of
+    compressed chunks on the server. This means that we don't need to do an
+    estimation, and we can instead precisely know how much data needs to be
+    downloaded.
+
+    Returns the precise update download size in Bytes or zero if an error occurs.
+    """
+
+    info = subprocess.run(['desync', 'info',
+                           '--seed', seed_index,
+                           '--chunks-info', chunks_details,
+                           update_index],
+                          check=False,
+                          capture_output=True,
+                          text=True)
+
+    if info.returncode != 0:
+        log.warning("Failed to gather information about the update: %i: %s",
+                    info.returncode, info.stdout)
+        return 0
+
+    index_info = json.loads(info.stdout)
+    return index_info.get("dedup-size-not-in-seed-nor-cache-compressed", 0)
+
+
 def get_update_size(seed_index: Path, update_index: Path) -> int:
     """Get the estimated update download size
 

@@ -189,7 +189,7 @@ server_data = [
         expectation='static_rel_and_snap4_expected',
     ),
     ServerData(
-        msg='Static server with snapshot and release images 5',
+        msg='Static server with snapshot and release images including precise update size 5',
         config=ServerConfig(
             pool_dir='releases-and-snaps5',
             branches=('stable', 'beta', 'rc'),

@@ -32,7 +32,7 @@ from pathlib import Path
 
 from steamosatomupd.image import Image
 from steamosatomupd.update import UpdateCandidate, UpdatePath, UpdateType
-from steamosatomupd.utils import get_update_size, extract_index_from_raucb
+from steamosatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size
 
 log = logging.getLogger(__name__)
 
@@ -42,6 +42,7 @@ IMAGE_MANIFEST_EXT = '.manifest.json'
 
 RAUC_BUNDLE_EXT = '.raucb'
 CASYNC_STORE_EXT = '.castr'
+CHUNKS_DETAILS_EXT = '.chunks_details.json'
 
 
 def _get_rauc_update_path(images_dir: str, manifest_path: str) -> str:
@@ -605,8 +606,17 @@ class ImagePool:
         update_index = extract_index_from_raucb(update_raucb, Path(self.extract_dir),
                                                 update_copy.image.get_unique_name())
 
+        chunks_details = update_raucb.with_suffix(CHUNKS_DETAILS_EXT)
+
         if initial_image_index and update_index:
-            update_copy.image.estimated_size = get_update_size(initial_image_index, update_index)
+            if chunks_details.is_file():
+                update_copy.image.estimated_size = get_precise_update_size(initial_image_index, update_index,
+                                                                           chunks_details)
+            else:
+                # TODO when we start to always include the chunks_details.json file for new images,
+                # we can stop doing this fallback estimated update size entirely
+                log.info("The download size is only an estimation because the chunks_details file is missing")
+                update_copy.image.estimated_size = get_update_size(initial_image_index, update_index)
         else:
             # Estimating the download size is not a critical operation.
             # If it fails we try to continue anyway.
