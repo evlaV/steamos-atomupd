@@ -97,12 +97,12 @@ Branches = stable;rc;beta;bc;preview;pc;main
 ```
 
 To let the server automatically generate this file, you can use the section
-`Images.ProvideRemoteInfoConfig` in the server configuration file.
+`Images.ProvideRemoteInfoConfig.$ARCH` in the server configuration file.
 If there are EOLs variants listed there, the server will automatically exclude them when
 generating the `remote-info.conf` files for the other non EOLs variants.
 
 For example if `steamtest1` is an EOL variant, and we have `Variants = steamdeck steamtest1`
-in `Images.ProvideRemoteInfoConfig`, the generated `/steamtest1/remote-info.conf` will have
+in `Images.ProvideRemoteInfoConfig.amd64`, the generated `/steamtest1/remote-info.conf` will have
 both variants listed, while `/steamdeck/remote-info.conf` will only have `steamdeck`.
 
 Structure of update candidates

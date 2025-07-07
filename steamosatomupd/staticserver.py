@@ -239,9 +239,9 @@ class UpdateParser(pyinotify.ProcessEvent):
 
             remote_info_written.add(remote_info)
 
-            known_variants = self.image_pool.remote_info_config_variants
+            known_variants = self.image_pool.remote_info_config_variants.get(image.arch, [])
             known_variants_without_eols = known_variants.copy()
-            known_branches = self.image_pool.remote_info_config_branches
+            known_branches = self.image_pool.remote_info_config_branches.get(image.arch, [])
 
             # Remove all EOLs variants.
             # The only exception is for remote-info.conf files for EOL variants. In those cases we don't want to
@@ -333,7 +333,7 @@ class UpdateParser(pyinotify.ProcessEvent):
             # it is, because it's likely a considerable amount of devices will pass through this one.
             estimate_download_size = index < index_cutoff or image.is_checkpoint()
 
-            if self.image_pool.generate_remote_info_config():
+            if self.image_pool.generate_remote_info_config(image.arch):
                 self._write_remote_info_config(remote_info_written, image)
 
             for requested_branch in supported_branches:

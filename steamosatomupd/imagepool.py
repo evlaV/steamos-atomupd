@@ -196,12 +196,11 @@ class ImagePool:
             branches_to_consider = dict(config['Images.BranchesToConsider'])
         else:
             branches_to_consider = {}
-        if config.has_section('Images.ProvideRemoteInfoConfig'):
-            remote_info_variants = config['Images.ProvideRemoteInfoConfig'].get('Variants', '').split()
-            remote_info_branches = config['Images.ProvideRemoteInfoConfig'].get('Branches', '').split()
-        else:
-            remote_info_variants = []
-            remote_info_branches = []
+        ri_variants: dict[str, list[str]] = {}
+        ri_branches: dict[str, list[str]] = {}
+        for arch in config['Images']['Archs'].split():
+            ri_variants[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Variants', fallback='').split()
+            ri_branches[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Branches', fallback='').split()
         self._create_pool(config['Images']['PoolDir'],
                           config['Images'].getboolean('Unstable'),
                           config['Images']['Products'].split(),
@@ -212,8 +211,8 @@ class ImagePool:
                           branches_to_consider,
                           config['Images']['Archs'].split(),
                           config['Images'].getboolean('StrictPoolValidation', True),
-                          remote_info_variants,
-                          remote_info_branches)
+                          ri_variants,
+                          ri_branches)
 
     @classmethod
     def validate_config(cls, config: ConfigParser) -> None:
@@ -227,23 +226,40 @@ class ImagePool:
                 log.error("Please provide a valid configuration file, the option '%s' is missing", option)
                 sys.exit(1)
 
-        if config.has_section('Images.ProvideRemoteInfoConfig'):
-            if not config['Images.ProvideRemoteInfoConfig'].get('Variants', ''):
-                log.error("Please provide a valid configuration file, the section 'ProvideRemoteInfoConfig' is missing "
-                          "the 'Variants' option")
-                sys.exit(1)
-            if not config['Images.ProvideRemoteInfoConfig'].get('Branches', ''):
-                log.error("Please provide a valid configuration file, the section 'ProvideRemoteInfoConfig' is missing "
-                          "the 'Branches' option")
-                sys.exit(1)
+        if config.has_section("Images.ProvideRemoteInfoConfig"):
+            log.error("Please provide a valid configuration file, the section Images.ProvideRemoteInfoConfig has "
+                      "been deprecated, now you must also append the desired architecture, e.g. "
+                      "Images.ProvideRemoteInfoConfig.amd64")
+            sys.exit(1)
+
+        remote_info_sections = [sec for sec in config.sections() if sec.startswith('Images.ProvideRemoteInfoConfig.')]
+        remote_info_archs = {sec.split('.', 2)[2] for sec in remote_info_sections}
+        archs = set(config['Images']['Archs'].split())
+        unexpected_archs = remote_info_archs - archs
+
+        if unexpected_archs:
+            log.error("Please provide a valid configuration file, the following archs in "
+                      "Images.ProvideRemoteInfoConfig.* are unexpected: %s", ', '.join(unexpected_archs))
+            sys.exit(1)
+
+        for arch in config['Images']['Archs'].split():
+            if config.has_section(f'Images.ProvideRemoteInfoConfig.{arch}'):
+                if not config[f'Images.ProvideRemoteInfoConfig.{arch}'].get('Variants', ''):
+                    log.error("Please provide a valid configuration file, the section 'ProvideRemoteInfoConfig' is "
+                              "missing the 'Variants' option")
+                    sys.exit(1)
+                if not config[f'Images.ProvideRemoteInfoConfig.{arch}'].get('Branches', ''):
+                    log.error("Please provide a valid configuration file, the section 'ProvideRemoteInfoConfig' is "
+                              "missing the 'Branches' option")
+                    sys.exit(1)
 
     def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str], variants_eol: dict[str, str],
                      supported_branches: list[str], branches_to_consider: dict[str, str],
                      supported_archs: list[str], strict_pool_validation: bool,
-                     remote_info_variants: list[str], remote_info_branches: list[str]) -> None:
+                     remote_info_variants: dict[str, list[str]], remote_info_branches: dict[str, list[str]]) -> None:
 
-        # Make sure the images directory exist
+        # Make sure the images directory exists
         images_dir = os.path.abspath(images_dir)
         if not os.path.isdir(images_dir):
             raise RuntimeError("Images dir '{}' does not exist".format(images_dir))
@@ -642,6 +658,6 @@ class ImagePool:
         """ Get list of supported branches"""
         return self.supported_branches
 
-    def generate_remote_info_config(self) -> bool:
+    def generate_remote_info_config(self, arch: str) -> bool:
         """ If we need to generate the remote-info.conf files """
-        return bool(self.remote_info_config_variants)
+        return bool(self.remote_info_config_variants.get(arch, False))
