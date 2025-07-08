@@ -1,0 +1,21 @@
+{
+    "minor": {
+        "candidates": [
+            {
+                "image": {
+                    "arch": "aarch64",
+                    "branch": "beta",
+                    "buildid": "20250707.100",
+                    "default_update_branch": "beta",
+                    "estimated_size": 0,
+                    "product": "steamos",
+                    "release": "holo",
+                    "variant": "steamdeck",
+                    "version": "3.8.5"
+                },
+                "update_path": "steamos/holo/3.8.5/aarch64/steamos-holo-20250707.100-3.8.5-aarch64-steamdeck.raucb"
+            }
+        ],
+        "release": "holo"
+    }
+}

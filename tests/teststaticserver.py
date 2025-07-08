@@ -562,6 +562,46 @@ server_data = [
         expectation='',
         exit_code=1,
     ),
+    ServerData(
+        msg='Configuration with unexpected remote info arch',
+        config=ServerConfig(
+            pool_dir='multi_arch',
+            branches=('stable',),
+            strict_pool_validation=False,
+            remote_info_config={
+                'amd64': RemoteInfoConfig(
+                    branches=('stable', 'beta'),
+                ),
+                'riscv': RemoteInfoConfig(
+                    branches=('stable', 'beta'),
+                ),
+            },
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Images for different architectures',
+        config=ServerConfig(
+            pool_dir='multi_arch',
+            archs=('amd64', 'aarch64'),
+            branches=('stable', 'beta'),
+            branches_to_consider={'beta': ['stable']},
+            strict_pool_validation=False,
+            remote_info_config={
+                'amd64': RemoteInfoConfig(
+                    variants=('steamdeck', 'vanilla'),
+                    branches=('stable', 'beta'),
+                ),
+                'aarch64': RemoteInfoConfig(
+                    variants=('steamdeck', 'vanilla', 'feature_x'),
+                    branches=('stable', 'beta', 'main'),
+                ),
+            },
+            variants=('steamdeck', 'vanilla'),
+        ),
+        expectation='multi_arch_expected',
+    ),
 ]
 
 
