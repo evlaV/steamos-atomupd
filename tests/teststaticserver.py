@@ -478,11 +478,53 @@ server_data = [
         expectation='branch2_eol_expected',
     ),
     ServerData(
+        msg='Same pool dir as before, this time the EOL variant is only listed in VariantsEOL',
+        config=ServerConfig(
+            pool_dir='branch2',
+            branches=('stable', 'beta'),
+            variants=('steamdeck',),
+            variants_eol=('vanilla:steamdeck',),
+        ),
+        expectation='branch2_eol_expected',
+    ),
+    ServerData(
         msg='Variant marked as EOL, even if is newer',
         config=ServerConfig(
             pool_dir='branch3_eol',
             branches=('stable',),
             variants=('steamdeck', 'vanilla', 'feature-x'),
+            variants_eol=('vanilla:steamdeck', 'feature-x:steamdeck'),
+            remote_info_config={
+                'amd64': RemoteInfoConfig(
+                    variants=('steamdeck', 'vanilla', 'feature-x'),
+                    branches=('stable',),
+                ),
+            },
+        ),
+        expectation='branch3_eol_expected',
+    ),
+    ServerData(
+        msg='One EOL variant also in the variants list, one not',
+        config=ServerConfig(
+            pool_dir='branch3_eol',
+            branches=('stable',),
+            variants=('steamdeck', 'feature-x'),
+            variants_eol=('vanilla:steamdeck', 'feature-x:steamdeck'),
+            remote_info_config={
+                'amd64': RemoteInfoConfig(
+                    variants=('steamdeck', 'vanilla', 'feature-x'),
+                    branches=('stable',),
+                ),
+            },
+        ),
+        expectation='branch3_eol_expected',
+    ),
+    ServerData(
+        msg='Multiple EOL variants not listed in variants',
+        config=ServerConfig(
+            pool_dir='branch3_eol',
+            branches=('stable',),
+            variants=('steamdeck',),
             variants_eol=('vanilla:steamdeck', 'feature-x:steamdeck'),
             remote_info_config={
                 'amd64': RemoteInfoConfig(

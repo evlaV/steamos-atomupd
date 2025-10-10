@@ -277,6 +277,13 @@ class ImagePool:
         self.image_updates_found: list[UpdateCandidate] = []
         self.extract_dir = tempfile.mkdtemp()
 
+        # If a variant is listed in VariantsEOL, but not in Variants, the expected behavior
+        # would still be for the server to handle it.
+        # Ensure all EOL variants are part of the `supported_variants`
+        eol_keys = set(self.variants_eol.keys())
+        missing_variants = eol_keys.difference(set(self.supported_variants))
+        self.supported_variants.extend(list(missing_variants))
+
         self.branches_to_consider: dict[str, list[str]] = {}
         for branch in branches_to_consider:
             self.branches_to_consider[branch] = branches_to_consider[branch].split()
