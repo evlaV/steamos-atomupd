@@ -564,7 +564,7 @@ class ImagePool:
                     # Even if we don't have a single image in the pool for one of the branches listed in "Branches",
                     # we don't consider this an error and continue anyway. This is a common situation when you are
                     # bootstrapping a new server, and you don't have yet all the image types you expect.
-                    log.debug("There is not a valid candidate for the branch %s. Continuing...")
+                    log.debug("There is not a valid candidate for the branch %s. Continuing...", requested_branch)
                     return None
             else:
                 log.debug("There isn't a fallback update for [%i, %s]",
