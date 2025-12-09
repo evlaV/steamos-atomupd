@@ -292,11 +292,14 @@ def download_update_from_rest_url(meta_url: str, image: Image,
     raise request_error
 
 
-def ensure_index_exists(regenerate: bool) -> None:
+def ensure_index_exists(only_symlink: bool = False) -> None:
     """ Ensure that the index file, and its symlink, are available
 
     If RAUC is configured to use the new `--regenerate-invalid-seeds` Desync
     argument, we don't need to regenerate the index ourselves.
+
+    Args:
+        only_symlink (bool): Whether to only symlink the index file
     """
 
     seed_index = get_active_slot_index()
@@ -310,9 +313,11 @@ def ensure_index_exists(regenerate: bool) -> None:
     rootfs_symlink.unlink(missing_ok=True)
     os.symlink(rootfs_dir, rootfs_symlink)
 
-    if seed_index.exists():
-        if not regenerate or desync_has_regenerate_argument():
-            return
+    if only_symlink:
+        return
+
+    if seed_index.exists() and desync_has_regenerate_argument():
+        return
 
     seed_index.unlink(missing_ok=True)
 
@@ -329,7 +334,7 @@ def do_update(attempts_log: Path, url: str, quiet: bool) -> None:
 
     global progress_process
     if is_desync_in_use():
-        ensure_index_exists(regenerate=True)
+        ensure_index_exists()
 
     # Remount /tmp with max memory and inodes number
     #
@@ -405,7 +410,10 @@ def estimate_download_size(runtime_dir: Path, update_url: str,
         # This image can be installed directly, use the current active
         # partition as a seed
         try:
-            ensure_index_exists(regenerate=False)
+            # In the edge case where we don't already have the index file, e.g. after a factory reset, we
+            # don't re-create the index here. That operation can take up to 30 seconds to complete, and
+            # we shouldn't stall the "check for updates" operation for so long
+            ensure_index_exists(only_symlink=True)
         except subprocess.CalledProcessError as e:
             log.debug("Unable to estimate the download size because creating the index file failed: %s", e)
             log.debug("Continuing...")
