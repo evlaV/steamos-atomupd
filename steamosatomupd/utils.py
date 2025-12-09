@@ -103,13 +103,18 @@ def extract_index_from_raucb(raucb_location: Path | str, extract_prefix: Path,
         # Trust the environment because if we are inside a Docker image, we are unable to check
         # the ownership of a bundle. However, the bundle signature is still validated, and the
         # result is only used for estimating the download size.
-        extract = subprocess.run(['rauc', 'extract',
-                                  '--conf', str(DEFAULT_RAUC_CONF),
-                                  '--trust-environment', str(raucb_location), str(extract_path)],
-                                 check=False,
-                                 stderr=subprocess.STDOUT,
-                                 stdout=subprocess.PIPE,
-                                 text=True)
+        try:
+            extract = subprocess.run(['rauc', 'extract',
+                                      '--conf', str(DEFAULT_RAUC_CONF),
+                                      '--trust-environment', str(raucb_location), str(extract_path)],
+                                     check=False,
+                                     stderr=subprocess.STDOUT,
+                                     stdout=subprocess.PIPE,
+                                     text=True,
+                                     timeout=20)
+        except subprocess.TimeoutExpired:
+            log.warning("Timeout reached while attempting to extract the image '%s'", raucb_location)
+            return None
 
         if extract.returncode != 0:
             log.warning("Failed to extract bundle: %i: %s", extract.returncode, extract.stdout)
