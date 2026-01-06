@@ -430,6 +430,7 @@ images_hierarchies = [
 
             Manifest(Variant.STEAMDECK, '3.6.7', '20240802.1', branch=Branch.RC),
 
+            Manifest(Variant.STEAMDECK, '3.6.8', '20240804.100', branch=Branch.BETA, skip=True),
             Manifest(Variant.STEAMDECK, '3.6.8', '20240805.100', branch=Branch.BETA),
 
             Manifest(Variant.STEAMDECK, '3.5.0', '20240707.111', branch=Branch.BC),
