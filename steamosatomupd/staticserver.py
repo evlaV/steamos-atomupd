@@ -22,6 +22,7 @@
 import argparse
 import configparser
 import contextlib
+from collections import defaultdict, deque
 from datetime import datetime
 import fcntl
 import json
@@ -32,6 +33,7 @@ import signal
 import sys
 from difflib import ndiff
 from pathlib import Path
+from typing import DefaultDict, Deque
 
 import pyinotify # type: ignore
 
@@ -48,6 +50,8 @@ DEFAULT_SERVE_UNSTABLE = False
 TRIGGER_FILE = "updated.txt"
 # Please keep this in sync with atomupd-daemon
 REMOTE_INFO_FILE = "remote-info.conf"
+# Please keep this in sync with atomupd-daemon
+BUILDS_LIST = "builds.json"
 
 
 @contextlib.contextmanager
@@ -315,6 +319,7 @@ class UpdateParser(pyinotify.ProcessEvent):
         second_last_update_jsons: set[Path] = set()
         # List of remote-info.conf file that have been already written
         remote_info_written: set[Path] = set()
+        builds_jsons_to_process: DefaultDict[Path, Deque[dict]] = defaultdict(deque)
 
         # Number of images for which we should pre-estimate the download size.
         # This is an arbitrary number chosen to be not big enough to slow down the static
@@ -335,6 +340,25 @@ class UpdateParser(pyinotify.ProcessEvent):
 
             if self.image_pool.generate_remote_info_config(image.arch):
                 self._write_remote_info_config(remote_info_written, image)
+
+            if not image.should_be_skipped() and not image.shadow_checkpoint:
+                # If this image is marked as "skip", or it is a shadow checkpoint, we don't write it in the
+                # builds JSON list
+
+                builds_json = Path(f"{image.release}/{image.product}/{image.arch}/{image.variant}/{BUILDS_LIST}")
+                build_info: dict[str, str | int] = {
+                    "version": image.get_version_str(),
+                    "buildid": str(image.buildid),
+                    "branch": image.branch,
+                    "update_path": image_update.update_path,
+                }
+                if image.is_checkpoint():
+                    build_info["introduces_checkpoint"] = image.introduces_checkpoint
+                if image.requires_checkpoint > 0:
+                    build_info["requires_checkpoint"] = image.requires_checkpoint
+
+                # Prepend items to create a list from oldest to newest
+                builds_jsons_to_process[builds_json].appendleft(build_info)
 
             for requested_branch in supported_branches:
                 json_path = Path(image.get_update_path(requested_branch))
@@ -364,6 +388,22 @@ class UpdateParser(pyinotify.ProcessEvent):
                                         fallback_update_jsons, UpdateType.unexpected_buildid)
                 self._write_update_json(image_update, requested_branch, json_path_second_last,
                                         second_last_update_jsons, UpdateType.second_last)
+
+        for builds_json_path, content in builds_jsons_to_process.items():
+            if not builds_json_path.parent.exists():
+                log.info('"%s" doesn\'t exist, likely because all images are using the legacy variant',
+                         builds_json_path)
+                continue
+
+            with open(builds_json_path, 'w', encoding='utf-8') as f:
+                # Write a more compact JSON, with one element per line
+                f.write("[\n")
+                for i, img in enumerate(content):
+                    f.write("    " + json.dumps(img))
+                    if i < len(content) - 1:
+                        f.write(",")
+                    f.write("\n")
+                f.write("]\n")
 
         # Pass the canonical update JSONs, because we want to check for leftovers only inside
         # the `/product/arch/version/variant` directories we are actually handling with this
