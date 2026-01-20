@@ -24,7 +24,7 @@ from contextlib import redirect_stdout
 from dataclasses import dataclass
 from unittest.mock import patch, mock_open
 
-from steamosatomupd import mkmanifest
+from holoatomupd import mkmanifest
 
 STANDARD_ENTRIES = ('ANSI_COLOR="1;35"\n'
                     'HOME_URL="https://www.steampowered.com/"\n'

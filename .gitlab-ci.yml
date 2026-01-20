@@ -80,12 +80,12 @@ test:jupiter:
 lint:pylint:
     extends: .lint_template
     script:
-        - pylint steamosatomupd
+        - pylint holoatomupd
 
 lint:mypy:
     extends: .lint_template
     script:
-        - mypy steamosatomupd
+        - mypy holoatomupd
 
 # We can't do this in the docker step because the kaniko executor
 # doesn't have git, therefore no `git describe`

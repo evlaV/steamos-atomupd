@@ -37,9 +37,9 @@ from typing import DefaultDict, Deque
 
 import pyinotify # type: ignore
 
-from steamosatomupd.image import Image
-from steamosatomupd.imagepool import ImagePool
-from steamosatomupd.update import UpdateCandidate, UpdateType, UpdatePath
+from holoatomupd.image import Image
+from holoatomupd.imagepool import ImagePool
+from holoatomupd.update import UpdateCandidate, UpdateType, UpdatePath
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -121,7 +121,7 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         # Arguments
 
-        parser = argparse.ArgumentParser(description="SteamOS Update Server")
+        parser = argparse.ArgumentParser(description="Holo Update Server")
         parser.add_argument('-c', '--config', metavar='FILE', required=True,
                             help="configuration file")
         parser.add_argument('-r', '--run-daemon', action='store_true', dest='daemon',

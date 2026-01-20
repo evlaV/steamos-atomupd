@@ -19,7 +19,7 @@
 import argparse
 import json
 
-from steamosatomupd.image import Image
+from holoatomupd.image import Image
 
 
 def main(args=None):

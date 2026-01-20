@@ -12,7 +12,7 @@ moduledir = join_paths(prefix, 'lib', 'python3', 'dist-packages')
 completionsdir = join_paths(prefix, get_option('datadir'), 'bash-completion', 'completions')
 systemdunitdir = join_paths(prefix, 'lib', 'systemd', 'system')
 
-install_subdir('steamosatomupd',
+install_subdir('holoatomupd',
   exclude_directories: ['__pycache__'],
   install_dir: moduledir,
 )

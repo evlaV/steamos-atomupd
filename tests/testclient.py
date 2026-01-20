@@ -29,9 +29,9 @@ from pathlib import Path
 from typing import List
 from unittest.mock import patch
 
-from steamosatomupd.image import BuildId, Image
-from steamosatomupd.update import UpdatePath
-from steamosatomupd import client
+from holoatomupd.image import BuildId, Image
+from holoatomupd.update import UpdatePath
+from holoatomupd import client
 
 data_path = Path(__file__).parent.resolve() / 'client_data'
 rauc_conf_dir = Path(__file__).parent.resolve() / 'rauc_conf_dir'
@@ -124,7 +124,7 @@ update_data = [
 
 
 class LoopPrevention(unittest.TestCase):
-    @patch('steamosatomupd.client.set_rauc_conf')
+    @patch('holoatomupd.client.set_rauc_conf')
     @patch('os.geteuid')
     def test_updates(self, geteuid, set_rauc_conf):
         for data in update_data:
@@ -210,8 +210,8 @@ rauc_conf_data = [
 
 
 class RaucConfigParsing(unittest.TestCase):
-    @patch('steamosatomupd.client.get_rauc_config')
-    @patch('steamosatomupd.client.set_rauc_conf')
+    @patch('holoatomupd.client.get_rauc_config')
+    @patch('holoatomupd.client.set_rauc_conf')
     @patch('os.geteuid')
     def test_parsing_rauc_conf(self, geteuid, set_rauc_conf, get_rauc_config):
         for data in rauc_conf_data:

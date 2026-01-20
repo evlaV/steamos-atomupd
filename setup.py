@@ -4,13 +4,13 @@
 
 from setuptools import setup
 
-setup(name='SteamOS Atomic Updater',
+setup(name='Holo Atomic Updater',
       version='0.20190711.0',
-      description='SteamOS Atomic Update - Python library that is used by both the client and the server.',
+      description='Holo Atomic Update - Python library that is used by both the client and the server.',
       long_description=open('README.md', 'r').read(),
       author='Arnaud Rebillout',
       author_email='arnaud.rebillout@collabora.com',
       url='https://store.steampowered.com/steamos/',
       license='LGPL-2.1',
-      packages=['steamosatomupd'],
+      packages=['holoatomupd'],
      )

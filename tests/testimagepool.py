@@ -19,9 +19,9 @@
 import unittest
 from collections import defaultdict
 
-from steamosatomupd.image import Image
-from steamosatomupd.imagepool import _get_update_candidates
-from steamosatomupd.update import UpdateCandidate, UpdateType
+from holoatomupd.image import Image
+from holoatomupd.imagepool import _get_update_candidates
+from holoatomupd.update import UpdateCandidate, UpdateType
 
 imgdata = {
     'product': 'steamos',

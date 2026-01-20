@@ -23,7 +23,7 @@ from pathlib import Path
 
 import semantic_version
 
-from steamosatomupd.image import BuildId
+from holoatomupd.image import BuildId
 
 log = logging.getLogger(__name__)
 

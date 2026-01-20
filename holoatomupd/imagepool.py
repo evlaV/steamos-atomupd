@@ -33,9 +33,9 @@ from pathlib import Path
 
 import semantic_version
 
-from steamosatomupd.image import Image, BuildId
-from steamosatomupd.update import UpdateCandidate, UpdatePath, UpdateType
-from steamosatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size, \
+from holoatomupd.image import Image, BuildId
+from holoatomupd.update import UpdateCandidate, UpdatePath, UpdateType
+from holoatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size, \
     parse_lwc_exempts
 
 log = logging.getLogger(__name__)

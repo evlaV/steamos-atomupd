@@ -410,7 +410,7 @@ server_data = [
             branches=('stable', 'beta'),
         ),
         expectation='skip_checkpoint_expected',
-        log_message='WARNING:steamosatomupd.imagepool:The pool has a checkpoint for (steamdeck_stable, 1) marked as '
+        log_message='WARNING:holoatomupd.imagepool:The pool has a checkpoint for (steamdeck_stable, 1) marked as '
                     '\'skip\', but there isn\'t a canonical checkpoint to replace it.',
     ),
     ServerData(
@@ -865,7 +865,7 @@ class StaticServerTestCase(unittest.TestCase):
     # Do not cut out the assertion error diff messages
     maxDiff = None
 
-    @patch('steamosatomupd.utils.DEFAULT_RAUC_CONF', Path.cwd() / 'tests/rauc/system.conf')
+    @patch('holoatomupd.utils.DEFAULT_RAUC_CONF', Path.cwd() / 'tests/rauc/system.conf')
     def test_static_server(self):
         # If necessary for debugging, the option `delete=False` can be used to prevent
         # automatic deletion of the temporary directory. Also remember to comment out
@@ -874,7 +874,7 @@ class StaticServerTestCase(unittest.TestCase):
         build_image_hierarchy(Path(images.name))
 
         try:
-            from steamosatomupd import staticserver
+            from holoatomupd import staticserver
         except ModuleNotFoundError as e:
             print('\n'.join([
               "Module not found: {}.".format(e),

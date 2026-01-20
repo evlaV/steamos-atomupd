@@ -35,10 +35,10 @@ import multiprocessing
 from functools import cache
 from pathlib import Path
 
-from steamosatomupd.image import Image
-from steamosatomupd.update import UpdatePath
-from steamosatomupd.utils import get_update_size, extract_index_from_raucb
-from steamosatomupd.utils import DEFAULT_RAUC_CONF, FALLBACK_RAUC_CONF, ROOTFS_INDEX
+from holoatomupd.image import Image
+from holoatomupd.update import UpdatePath
+from holoatomupd.utils import get_update_size, extract_index_from_raucb
+from holoatomupd.utils import DEFAULT_RAUC_CONF, FALLBACK_RAUC_CONF, ROOTFS_INDEX
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
@@ -632,14 +632,20 @@ def desync_has_regenerate_argument() -> bool:
 def set_rauc_conf():
     """Set the RAUC configuration path and HTTP proxy and restart the service"""
 
-    # Set, or unset, the 'STEAMOS_CUSTOM_RAUC_CONF' environment variable to
+    # Set, or unset, the 'STEAMOS_CUSTOM_RAUC_CONF' environment variable
+    # and the new 'HOLO_CUSTOM_RAUC_CONF' variable to
     # ensure that the RAUC service will be restarted with the correct configuration
     if rauc_conf_path == DEFAULT_RAUC_CONF:
         subprocess.run(['systemctl', 'unset-environment', 'STEAMOS_CUSTOM_RAUC_CONF'],
                        check=True)
+        subprocess.run(['systemctl', 'unset-environment', 'HOLO_CUSTOM_RAUC_CONF'],
+                       check=True)
     else:
         subprocess.run(['systemctl', 'set-environment',
                         f'STEAMOS_CUSTOM_RAUC_CONF={rauc_conf_path}'],
+                       check=True)
+        subprocess.run(['systemctl', 'set-environment',
+                        f'HOLO_CUSTOM_RAUC_CONF={rauc_conf_path}'],
                        check=True)
 
     # Import the current HTTP/HTTPS proxy settings, if any
@@ -660,7 +666,7 @@ class UpdateClient:
 
         # Arguments
 
-        parser = argparse.ArgumentParser(description="SteamOS Update Client")
+        parser = argparse.ArgumentParser(description="Holo Update Client")
         parser.add_argument('-c', '--config',
                             metavar='FILE', default=DEFAULT_CONFIG_FILE,
                             help="configuration file (default: {})".format(DEFAULT_CONFIG_FILE))

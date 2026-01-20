@@ -26,8 +26,8 @@ from typing import Any
 
 import semantic_version
 
-from steamosatomupd.image import Image, BuildId
-from steamosatomupd.utils import parse_lwc_exempts
+from holoatomupd.image import Image, BuildId
+from holoatomupd.utils import parse_lwc_exempts
 
 
 class UpdateType(Enum):

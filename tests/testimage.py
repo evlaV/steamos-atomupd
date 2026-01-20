@@ -19,7 +19,7 @@
 import unittest
 from dataclasses import dataclass
 
-from steamosatomupd.image import Image
+from holoatomupd.image import Image
 
 imgdata = {
     'product': 'steamos',

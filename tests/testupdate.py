@@ -19,7 +19,7 @@
 import semantic_version
 import unittest
 
-from steamosatomupd.update import UpdatePath
+from holoatomupd.update import UpdatePath
 
 oldimgdata = {
     'product': 'steamos',
