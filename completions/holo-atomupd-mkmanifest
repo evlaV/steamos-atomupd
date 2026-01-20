@@ -12,14 +12,14 @@
 #  Free Software Foundation; either version 2.1 of the License, or (at your
 #  option) any later version.
 
-_steamos-atomupd-mkmanifest()
+_holo-atomupd-mkmanifest()
 {
     local cur prev words cword
     _init_completion || return
 
     case "$prev" in
         --product)
-            COMPREPLY=($(compgen -W "steamos" -- "$cur"))
+            COMPREPLY=($(compgen -W "steamos holo" -- "$cur"))
             return
             ;;
         --release)
@@ -46,4 +46,4 @@ _steamos-atomupd-mkmanifest()
 
     COMPREPLY=($(compgen -W "-h --help --product --release --variant --arch --version --buildid --checkpoint" -- "$cur"))
 } &&
-complete -F _steamos-atomupd-mkmanifest steamos-atomupd-mkmanifest
+complete -F _holo-atomupd-mkmanifest holo-atomupd-mkmanifest

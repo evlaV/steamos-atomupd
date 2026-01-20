@@ -2,7 +2,7 @@
 
 binaries = [
   'holo-atomupd-client',
-  'steamos-atomupd-mkmanifest',
+  'holo-atomupd-mkmanifest',
   'steamos-atomupd-staticserver',
 ]
 
