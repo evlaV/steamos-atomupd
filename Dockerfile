@@ -35,7 +35,7 @@
 #              -v ./path/to/data/:/atomupd/data/:ro \
 #              -v ./path/to/meta/:/atomupd/meta/:rw \
 #              -w /atomupd/meta \
-#              --entrypoint /usr/local/bin/steamos-atomupd-staticserver \
+#              --entrypoint /usr/local/bin/holo-atomupd-staticserver \
 #              steamos-atomupd:latest -d -c /atomupd/server.conf
 #
 #   # To test the static server:
@@ -45,7 +45,7 @@
 #              -v $(pwd)/examples/examples-data:/atomupd/data/examples-data:ro \
 #              -v $(pwd)/tmp:/atomupd/data:rw \
 #              -w /atomupd/data \
-#              --entrypoint /usr/local/bin/steamos-atomupd-staticserver \
+#              --entrypoint /usr/local/bin/holo-atomupd-staticserver \
 #              steamos-atomupd:latest -d -c /atomupd/server.conf
 #    # There should be no difference
 #    diff -ru tests/staticexpected/steamos tmp/steamos

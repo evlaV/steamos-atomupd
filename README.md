@@ -33,7 +33,7 @@ Run locally:
 
     # Create the meta JSON files
     export IN_SOURCE_TREE=1
-    ./bin/steamos-atomupd-staticserver --debug --config examples/server-releases.conf
+    ./bin/holo-atomupd-staticserver --debug --config examples/server-releases.conf
 
 
 Integration

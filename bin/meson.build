@@ -3,7 +3,7 @@
 binaries = [
   'holo-atomupd-client',
   'holo-atomupd-mkmanifest',
-  'steamos-atomupd-staticserver',
+  'holo-atomupd-staticserver',
 ]
 
 install_data(binaries,

@@ -940,7 +940,7 @@ class StaticServerTestCase(unittest.TestCase):
 
                     my_env = os.environ
                     my_env["IN_SOURCE_TREE"] = "True"
-                    daemon = subprocess.Popen([sys.executable, steamos_atomupd_dir / 'bin/steamos-atomupd-staticserver', '--run-daemon', '--debug', '--config', tmp_config.name],
+                    daemon = subprocess.Popen([sys.executable, steamos_atomupd_dir / 'bin/holo-atomupd-staticserver', '--run-daemon', '--debug', '--config', tmp_config.name],
                                               env=my_env, cwd=meta_dir)
 
                     # Give the static server time to set up it's watch, etc.
@@ -1049,7 +1049,7 @@ class StaticServerTestCase(unittest.TestCase):
                     my_env = os.environ
                     my_env["IN_SOURCE_TREE"] = "True"
                     second_daemon = subprocess.Popen([sys.executable,
-                                                      steamos_atomupd_dir / 'bin/steamos-atomupd-staticserver',
+                                                      steamos_atomupd_dir / 'bin/holo-atomupd-staticserver',
                                                       '--run-daemon', '--debug', '--config', tmp_config.name],
                                                      env=my_env, cwd=meta_dir)
 
