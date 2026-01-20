@@ -43,7 +43,7 @@ Integration
 
 Install the client:
 
-    apt install steamos-atomupd-client
+    apt install holo-atomupd-client
 
 Create a configuration file at `/etc/holo-atomupd/client.conf`:
 
@@ -56,7 +56,7 @@ Create a configuration file at `/etc/holo-atomupd/client.conf`:
 
 Test the communication with the server:
 
-    steamos-atomupd-client --query-only
+    holo-atomupd-client --query-only
 
 #### Server-side
 
