@@ -5,7 +5,7 @@ Wants=network-online.target
 Documentation=https://gitlab.collabora.com/steam/steamos-atomupd
 
 [Service]
-WorkingDirectory=/etc/steamos-atomupd/server
+WorkingDirectory=/etc/holo-atomupd/server
 ExecStart=@bindir@/steamos-atomupd-server --config %i.conf
 
 [Install]
