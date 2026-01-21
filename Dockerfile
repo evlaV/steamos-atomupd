@@ -5,22 +5,6 @@
 # -----
 #   docker build -t steamos-atomupd:latest .
 #
-# run (server):
-# ------------
-#   # This assumes /path/to/server.conf references "/atomupd/data" as its root,
-#   # maps the config file and relevant data directory into docker as read-only,
-#   # and publishes the expected ports.
-#   #
-#   docker run --rm --init --name my-atomupd-server \
-#              -v ./path/to/server.conf:/atomupd/server.conf:ro \
-#              -v ./path/to/data/:/atomupd/data/:ro \
-#              -p 8000:8000 -p 5000:5000 \
-#              steamos-atomupd:latest -d -c /atomupd/server.conf
-#
-# launch shell against a running server:
-# -------------------------------------
-#   docker exec -ti my-atomupd-server bash
-#
 # run (export metadata for static server):
 # ----------------------------------------
 #   # This assumes /path/to/server.conf references "/atomupd/data" as its root.
@@ -112,5 +96,5 @@ head -v -n-0 /etc/debian_chroot /etc/issue /usr/lib/os-release || :; \
 
 STOPSIGNAL SIGINT
 
-ENTRYPOINT [ "/usr/local/bin/steamos-atomupd-server" ]
+ENTRYPOINT [ "/usr/local/bin/holo-atomupd-staticserver" ]
 EXPOSE 5000

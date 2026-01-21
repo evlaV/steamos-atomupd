@@ -35,4 +35,3 @@ test('Unit tests', python,
 )
 
 subdir('bin')
-subdir('data')
