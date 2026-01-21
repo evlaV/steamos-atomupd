@@ -187,13 +187,13 @@ rauc_conf_data = [
     RaucConfData(
         msg='Using Desync',
         rauc_config=rauc_conf_dir / 'desync.conf',
-        seed_index=Path('/var/lib/steamos-atomupd/rootfs.caibx'),
+        seed_index=Path('/var/lib/holo-atomupd/rootfs.caibx'),
         desync_in_use=True,
     ),
     RaucConfData(
         msg='Using Desync with seed option not at the beginning',
         rauc_config=rauc_conf_dir / 'desync_reordered.conf',
-        seed_index=Path('/var/lib/steamos-atomupd/rootfs.caibx'),
+        seed_index=Path('/var/lib/holo-atomupd/rootfs.caibx'),
         desync_in_use=True,
     ),
     RaucConfData(
