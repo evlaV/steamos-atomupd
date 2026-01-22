@@ -52,7 +52,7 @@ def _load_os_release(os_release_path=''):
     return data
 
 
-@dataclass
+@dataclass(order=True)
 class BuildId:
 
     """A build ID"""
@@ -84,28 +84,6 @@ class BuildId:
         date = datetime.datetime.strptime(fields[0], '%Y%m%d').date()
 
         return cls(date, incr)
-
-    def __eq__(self, other: object) -> bool:
-        if not isinstance(other, BuildId):
-            return NotImplemented
-        return (self.date, self.incr) == (other.date, other.incr)
-
-    def __ne__(self, other: object) -> bool:
-        if not isinstance(other, BuildId):
-            return NotImplemented
-        return not self == other
-
-    def __lt__(self, other: BuildId) -> bool:
-        return (self.date, self.incr) < (other.date, other.incr)
-
-    def __le__(self, other: BuildId) -> bool:
-        return (self.date, self.incr) <= (other.date, other.incr)
-
-    def __gt__(self, other: BuildId) -> bool:
-        return (self.date, self.incr) > (other.date, other.incr)
-
-    def __ge__(self, other: BuildId) -> bool:
-        return (self.date, self.incr) >= (other.date, other.incr)
 
     def __repr__(self) -> str:
         return "{}.{}".format(self.date.strftime('%Y%m%d'), self.incr)
