@@ -58,7 +58,7 @@ class ServerConfig:
     variants: tuple[str, ...] = ('steamdeck',)
     variants_eol: tuple[str, ...] = ()
     product: str = 'steamos'
-    releases: tuple[str, ...] = ('holo',)
+    release: str = 'holo'
     archs: tuple[str, ...] = ('amd64',)
 
 
@@ -707,7 +707,7 @@ class StaticServerTestCase(unittest.TestCase):
                 config.optionxform = str
                 config['Images'] = {'PoolDir': os.path.join(images.name, data.config.pool_dir),
                                     'Product': data.config.product,
-                                    'Releases': ' '.join(data.config.releases),
+                                    'Release': data.config.release,
                                     'Variants': ' '.join(data.config.variants),
                                     'Branches': ' '.join(data.config.branches),
                                     'Archs': ' '.join(data.config.archs)}

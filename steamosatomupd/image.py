@@ -441,7 +441,7 @@ class Image:
     def get_unique_name(self) -> str:
         """Generates a string that is unique for this image"""
 
-        return f"{self.get_version_str()}_{self.release}_{self.buildid}"
+        return f"{self.get_version_str()}_{self.buildid}"
 
     def should_be_skipped(self) -> bool:
         """Whether the image should be skipped and not be considered as a valid update"""
@@ -450,28 +450,21 @@ class Image:
 
     # A note regarding comparison operators.
     #
-    # When comparing images, we care about version, release and buildid.
+    # When comparing images, we care about version and buildid.
     #
     # When versions are defined for both images, we just compare it.
     #
-    # When there is no version for both images, we compare releases first,
-    # then build IDs. We expect releases to be strings such as 'brewmaster',
-    # 'clockwerk' and so on, sorted alphabetically. It means that when we
-    # compare 'brewmaster 20190201' and 'clockwerk 20180201', clockwerk is
-    # higher.
-    #
-    # If we need to compare an image with a version against an image without,
-    # we simply use the release and buildid values. This allows us to mix
-    # snapshot and versioned images. This is useful, for example, when we want
-    # to allow older snaphot images to update to newer versioned images.
+    # If at least one image doesn't have a version, we simply use the buildid
+    # values. This allows us to mix snapshot and versioned images. This is
+    # useful, for example, when we want to allow older snapshot images to
+    # update to newer versioned images.
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Image):
             return NotImplemented
         if self.version and other.version:
-            return (self.version, self.release, self.buildid) == (
-                other.version, other.release, other.buildid)
-        return (self.release, self.buildid) == (other.release, other.buildid)
+            return (self.version, self.buildid) == (other.version, other.buildid)
+        return self.buildid == other.buildid
 
     def __ne__(self, other: object) -> bool:
         if not isinstance(other, Image):
@@ -480,27 +473,23 @@ class Image:
 
     def __lt__(self, other: Image) -> bool:
         if self.version and other.version:
-            return (self.version, self.release, self.buildid) < (
-                other.version, other.release, other.buildid)
-        return (self.release, self.buildid) < (other.release, other.buildid)
+            return (self.version, self.buildid) < (other.version, other.buildid)
+        return self.buildid < other.buildid
 
     def __le__(self, other: Image) -> bool:
         if self.version and other.version:
-            return (self.version, self.release, self.buildid) <= (
-                other.version, other.release, other.buildid)
-        return (self.release, self.buildid) <= (other.release, other.buildid)
+            return (self.version, self.buildid) <= (other.version, other.buildid)
+        return self.buildid <= other.buildid
 
     def __gt__(self, other: Image) -> bool:
         if self.version and other.version:
-            return (self.version, self.release, self.buildid) > (
-                other.version, other.release, other.buildid)
-        return (self.release, self.buildid) > (other.release, other.buildid)
+            return (self.version, self.buildid) > (other.version, other.buildid)
+        return self.buildid > other.buildid
 
     def __ge__(self, other: Image) -> bool:
         if self.version and other.version:
-            return (self.version, self.release, self.buildid) >= (
-                other.version, other.release, other.buildid)
-        return (self.release, self.buildid) >= (other.release, other.buildid)
+            return (self.version, self.buildid) >= (other.version, other.buildid)
+        return self.buildid >= other.buildid
 
     def __repr__(self) -> str:
         return "{{ {}, {}, {}, {}, {}, {}, {}, {}, {}, {} }}".format(
@@ -508,4 +497,4 @@ class Image:
             self.version, self.buildid, self.introduces_checkpoint, self.requires_checkpoint)
 
     def __hash__(self) -> int:
-        return hash((self.get_version_str(), self.release, str(self.buildid)))
+        return hash((self.get_version_str(), str(self.buildid)))
