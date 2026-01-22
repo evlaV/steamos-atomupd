@@ -46,7 +46,6 @@ log = logging.getLogger(__name__)
 wm = pyinotify.WatchManager()
 
 # Default config
-DEFAULT_SERVE_UNSTABLE = False
 TRIGGER_FILE = "updated.txt"
 # Please keep this in sync with atomupd-daemon
 REMOTE_INFO_FILE = "remote-info.conf"
@@ -144,11 +143,6 @@ class UpdateParser(pyinotify.ProcessEvent):
         log.debug("Parsing config from file: %s", args.config)
 
         config = configparser.ConfigParser()
-
-        config.read_dict({
-            'Images': {
-                'Unstable': DEFAULT_SERVE_UNSTABLE,
-            }})
 
         with open(args.config, 'r', encoding='utf-8') as f:
             config.read_file(f)

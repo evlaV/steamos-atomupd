@@ -53,7 +53,6 @@ class ServerConfig:
     pool_dir: str
     branches: tuple[str, ...]
     branches_to_consider: dict[str, list[str]] = field(default_factory=dict)
-    unstable: bool = True
     strict_pool_validation: bool = True
     remote_info_config: dict[str, RemoteInfoConfig] = field(default_factory=dict)
     variants: tuple[str, ...] = ('steamdeck',)
@@ -707,7 +706,6 @@ class StaticServerTestCase(unittest.TestCase):
                 # Preserve case
                 config.optionxform = str
                 config['Images'] = {'PoolDir': os.path.join(images.name, data.config.pool_dir),
-                                    'Unstable': data.config.unstable,
                                     'Products': ' '.join(data.config.products),
                                     'Releases': ' '.join(data.config.releases),
                                     'Variants': ' '.join(data.config.variants),

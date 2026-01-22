@@ -433,14 +433,6 @@ class Image:
 
         return not self.version
 
-    def is_stable(self) -> bool:
-        """Whether an Image is stable (i.e. it has a stable version)"""
-
-        if self.version:
-            return not self.version.prerelease
-
-        return False
-
     def is_checkpoint(self) -> bool:
         """Whether this image introduces a new checkpoint"""
 

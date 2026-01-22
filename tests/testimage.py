@@ -136,18 +136,6 @@ class MiscTestCase(unittest.TestCase):
         d['version'] = '3.6'
         self.assertFalse(Image.from_dict(d).is_snapshot())
 
-    def test_stable(self):
-        d = dict(imgdata)
-
-        d['version'] = '3.2'
-        self.assertTrue(Image.from_dict(d).is_stable())
-
-        d['version'] = '3.6-rc1'
-        self.assertFalse(Image.from_dict(d).is_stable())
-
-        d['version'] = 'snapshot'
-        self.assertFalse(Image.from_dict(d).is_stable())
-
     def test_flask_args(self):
         d = dict(imgdata)
 

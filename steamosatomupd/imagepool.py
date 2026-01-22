@@ -202,7 +202,6 @@ class ImagePool:
             ri_variants[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Variants', fallback='').split()
             ri_branches[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Branches', fallback='').split()
         self._create_pool(config['Images']['PoolDir'],
-                          config['Images'].getboolean('Unstable'),
                           config['Images']['Products'].split(),
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
@@ -220,7 +219,7 @@ class ImagePool:
 
         The execution will stop if the validation fails."""
 
-        options = ['PoolDir', 'Unstable', 'Products', 'Releases', 'Variants', 'Branches', 'Archs']
+        options = ['PoolDir', 'Products', 'Releases', 'Variants', 'Branches', 'Archs']
         for option in options:
             if not config.has_option('Images', option):
                 log.error("Please provide a valid configuration file, the option '%s' is missing", option)
@@ -253,7 +252,7 @@ class ImagePool:
                               "missing the 'Branches' option")
                     sys.exit(1)
 
-    def _create_pool(self, images_dir: str, want_unstable_images: bool, supported_products: list[str],
+    def _create_pool(self, images_dir: str, supported_products: list[str],
                      supported_releases: list[str], supported_variants: list[str], variants_eol: dict[str, str],
                      supported_branches: list[str], branches_to_consider: dict[str, str],
                      supported_archs: list[str], strict_pool_validation: bool,
@@ -266,7 +265,6 @@ class ImagePool:
 
         # Our variables
         self.images_dir = images_dir
-        self.want_unstable_images = want_unstable_images
         self.supported_products = supported_products
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
@@ -355,12 +353,6 @@ class ImagePool:
                     log.debug("Discarded unsupported image %s: %s", f, e)
                     continue
 
-                # Discard unstable images if we don't want them
-                # TODO check the code to see if it's worth introducing image.is_unstable() for readability
-                if not want_unstable_images and not image.is_stable():
-                    log.debug("Discarded unstable image %s", f)
-                    continue
-
                 # Add image as an update candidate
                 candidate = UpdateCandidate(image, update_path)
                 self.image_updates_found.append(candidate)
@@ -412,7 +404,6 @@ class ImagePool:
     def __str__(self) -> str:
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),
-            'Unstable  : {}'.format(self.want_unstable_images),
             'Products  : {}'.format(self.supported_products),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
