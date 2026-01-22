@@ -428,11 +428,6 @@ class Image:
 
         return path + '.json'
 
-    def is_snapshot(self) -> bool:
-        """Whether an Image is a snapshot"""
-
-        return not self.version
-
     def is_checkpoint(self) -> bool:
         """Whether this image introduces a new checkpoint"""
 

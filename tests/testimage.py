@@ -125,17 +125,8 @@ class VersionTestCase(unittest.TestCase):
         self.assertTrue(Image.from_dict(d1) <  Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d2) >  Image.from_dict(d1))
 
+
 class MiscTestCase(unittest.TestCase):
-
-    def test_snaphot(self):
-        d = dict(imgdata)
-
-        d['version'] = 'snapshot'
-        self.assertTrue(Image.from_dict(d).is_snapshot())
-
-        d['version'] = '3.6'
-        self.assertFalse(Image.from_dict(d).is_snapshot())
-
     def test_flask_args(self):
         d = dict(imgdata)
 
