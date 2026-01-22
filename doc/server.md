@@ -9,7 +9,7 @@ Overview
 The server requires a configuration file with a bunch of mandatory params:
 - the directory where images live
 - whether images are snapshots or not
-- the list of supported products (e.g. `steamos`)
+- the supported product (e.g. `steamos`)
 - the list of supported releases (e.g. `holo`)
 - the list of supported variants (e.g. `steamdeck`)
 - the list of supported branches (e.g. `stable`)

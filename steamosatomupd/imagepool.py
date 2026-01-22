@@ -202,7 +202,7 @@ class ImagePool:
             ri_variants[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Variants', fallback='').split()
             ri_branches[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Branches', fallback='').split()
         self._create_pool(config['Images']['PoolDir'],
-                          config['Images']['Products'].split(),
+                          config['Images']['Product'],
                           config['Images']['Releases'].split(),
                           config['Images']['Variants'].split(),
                           dict((pair.split(':') for pair in variants_eol)),
@@ -219,7 +219,7 @@ class ImagePool:
 
         The execution will stop if the validation fails."""
 
-        options = ['PoolDir', 'Products', 'Releases', 'Variants', 'Branches', 'Archs']
+        options = ['PoolDir', 'Product', 'Releases', 'Variants', 'Branches', 'Archs']
         for option in options:
             if not config.has_option('Images', option):
                 log.error("Please provide a valid configuration file, the option '%s' is missing", option)
@@ -252,7 +252,7 @@ class ImagePool:
                               "missing the 'Branches' option")
                     sys.exit(1)
 
-    def _create_pool(self, images_dir: str, supported_products: list[str],
+    def _create_pool(self, images_dir: str, supported_product: str,
                      supported_releases: list[str], supported_variants: list[str], variants_eol: dict[str, str],
                      supported_branches: list[str], branches_to_consider: dict[str, str],
                      supported_archs: list[str], strict_pool_validation: bool,
@@ -265,7 +265,7 @@ class ImagePool:
 
         # Our variables
         self.images_dir = images_dir
-        self.supported_products = supported_products
+        self.supported_product = supported_product
         self.supported_releases = supported_releases
         self.supported_variants = supported_variants
         self.variants_eol = variants_eol
@@ -404,7 +404,7 @@ class ImagePool:
     def __str__(self) -> str:
         return '\n'.join([
             'Images dir: {}'.format(self.images_dir),
-            'Products  : {}'.format(self.supported_products),
+            'Product  : {}'.format(self.supported_product),
             'Releases  : {}'.format(self.supported_releases),
             'Variants  : {}'.format(self.supported_variants),
             'Variants EOL: {}'.format(self.variants_eol),
@@ -426,7 +426,7 @@ class ImagePool:
 
         branch = override_branch if override_branch else image.branch
 
-        if (image.product not in self.supported_products
+        if (image.product != self.supported_product
                 or image.arch not in self.supported_archs
                 or image.release not in self.supported_releases
                 or image.variant not in self.supported_variants

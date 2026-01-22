@@ -57,7 +57,7 @@ class ServerConfig:
     remote_info_config: dict[str, RemoteInfoConfig] = field(default_factory=dict)
     variants: tuple[str, ...] = ('steamdeck',)
     variants_eol: tuple[str, ...] = ()
-    products: tuple[str, ...] = ('steamos',)
+    product: str = 'steamos'
     releases: tuple[str, ...] = ('holo',)
     archs: tuple[str, ...] = ('amd64',)
 
@@ -706,7 +706,7 @@ class StaticServerTestCase(unittest.TestCase):
                 # Preserve case
                 config.optionxform = str
                 config['Images'] = {'PoolDir': os.path.join(images.name, data.config.pool_dir),
-                                    'Products': ' '.join(data.config.products),
+                                    'Product': data.config.product,
                                     'Releases': ' '.join(data.config.releases),
                                     'Variants': ' '.join(data.config.variants),
                                     'Branches': ' '.join(data.config.branches),
