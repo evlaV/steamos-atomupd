@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2022 Collabora Ltd
+# Copyright © 2022-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -71,7 +71,7 @@ class ServerData:
     mock_leftovers: Path | None = None
     mock_ndiff: Path | None = None
     replaced_leftovers: bool = False
-    unchanged_lefovers: bool = False
+    unchanged_leftovers: bool = False
     removed_image_warning: bool = False
     run_as_daemon: bool = False
     exit_code: int = 0
@@ -98,7 +98,7 @@ server_data = [
         expectation='staticexpected',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'staticexpected_mock_ndiff',
-        unchanged_lefovers=True,
+        unchanged_leftovers=True,
         removed_image_warning=True,
     ),
     ServerData(
@@ -129,7 +129,7 @@ server_data = [
         mock_leftovers=EXPECTATION_PARENT / 'static_rel_and_snap_mock_leftover',
         mock_ndiff=EXPECTATION_PARENT / 'static_rel_and_snap_mock_ndiff',
         replaced_leftovers=True,
-        unchanged_lefovers=True,
+        unchanged_leftovers=True,
     ),
     ServerData(
         msg='Static server with release images running as daemon',
@@ -150,7 +150,7 @@ server_data = [
         expectation='staticexpected',
         changed_expectation='staticdaemonexpected2',
         mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
-        unchanged_lefovers=True,
+        unchanged_leftovers=True,
         removed_image_warning=True,
         run_as_daemon=True,
     ),
@@ -798,7 +798,7 @@ class StaticServerTestCase(unittest.TestCase):
                     self.assertEqual(replaced_files, data.replaced_leftovers, replaced_files)
 
                     unchanged_files = any(line.endswith('has not changed, skipping...') for line in lo.output)
-                    self.assertEqual(unchanged_files, data.unchanged_lefovers, unchanged_files)
+                    self.assertEqual(unchanged_files, data.unchanged_leftovers, unchanged_files)
 
                     deleted_images = any(line.endswith('with the "skip" option set') for line in lo.output)
                     self.assertEqual(deleted_images, data.removed_image_warning, deleted_images)
