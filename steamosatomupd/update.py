@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,34 @@ from enum import Enum, auto
 from typing import Any
 
 from steamosatomupd.image import Image
+
+
+class UpdateType(Enum):
+    """
+    Used to select which type of update we are looking for
+    """
+
+    standard = auto()
+    """ The canonical update """
+    forced = auto()
+    """ The update should be forced, even if that results in a downgrade """
+    unexpected_buildid = auto()
+    """
+    The image buildid should not be taken into consideration, this is used to
+    generate generic fallback updates
+    """
+    second_last = auto()
+    """
+    We don't want the latest update, but instead the penultimate. This option implies
+    'unexpected_buildid'.
+    """
+
+    def is_fallback(self) -> bool:
+        """
+        Check if the provided update_type is a fallback. I.e. a generic update that shouldn't
+        take into consideration the origin image build ID nor its variant.
+        """
+        return self in (UpdateType.unexpected_buildid, UpdateType.second_last)
 
 
 @dataclass
@@ -124,31 +152,3 @@ class UpdatePath:
             data['minor']['replacement_eol_variant'] = self.replacement_eol_variant
 
         return data
-
-
-class UpdateType(Enum):
-    """
-    Used to select which type of update we are looking for
-    """
-
-    standard = auto()
-    """ The canonical update """
-    forced = auto()
-    """ The update should be forced, even if that results in a downgrade """
-    unexpected_buildid = auto()
-    """
-    The image buildid should not be taken into consideration, this is used to
-    generate generic fallback updates
-    """
-    second_last = auto()
-    """
-    We don't want the latest update, but instead the penultimate. This option implies
-    'unexpected_buildid'.
-    """
-
-    def is_fallback(self) -> bool:
-        """
-        Check if the provided update_type is a fallback. I.e. a generic update that shouldn't
-        take into consideration the origin image build ID nor its variant.
-        """
-        return self in (UpdateType.unexpected_buildid, UpdateType.second_last)
