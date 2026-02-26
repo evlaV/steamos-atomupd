@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2021 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -815,6 +815,23 @@ class UpdateClient:
 
         if not update:
             log.debug("The server proposed an update that we are already using, nothing to do...")
+            return 0
+
+        exempt_candidates = []
+
+        for potential_candidate in update.candidates:
+            if potential_candidate.exempts and potential_candidate.image.variant == current_image.variant:
+                # Check the exempts lists only if we are applying an update for the same variant.
+                # For different variants, we don't do anything smart and just apply all updates
+                if current_image.meets_exempts(potential_candidate.exempts):
+                    log.debug("Skipping %s because we are exempt from this lightweight checkpoint",
+                              potential_candidate.image.buildid)
+                    exempt_candidates.append(potential_candidate)
+
+        update.candidates = [c for c in update.candidates if c not in exempt_candidates]
+
+        if not update.candidates:
+            log.debug("The server only proposed a lightweight checkpoint update that we can skip...")
             return 0
 
         candidate = update.candidates[0]

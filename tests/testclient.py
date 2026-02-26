@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2022 Collabora Ltd
+# Copyright © 2022-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -79,7 +79,48 @@ update_data = [
         msg='Same version update plus another minor updates',
         update_file=data_path / 'update_two_minors.json',
         updates=[BuildId.from_string('20220227.3')],
-    )
+    ),
+    UpdateData(
+        msg='Update with lightweight checkpoint 1',
+        update_file=data_path / 'update_lwc_main.json',
+        manifest=data_path / '20251212_manifest.json',
+        updates=[
+            BuildId.from_string('20260103.1000'),
+            BuildId.from_string('20260205.1000'),
+        ],
+    ),
+    UpdateData(
+        msg='Update with lightweight checkpoint 2',
+        update_file=data_path / 'update_lwc_main.json',
+        manifest=data_path / '20260101_manifest.json',
+        updates=[
+            BuildId.from_string('20260103.1000'),
+            BuildId.from_string('20260205.1000'),
+        ],
+    ),
+    UpdateData(
+        msg='Update with lightweight checkpoint, matching the requirements 1',
+        update_file=data_path / 'update_lwc_main.json',
+        manifest=data_path / '20260202_manifest.json',
+        updates=[BuildId.from_string('20260205.1000')],
+    ),
+    UpdateData(
+        msg='Update with lightweight checkpoint, matching the requirements 2',
+        update_file=data_path / 'update_lwc_main.json',
+        manifest=data_path / '20260205_manifest.json',
+        updates=[BuildId.from_string('20260205.1000')],
+    ),
+    UpdateData(
+        msg='Update with lightweight checkpoint, matching the requirements 3',
+        update_file=data_path / 'update_lwc_main.json',
+        manifest=data_path / '20260219_manifest.json',
+        updates=[BuildId.from_string('20260205.1000')],
+    ),
+    UpdateData(
+        msg='Update with only a lightweight checkpoint that we can skip',
+        update_file=data_path / 'update_only_lwc_main.json',
+        manifest=data_path / '20260219_manifest.json',
+    ),
 ]
 
 
