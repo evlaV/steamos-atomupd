@@ -450,6 +450,66 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, '3.8.5', '20250707.100', branch=Branch.BETA, arch='aarch64'),
         ]
     ),
+
+    Hierarchy(
+        directory_name='branch5',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.7.6', '20251001.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.7.7', '20251022.1', branch=Branch.STABLE),  # lwc exempt threshold
+            Manifest(Variant.STEAMDECK, '3.7.8', '20251023.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.8.1', '20260206.1', branch=Branch.STABLE),
+
+            Manifest(Variant.STEAMDECK, '3.7', '20250909.1000', branch=Branch.MAIN),
+            Manifest(Variant.STEAMDECK, '3.8', '20260101.1000', branch=Branch.MAIN),
+            Manifest(Variant.STEAMDECK, '3.8', '20260103.1000', branch=Branch.MAIN),  # lwc target
+            Manifest(Variant.STEAMDECK, '3.8', '20260205.1000', branch=Branch.MAIN),
+            Manifest(Variant.STEAMDECK, '3.8', '20260209.1000', branch=Branch.MAIN),
+        ]
+    ),
+
+    Hierarchy(
+        directory_name='branch6',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.7.6', '20251001.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.7.7', '20251022.1', branch=Branch.STABLE),  # lwc exempt threshold
+            Manifest(Variant.STEAMDECK, '3.7.8', '20251023.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.8.1', '20260130.1', branch=Branch.STABLE,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+
+            Manifest(Variant.STEAMDECK, '3.7', '20250909.1000', branch=Branch.MAIN),
+            Manifest(Variant.STEAMDECK, '3.8', '20260130.1000', branch=Branch.MAIN,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.8', '20260131.1000', branch=Branch.MAIN,
+                     requires_checkpoint=1),  # lwc target + exempt threshold
+            Manifest(Variant.STEAMDECK, '3.8', '20260205.1000', branch=Branch.MAIN, requires_checkpoint=1),
+            Manifest(Variant.STEAMDECK, '3.8', '20260222.1000', branch=Branch.MAIN,
+                     requires_checkpoint=1, introduces_checkpoint=2),
+            Manifest(Variant.STEAMDECK, '3.8', '20260223.1000', branch=Branch.MAIN, requires_checkpoint=2),
+
+            Manifest(Variant.VANILLA, '3.7.8', '20261023.50', branch=Branch.STABLE),
+            Manifest(Variant.VANILLA, '3.8.1', '20260130.50', branch=Branch.STABLE,
+                     requires_checkpoint=0, introduces_checkpoint=1),
+            Manifest(Variant.VANILLA, '3.8.2', '20260225.50', branch=Branch.STABLE,
+                     requires_checkpoint=1, introduces_checkpoint=2),
+        ]
+    ),
+
+    Hierarchy(
+        directory_name='releases-and-snaps6',
+        manifests=[
+            Manifest(Variant.STEAMDECK, 'snapshot', '20230801.1'),
+            Manifest(Variant.STEAMDECK, '3.7.8', '20251023.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.8.1', '20260130.1', branch=Branch.STABLE),
+
+            Manifest(Variant.STEAMDECK, '3.8', '20260101.1000', branch=Branch.MAIN),
+            Manifest(Variant.STEAMDECK, '3.8', '20260103.1000', branch=Branch.MAIN),  # lwc target + exempt threshold
+            Manifest(Variant.STEAMDECK, '3.8', '20260205.1000', branch=Branch.MAIN),
+
+            Manifest(Variant.STEAMDECK, '3.8', '20260102.10000', branch=Branch.STAGING),
+            Manifest(Variant.STEAMDECK, '3.8', '20260102.10001', branch=Branch.STAGING),  # lwc target + exempt threshold
+            Manifest(Variant.STEAMDECK, '3.8', '20260202.10002', branch=Branch.STAGING),
+        ]
+    ),
 ]
 
 additional_images = [

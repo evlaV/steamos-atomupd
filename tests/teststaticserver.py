@@ -43,6 +43,13 @@ log = logging.getLogger(__name__)
 
 
 @dataclass
+class LightweightCheckpoint:
+    variant: str = 'steamdeck'
+    targets: list[str] = field(default_factory=list)
+    exempts: list[str] = field(default_factory=list)
+
+
+@dataclass
 class RemoteInfoConfig:
     variants: tuple[str, ...] = ()
     branches: tuple[str, ...] = ()
@@ -55,6 +62,7 @@ class ServerConfig:
     branches_to_consider: dict[str, list[str]] = field(default_factory=dict)
     strict_pool_validation: bool = True
     remote_info_config: dict[str, RemoteInfoConfig] = field(default_factory=dict)
+    lightweight_checkpoints: list[LightweightCheckpoint] = field(default_factory=list)
     variants: tuple[str, ...] = ('steamdeck',)
     variants_eol: tuple[str, ...] = ()
     product: str = 'steamos'
@@ -643,6 +651,189 @@ server_data = [
         ),
         expectation='multi_arch_expected',
     ),
+    ServerData(
+        msg='Lightweight checkpoint for an image in beta without pre-requisites',
+        config=ServerConfig(
+            pool_dir='branch-and-legacy-variant1',
+            variants=('steamdeck',),
+            branches=('stable', 'beta'),
+            branches_to_consider={'beta': ['stable']},
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['beta:3.7.5:20240120.100'],
+                ),
+            ],
+        ),
+        expectation='branch_and_legacy_variant1_lwc_expected',
+    ),
+    ServerData(
+        msg='Lightweight checkpoint with one pre-requisite',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8:20260103.1000'],
+                    exempts=['3.7.7:20251022.1']
+                ),
+            ],
+        ),
+        expectation='branch5_expected',
+    ),
+    ServerData(
+        msg='Lightweight checkpoint with multiple pre-requisites',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8:20260103.1000'],
+                    exempts=['3.7.7:20251022.1', '3.8:20260103.1000']
+                ),
+            ],
+        ),
+        expectation='branch5_expected_2exempt',
+    ),
+    ServerData(
+        msg='Lightweight checkpoint with 3.8.0 instead of 3.8',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8.0:20260103.1000'],
+                    exempts=['3.7.7:20251022.1', '3.8.0:20260103.1000']
+                ),
+            ],
+        ),
+        expectation='branch5_expected_2exempt',
+    ),
+    ServerData(
+        msg='Two Lightweight checkpoints',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8:20260103.1000'],
+                    exempts=['3.7.7:20251022.1', '3.8:20260103.1000']
+                ),
+                LightweightCheckpoint(
+                    targets=['main:3.8:20260205.1000'],
+                    exempts=['3.8:20260205.1000']
+                ),
+            ],
+        ),
+        expectation='branch5_expected_2lwc',
+    ),
+    ServerData(
+        msg='Checkpoint and lightweight checkpoint, with multiple variants',
+        config=ServerConfig(
+            pool_dir='branch6',
+            variants=('steamdeck', 'vanilla'),
+            branches=('stable', 'main'),
+            strict_pool_validation=False,
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8:20260131.1000'],
+                    exempts=['3.7.7:20251022.1', '3.8:20260205.1000']
+                ),
+            ],
+        ),
+        expectation='branch6_expected',
+    ),
+    ServerData(
+        msg='Lightweight checkpoint, with multiple targets',
+        config=ServerConfig(
+            pool_dir='releases-and-snaps6',
+            branches=('stable', 'main', 'staging'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['staging:3.8:20260102.10001', 'main:3.8:20260103.1000'],
+                    exempts=['3.8:20260102.10001', '3.8:20260103.1000']
+                ),
+            ],
+        ),
+        expectation='static_rel_and_snap6_expected',
+    ),
+    ServerData(
+        msg='Configuration with lightweight checkpoint target that doesn\'t exist',
+        config=ServerConfig(
+            pool_dir='branch6',
+            variants=('steamdeck', 'vanilla'),
+            branches=('stable', 'main'),
+            strict_pool_validation=False,
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8:33330131.1000'],
+                    exempts=['3.7.7:20251022.1', '3.8:20260205.1000']
+                ),
+            ],
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Configuration with Lightweight checkpoint target for unknown branch',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['staging:3.8:20260103.1000'],
+                    exempts=['3.7.7:20251022.1']
+                ),
+            ],
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Configuration with Lightweight checkpoint target missing the branch',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['3.8:20260103.1000'],
+                    exempts=['3.7.7:20251022.1']
+                ),
+            ],
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Configuration with Lightweight checkpoint exempts with typo',
+        config=ServerConfig(
+            pool_dir='branch5',
+            branches=('stable', 'main'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    targets=['main:3.8:20260103.1000'],
+                    exempts=['3.7.7.20251022.1']
+                ),
+            ],
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
+        msg='Configuration with Lightweight checkpoint for an unknown target',
+        config=ServerConfig(
+            pool_dir='releases-and-snaps6',
+            branches=('stable', 'main', 'staging'),
+            lightweight_checkpoints=[
+                LightweightCheckpoint(
+                    variant='missing',
+                    targets=['staging:3.8:20260102.10001', 'main:3.8:20260103.1000'],
+                    exempts=['3.8:20260102.10001', '3.8:20260103.1000']
+                ),
+            ],
+        ),
+        expectation='',
+        exit_code=1,
+    ),
 ]
 
 
@@ -727,6 +918,12 @@ class StaticServerTestCase(unittest.TestCase):
 
                 if data.config.variants_eol:
                     config['Images']['VariantsEol'] = ' '.join(data.config.variants_eol)
+
+                for i, lwc in enumerate(data.config.lightweight_checkpoints, start=1):
+                    config[f'LightweightCheckpoint.{lwc.variant}.{i}'] = {}
+                    config[f'LightweightCheckpoint.{lwc.variant}.{i}']['Targets'] = ' '.join(lwc.targets)
+                    if lwc.exempts:
+                        config[f'LightweightCheckpoint.{lwc.variant}.{i}']['ExemptFrom'] = ' '.join(lwc.exempts)
 
                 config.write(tmp_config)
 
