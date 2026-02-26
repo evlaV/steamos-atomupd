@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -17,6 +17,7 @@
 # <http://www.gnu.org/licenses/>.
 
 import unittest
+from collections import defaultdict
 
 from steamosatomupd.image import Image
 from steamosatomupd.imagepool import _get_update_candidates
@@ -57,7 +58,7 @@ class GetUpdateCandidatesTestCase(unittest.TestCase):
         c3 = mk_update_candidate(d3)
 
         # only the last image is an update candidate
-        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard, defaultdict(list))
         self.assertTrue(res == [ c3 ])
 
         # checkpoint + last image
@@ -66,14 +67,14 @@ class GetUpdateCandidatesTestCase(unittest.TestCase):
         d3['requires_checkpoint'] = 1
         c2 = mk_update_candidate(d2)
         c3 = mk_update_candidate(d3)
-        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard, defaultdict(list))
         self.assertTrue(res == [ c2, c3 ])
 
         # no update candidates (already at latest)
         d['version'] = '2.2'
         d['requires_checkpoint'] = 1
         i = mk_image(d)
-        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard)
+        res = _get_update_candidates([ c1, c2, c3 ], i, UpdateType.standard, defaultdict(list))
         self.assertTrue(res == [])
 
 if __name__ == '__main__':

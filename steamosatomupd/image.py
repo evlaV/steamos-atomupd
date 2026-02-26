@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2024 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -425,6 +425,46 @@ class Image:
         """Whether the image should be skipped and not be considered as a valid update"""
 
         return self.skip
+
+    def meets_exempts(self, exempts: list[tuple[semantic_version.Version, BuildId]]) -> bool:
+        """Returns True if this image satisfies the exempts prerequisites of a lightweight checkpoint.
+
+        Each exempt is a (version, buildid) pair. This image meets the requisites if
+        its minor version is newer than all exempts, or if it matches an exempt
+        minor version and its (version, buildid) is greater or equal to it.
+        If the exempts list is empty, this function returns False.
+
+        Example: exempts [(3.7.16, 20251105.0), (3.8.0, 20251119.1000)]
+        - If this image has a 3.7.x version, it must be at least 3.7.16 and with buildid 20251105.0 or greater
+        - If this image has a 3.8.x version, it must have a buildid 20251119.1000 or greater
+        - If the version is 3.9.x or newer, it always satisfies the prerequisites
+        - If the version is 3.6.x or older, it doesn't
+        """
+
+        if not self.version:
+            # Deprecated unversioned snapshot images have all been created before the introduction
+            # of lightweight checkpoints. There is no need to try some clever heuristic to
+            # compare them. We can simply assume that they never meet the exempts requisites.
+            return False
+
+        higher_ver = False
+        for ex_version, ex_buildid in exempts:
+            if (self.version.major, self.version.minor) < (ex_version.major, ex_version.minor):
+                continue
+
+            if (self.version.major, self.version.minor) > (ex_version.major, ex_version.minor):
+                higher_ver = True
+                continue
+
+            # If we have the same major.minor version, we simply return if our version and buildid
+            # is newer or not.
+            return (self.version, self.buildid) >= (ex_version, ex_buildid)
+
+        if higher_ver:
+            # Our major.minor version is newer than all the exempts
+            return True
+
+        return False
 
     # A note regarding comparison operators.
     #

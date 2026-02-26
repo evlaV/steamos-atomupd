@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2022 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -28,11 +28,15 @@ import weakref
 from collections import defaultdict
 from configparser import ConfigParser
 from copy import deepcopy, copy
+from dataclasses import dataclass
 from pathlib import Path
 
-from steamosatomupd.image import Image
+import semantic_version
+
+from steamosatomupd.image import Image, BuildId
 from steamosatomupd.update import UpdateCandidate, UpdatePath, UpdateType
-from steamosatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size
+from steamosatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size, \
+    parse_lwc_exempts
 
 log = logging.getLogger(__name__)
 
@@ -43,6 +47,30 @@ IMAGE_MANIFEST_EXT = '.manifest.json'
 RAUC_BUNDLE_EXT = '.raucb'
 CASYNC_STORE_EXT = '.castr'
 CHUNKS_DETAILS_EXT = '.chunks_details.json'
+
+# Type alias to make it clearer what a str is supposed to hold
+VariantBranch = tuple[str, str]   # (variant, branch)
+VersionBuildid = tuple[str, str]  # (version, buildid)
+
+
+@dataclass
+class _RawLwCheckpoint:
+    """
+    Transient, config-time representation of a lightweight checkpoint target.
+    Lives only during pool construction. Resolved into a list of UpdateCandidates
+    after the pool walk completes.
+
+    - exempts: parsed ExemptFrom list, carried forward into the resolved candidate
+    - branch: the branch this checkpoint applies to
+    - variant: the variant of this checkpoint
+    - version: image version of this checkpoint
+    - buildid: image buildid of this checkpoint
+    """
+    exempts: list[tuple[semantic_version.Version, BuildId]]
+    branch: str
+    variant: str
+    version: str
+    buildid: str
 
 
 def _get_rauc_update_path(images_dir: str, manifest_path: str) -> str:
@@ -63,13 +91,14 @@ def _get_rauc_update_path(images_dir: str, manifest_path: str) -> str:
 
 
 def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
-                           update_type: UpdateType) -> list[UpdateCandidate]:
+                           update_type: UpdateType,
+                           lw_checkpoints: dict[VariantBranch, list[UpdateCandidate]]) -> list[UpdateCandidate]:
     """Get possible update candidates within an ordered list.
 
     This is where we decide who are the valid update candidates for a
     given image. The valid candidates are:
     - images that are more recent than image
-    - images that are either a checkpoint, either the latest image
+    - images that are either a checkpoint, a lightweight checkpoint or the latest image
     """
 
     previous: UpdateCandidate | None = None
@@ -120,6 +149,30 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
                            candidate.image.branch == newest_candidate.image.branch and
                            candidate.image < newest_candidate.image]
 
+    # If we have lightweight checkpoints for the branch we are aiming for, we need to check if we
+    # satisfy their exempts prerequisites. Otherwise, we need to add their targets to the winners list.
+    # If this is a fallback update, we always add all lightweight checkpoints, it will be the client's duty
+    # to eventually skip them.
+    for lwc_info in lw_checkpoints.get((newest_candidate.image.variant, newest_candidate.image.branch), []):
+        if image.meets_exempts(lwc_info.exempts) and not update_type.is_fallback():
+            continue
+        if lwc_info.image == image and not update_type.is_fallback():
+            # If the lightweight checkpoint is this very same image, we don't add it to the winners list
+            continue
+        if lwc_info.image >= newest_candidate.image:
+            # We skip it also in case the lwc is equal or newer to newest_candidate. We want to avoid
+            # the situation where the last candidate also has pre-requisites, because that would not
+            # mean anything. Being the last candidate, there is no way for a client to skip it to
+            # the next.
+            continue
+        if image.get_image_checkpoint() > lwc_info.image.requires_checkpoint:
+            # If we are already past the lwc required checkpoint, we skip it.
+            # Otherwise, this introduces a downgrade from a hard checkpoint, which is
+            # not supported.
+            continue
+
+        winners.append(lwc_info)
+
     # If the destination requires a newer checkpoint we add the necessary checkpoints to the winners list
     curr_checkpoint = image.get_image_checkpoint()
     for candidate in filtered_candidates:
@@ -138,6 +191,9 @@ def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
         log.info("(%s) can't update to \"%s\"/\"%s\" because it is missing a required checkpoint",
                  image, newest_candidate.image.variant, newest_candidate.image.branch)
         return []
+
+    # Sort the winners to ensure the checkpoints and the lightweight checkpoints are in the correct order
+    winners.sort(key=lambda x: x.image)
 
     if newest_candidate not in winners:
         winners.append(newest_candidate)
@@ -201,6 +257,34 @@ class ImagePool:
         for arch in config['Images']['Archs'].split():
             ri_variants[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Variants', fallback='').split()
             ri_branches[arch] = config.get(f'Images.ProvideRemoteInfoConfig.{arch}', 'Branches', fallback='').split()
+
+        raw_lw_checkpoints: dict[VersionBuildid, list[_RawLwCheckpoint]] = defaultdict(list)
+        for section in config.sections():
+            if not section.startswith('LightweightCheckpoint.'):
+                continue
+
+            _, variant, _ = section.split('.')
+            targets = config.get(section, 'Targets', fallback='').split()
+            exempt_from = config.get(section, 'ExemptFrom', fallback='').split()
+
+            exempt_from_list = parse_lwc_exempts(exempt_from)
+
+            for target in targets:
+                branch, version, buildid = target.split(':')
+                # This normalizes the version representation. E.g. '3.8' will become '3.8.0'
+                version_str = str(semantic_version.Version.coerce(version))
+                target_info = (version_str, buildid)
+
+                raw_lw_checkpoints[target_info].append(
+                    _RawLwCheckpoint(
+                        exempts=list(exempt_from_list),
+                        branch=branch,
+                        variant=variant,
+                        version=version_str,
+                        buildid=buildid,
+                    )
+                )
+
         self._create_pool(config['Images']['PoolDir'],
                           config['Images']['Product'],
                           config['Images']['Release'],
@@ -211,7 +295,8 @@ class ImagePool:
                           config['Images']['Archs'].split(),
                           config['Images'].getboolean('StrictPoolValidation', True),
                           ri_variants,
-                          ri_branches)
+                          ri_branches,
+                          raw_lw_checkpoints)
 
     @classmethod
     def validate_config(cls, config: ConfigParser) -> None:
@@ -252,11 +337,55 @@ class ImagePool:
                               "missing the 'Branches' option")
                     sys.exit(1)
 
+        variants = config['Images']['Variants'].split()
+        for section in config.sections():
+            if not section.startswith('LightweightCheckpoint.'):
+                continue
+
+            parts = section.split('.')
+            if len(parts) != 3:
+                log.error("Please provide a valid configuration file, the section 'LightweightCheckpoint' must follow "
+                          "the structure 'LightweightCheckpoint.$VARIANT.$COUNTER', instead we have: %s", section)
+                sys.exit(1)
+
+            _, variant, _ = parts
+            if variant not in variants:
+                log.error("Please provide a valid configuration file, a LightweightCheckpoint has been defined "
+                          "for an unknown variant: %s", section)
+                sys.exit(1)
+
+            exempts = config.get(section, 'ExemptFrom', fallback='').split()
+            for exempt in exempts:
+                if exempt.count(':') != 1:
+                    log.error("Please provide a valid configuration file, a LightweightCheckpoint has been defined "
+                              "with an unexpected ExemptFrom list: %s", section)
+                    sys.exit(1)
+
+            targets = config.get(section, 'Targets', fallback='').split()
+            if not targets:
+                log.error("Please provide a valid configuration file, a LightweightCheckpoint has been defined "
+                          "without its targets: %s", section)
+                sys.exit(1)
+
+            for target in targets:
+                if target.count(':') != 2:
+                    log.error("Please provide a valid configuration file, a LightweightCheckpoint has been defined "
+                              "with an unexpected targets list: %s", section)
+                    sys.exit(1)
+
+                branch, _, _ = target.split(':')
+                configured_branches = config['Images']['Branches'].split()
+                if branch not in configured_branches:
+                    log.error("Please provide a valid configuration file, a LightweightCheckpoint has been defined "
+                              "with a target pointing to an unknown branch: %s", section)
+                    sys.exit(1)
+
     def _create_pool(self, images_dir: str, supported_product: str,
                      supported_release: str, supported_variants: list[str], variants_eol: dict[str, str],
                      supported_branches: list[str], branches_to_consider: dict[str, str],
                      supported_archs: list[str], strict_pool_validation: bool,
-                     remote_info_variants: dict[str, list[str]], remote_info_branches: dict[str, list[str]]) -> None:
+                     remote_info_variants: dict[str, list[str]], remote_info_branches: dict[str, list[str]],
+                     raw_lw_checkpoints: dict[VersionBuildid, list[_RawLwCheckpoint]]) -> None:
 
         # Make sure the images directory exists
         images_dir = os.path.abspath(images_dir)
@@ -288,6 +417,10 @@ class ImagePool:
 
         self.remote_info_config_variants = remote_info_variants
         self.remote_info_config_branches = remote_info_branches
+        # Dictionary where the values are lists of UpdateCandidates, with information about
+        # lightweight checkpoints (UpdateCandidate.image) and the exempts (UpdateCandidate.exempts).
+        # The keys are tuples (variant, branch), to classify the lwc into the right group.
+        self.lw_checkpoints: dict[VariantBranch, list[UpdateCandidate]] = defaultdict(list)
 
         self._finalizer = weakref.finalize(self, shutil.rmtree, self.extract_dir)
 
@@ -359,6 +492,15 @@ class ImagePool:
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: %s", f)
 
+                # If this image is listed as a lightweight checkpoint target, we save its UpdateCandidate.
+                # This allows us to know where to get this specific image
+                image_version_buildid = (image.get_version_str(), str(image.buildid))
+                for raw_lwc in raw_lw_checkpoints.get(image_version_buildid, []):
+                    target_candidate = UpdateCandidate(image, update_path, raw_lwc.exempts)
+                    lwc_variant_branch = (raw_lwc.variant, raw_lwc.branch)
+                    self.lw_checkpoints[lwc_variant_branch].append(target_candidate)
+                    log.info("Processed info about the lightweight checkpoint target: %s", target_candidate)
+
         seen_intro: dict[str, list[int]] = defaultdict(list)
         seen_shadow: dict[str, list[int]] = defaultdict(list)
         seen_intro_skip: list[tuple[str, int]] = []
@@ -400,6 +542,17 @@ class ImagePool:
                 log.warning("The pool has a checkpoint for (%s, %s) marked as 'skip', but "
                             "there isn't a canonical checkpoint to replace it.",
                             variant_branch, introduced_checkpoint)
+
+        # Validate that all the declared lightweight checkpoints actually exist in our pool
+        resolved_lwc_targets = {
+            (candidate.image.get_version_str(), str(candidate.image.buildid))
+            for candidates in self.lw_checkpoints.values()
+            for candidate in candidates
+        }
+        for version_buildid, _ in raw_lw_checkpoints.items():
+            if version_buildid not in resolved_lwc_targets:
+                raise RuntimeError(f"A Lightweight Checkpoint has been declared with a target "
+                                   f"{version_buildid} that is not available in the image pool")
 
     def __str__(self) -> str:
         return '\n'.join([
@@ -478,7 +631,8 @@ class ImagePool:
 
     def get_updatepath(self, image: Image, relative_update_path: Path | None,
                        requested_branch: str, candidates: list[UpdateCandidate],
-                       estimate_download_size: bool, replacement_eol_variant: str) -> UpdatePath | None:
+                       estimate_download_size: bool, replacement_eol_variant: str,
+                       update_type: UpdateType) -> UpdatePath | None:
         """Get an UpdatePath from a given UpdateCandidate list
 
         Return an UpdatePath object, or None if no updates available.
@@ -496,7 +650,7 @@ class ImagePool:
         if estimate_download_size and relative_update_path:
             candidates[0] = self.estimate_download_size(image, relative_update_path, candidates[0])
 
-        return UpdatePath(image.release, replacement_eol_variant, candidates)
+        return UpdatePath(image.release, replacement_eol_variant, candidates, update_type)
 
     def get_updates(self, image: Image, relative_update_path: Path,
                     requested_branch: str, update_type=UpdateType.standard,
@@ -527,15 +681,15 @@ class ImagePool:
                 update_type = UpdateType.forced
 
         all_candidates, same_branch_candidates = self.get_all_allowed_candidates(image, requested_branch)
-        candidates = _get_update_candidates(all_candidates, image, update_type)
+        candidates = _get_update_candidates(all_candidates, image, update_type, self.lw_checkpoints)
         if not candidates:
             # If we were not able to find a valid update candidate we retry with only candidates
             # that are exactly the requested branch. For example, when we use a BranchOrder we
             # might attempt to go to a more stable branch, but sometimes that could not be possible.
-            candidates = _get_update_candidates(same_branch_candidates, image, update_type)
+            candidates = _get_update_candidates(same_branch_candidates, image, update_type, self.lw_checkpoints)
 
         update_path = self.get_updatepath(image, relative_update_path, requested_branch,
-                                          candidates, estimate_download_size, replacement_eol_variant)
+                                          candidates, estimate_download_size, replacement_eol_variant, update_type)
 
         if update_path:
             return update_path
@@ -588,12 +742,13 @@ class ImagePool:
                 update_type = UpdateType.forced
 
         if update_type == UpdateType.forced:
-            candidates_forced = _get_update_candidates(all_candidates, image, update_type)
+            candidates_forced = _get_update_candidates(all_candidates, image, update_type, self.lw_checkpoints)
             if not candidates_forced:
-                candidates_forced = _get_update_candidates(same_branch_candidates, image, update_type)
+                candidates_forced = _get_update_candidates(same_branch_candidates, image, update_type,
+                                                           self.lw_checkpoints)
 
-            update_path = self.get_updatepath(image, relative_update_path, requested_branch,
-                                              candidates_forced, estimate_download_size, replacement_eol_variant)
+            update_path = self.get_updatepath(image, relative_update_path, requested_branch, candidates_forced,
+                                              estimate_download_size, replacement_eol_variant, update_type)
             if update_path:
                 return update_path
 

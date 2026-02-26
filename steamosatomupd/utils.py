@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2022 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,10 @@ import json
 import logging
 import subprocess
 from pathlib import Path
+
+import semantic_version
+
+from steamosatomupd.image import BuildId
 
 log = logging.getLogger(__name__)
 
@@ -132,3 +136,22 @@ def extract_index_from_raucb(raucb_location: Path | str, extract_prefix: Path,
         return None
 
     return image_index
+
+
+def parse_lwc_exempts(raw_exempts: list[str]) -> list[tuple[semantic_version.Version, BuildId]]:
+    """Parse the string array of Lightweight Checkpoints exempts, as provided in the config
+
+    The strings are expected to be in the format "version:buildid"
+
+    Returns a list of tuples (version, buildid)
+    """
+    exempts: list[tuple[semantic_version.Version, BuildId]] = []
+
+    for exempt_str in raw_exempts:
+        version, buildid_str = exempt_str.split(':')
+        buildid = BuildId.from_string(buildid_str)
+        # https://github.com/rbarrois/python-semanticversion/issues/29
+        semver = semantic_version.Version.coerce(version)
+        exempts.append((semver, buildid))
+
+    return exempts

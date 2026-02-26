@@ -20,11 +20,14 @@
 # (scheduled for Python 3.13)
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
-from steamosatomupd.image import Image
+import semantic_version
+
+from steamosatomupd.image import Image, BuildId
+from steamosatomupd.utils import parse_lwc_exempts
 
 
 class UpdateType(Enum):
@@ -60,10 +63,12 @@ class UpdateCandidate:
     """An update candidate
 
     An update candidate is simply an image with an update path.
+    If this is a lightweight checkpoint, we also store the eventual exempt images list.
     """
 
     image: Image
     update_path: str
+    exempts: list[tuple[semantic_version.Version, BuildId]] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> UpdateCandidate:
@@ -75,12 +80,29 @@ class UpdateCandidate:
 
         image = Image.from_dict(data['image'])
         update_path = data['update_path']
-        return cls(image, update_path)
 
-    def to_dict(self) -> dict[str, Any]:
+        # This is not a required field. If this candidate is not a lightweight checkpoint,
+        # there will be no "exempts from" images
+        exempts_data = data.get('exempt_from', [])
+        exempts = parse_lwc_exempts(exempts_data)
+
+        return cls(image, update_path, exempts)
+
+    def to_dict(self, update_type=UpdateType.standard) -> dict[str, Any]:
         """Export an UpdateCandidate to a dictionary"""
-
-        return {'image': self.image.to_dict(), 'update_path': self.update_path}
+        return {
+            'image': self.image.to_dict(),
+            'update_path': self.update_path,
+            **(
+                # Write the exempt section only if we actually have an exempt list for
+                # lightweight checkpoints (lwc), and only if this is a fallback update.
+                # If it is a canonical update, and we have a lwc, there is no need to send
+                # the exempt info to the clients. We already know from the server side that
+                # the lwc is needed.
+                {'exempt_from': [f"{v}:{b}" for v, b in self.exempts]}
+                if self.exempts and update_type.is_fallback() else {}
+            )
+        }
 
     def __repr__(self) -> str:
         return "{}, {}".format(self.image, self.update_path)
@@ -104,10 +126,12 @@ class UpdatePath:
       }
     """
 
-    def __init__(self, release: str, replacement_eol_variant: str, candidates: list[UpdateCandidate]):
+    def __init__(self, release: str, replacement_eol_variant: str, candidates: list[UpdateCandidate],
+                 update_type=UpdateType.standard):
         self.release = release
         self.replacement_eol_variant = replacement_eol_variant
         self.candidates = []
+        self.update_type = update_type
 
         if not candidates:
             return
@@ -140,7 +164,7 @@ class UpdatePath:
         data = {}
         array = []
         for candidate in self.candidates:
-            cdata = candidate.to_dict()
+            cdata = candidate.to_dict(self.update_type)
             array.append(cdata)
 
         # For legacy reasons we need to wrap the list of update candidates around "minor".
