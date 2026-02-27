@@ -111,6 +111,18 @@ Shadow checkpoints can't be flagged as `skip`. If you released a shadow checkpoi
 and then, later on, you desire to delete it, you need to remove, rename or move
 the image manifest.
 
+Lightweight checkpoints
+-----------------------
+
+This is a separate form of checkpoints. Compared to the canonical ones, these are
+more flexible and with fewer restrictions. The biggest differences are:
+- Downgrades are still allowed, even after passing a lightweight checkpoint (lwc)
+- lwcs are declared per branch, and there is no need to create sync points between all branches
+- It's possible to easily set separation points, before which it's required to install
+  the lwc, and after which it can be skipped
+- Because lwcs act on branches, they are declared in the server config file, instead of
+  the images manifest
+
 Client and server
 -----------------
 
@@ -193,3 +205,18 @@ E.g. if you want to revert checkpoint 2, you need to release an image that has
 But in the other variants (unless there you already released the checkpoint 2 too),
 you can create a shadow checkpoint with `introduces_checkpoint: 3` and `requires_checkpoint: 1`.
 This will allow the server to consider the checkpoint 1 and 3 as being compatible.
+
+### After releasing a lightweight checkpoint, is it possible to expand the "exempt from" list?
+
+Yes, the configuration lives on the server side, and it's possible to expand the "exempt from"
+list later on, once you release images that already gracefully handle the breaking changes
+introduced in that lwc.
+
+### When should we use a checkpoint compared to a lightweight checkpoint?
+
+The most important difference is that with a lwc you can still perform a downgrade.
+This means that lwc should be chosen only when you want to have breaking changes that
+are still backward compatible.
+E.g. if you want to change the signing key used. In that case you can create an lwc that
+includes both the old and new certificate and sign with only the new key all future images.
+If instead you don't want to trust the old certificate anymore, you'll need a full checkpoint.

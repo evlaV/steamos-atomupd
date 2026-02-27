@@ -128,12 +128,17 @@ When an update is available, the JSON *object* has the following keys:
 
     **candidates**
     :   An array of objects, each of them describing a possible update.
-        Every object has the following keys:
+        Every object has the following keys, unless marked optional:
 
         **update_path**
         :   Relative path pointing to the rauc bundle file, needed to
             initialize the update. For example
             `jupiter/20211022.4/jupiter-20211022.4-snapshot.raucb`
+
+        **exempt_from**
+        :   An optional array of strings with the form "${VERSION}:${BUILDID}"
+            to inform the clients that they can skip this update candidate
+            only if their current image meets the exempt prerequisites.
 
         **image**
         :   An object with the details of the proposed image update.
