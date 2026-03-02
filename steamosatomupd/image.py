@@ -102,7 +102,7 @@ class Image:
     branch: str
     default_update_branch: str
     arch: str
-    version: semantic_version.Version
+    version: semantic_version.Version | None
     buildid: BuildId
     introduces_checkpoint: int
     requires_checkpoint: int
