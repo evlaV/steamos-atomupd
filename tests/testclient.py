@@ -108,7 +108,6 @@ update_data = [
         msg='Update with lightweight checkpoint, matching the requirements 2',
         update_file=data_path / 'update_lwc_main.json',
         manifest=data_path / '20260205_manifest.json',
-        updates=[BuildId.from_string('20260205.1000')],
     ),
     UpdateData(
         msg='Update with lightweight checkpoint, matching the requirements 3',

@@ -811,12 +811,6 @@ class UpdateClient:
             log.debug("This is very unexpected, the server response was:\n '%s'", server_response)
             return -1
 
-        update = prevent_update_loop(update, current_image)
-
-        if not update:
-            log.debug("The server proposed an update that we are already using, nothing to do...")
-            return 0
-
         exempt_candidates = []
 
         for potential_candidate in update.candidates:
@@ -832,6 +826,14 @@ class UpdateClient:
 
         if not update.candidates:
             log.debug("The server only proposed a lightweight checkpoint update that we can skip...")
+            return 0
+
+        # After removing the eventual lightweight checkpoints that we can skip, we check if there is
+        # a loop in the proposed updates
+        update = prevent_update_loop(update, current_image)
+
+        if not update:
+            log.debug("The server proposed an update that we are already using, nothing to do...")
             return 0
 
         candidate = update.candidates[0]

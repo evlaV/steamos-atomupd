@@ -4,6 +4,6 @@
   "variant": "steamdeck",
   "default_update_branch": "stable",
   "arch": "amd64",
-  "version": "3.8.1",
+  "version": "3.8.0",
   "buildid": "20260205.1000"
 }
