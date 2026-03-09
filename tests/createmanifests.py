@@ -20,6 +20,7 @@ import json
 from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 
 class Variant(StrEnum):
@@ -547,9 +548,9 @@ def build_image_hierarchy(path: Path, only_additional_images=False) -> None:
                 img_manifest.touch()
                 continue
 
-            json_data = {'product': manifest.product, 'release': manifest.release,
-                         'variant': manifest.variant, 'arch': manifest.arch,
-                         'version': manifest.version, 'buildid': manifest.buildid}
+            json_data: dict[str, Any] = {'product': manifest.product, 'release': manifest.release,
+                                         'variant': manifest.variant, 'arch': manifest.arch,
+                                         'version': manifest.version, 'buildid': manifest.buildid}
 
             if manifest.branch != Branch.LEGACY:
                 json_data['branch'] = manifest.branch
