@@ -195,13 +195,12 @@ def do_progress():
         if len(words) == 0:
             continue
 
-        if words[0] == "installing" and words[2] == "started":
+        if words[0] == "Installation" and words[2] == "started":
             print("%d%%" % 0)
-        elif words[0] == "installing" and words[2] == "finished":
+        elif words[0] == "Installation" and words[2] == "succeeded":
             print("%d%%" % 100)
-        elif words[0] == "installing" and words[2] == "succeeded":
             break
-        elif words[0] == "installing" and words[2] == "failed:":
+        elif words[0] == "Installation" and words[2] == "failed:":
             break
         elif line == "stopping service" or line.startswith("Got exit signal"):
             break
