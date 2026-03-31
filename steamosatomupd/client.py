@@ -21,6 +21,7 @@ import configparser
 import datetime
 import json
 import logging
+import re
 import os
 import shlex
 import signal
@@ -41,6 +42,25 @@ from steamosatomupd.utils import DEFAULT_RAUC_CONF, FALLBACK_RAUC_CONF, ROOTFS_I
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
+
+# Please keep this in sync with the server nginx configuration
+AU_HASH_NOTICE = 'DO_NOT_SHARE_URL'
+
+
+class _RedactingFilter(logging.Filter):
+    """Replaces the eventual secret hash path component with `REDACTED`, so that the
+    URLs can be safely used in log messages
+    """
+    def filter(self, record):
+        if record.args:
+            record.msg = record.getMessage()
+            record.args = None
+        record.msg = re.sub(
+            r'/[^/]+_' + AU_HASH_NOTICE + '/', '/REDACTED/', str(record.msg))
+        return True
+
+
+log.addFilter(_RedactingFilter())
 
 # Hard-coded defaults
 FAILED_ATTEMPTS_FILENAME = 'failed_attempts.log'

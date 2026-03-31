@@ -279,6 +279,7 @@ class DownloadUpdateData:
     second_last: bool = False
     meta_attempts: int = 1
     error_code: int = 0
+    redacted: bool = False
     # These are the production server that we use for Jupiter
     meta_url: str = 'https://steamdeck-atomupd.steamos.cloud/meta'
     query_url: str = 'https://steamdeck-atomupd.steamos.cloud/updates'
@@ -408,6 +409,38 @@ download_update_data_4xx = [
     ),
 ]
 
+download_update_data_hash = [
+    DownloadUpdateData(
+        msg="Hash not known to the server",
+        error_code=401,
+        redacted=True,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': f'steamdecktest_12345abc_{client.AU_HASH_NOTICE}',
+            'default_update_branch': 'stable',
+            'arch': 'amd64',
+            'version': '3.7.0',
+            'buildid': '20241016.1',
+        },
+    ),
+
+    DownloadUpdateData(
+        msg="No hash used",
+        error_code=401,
+        redacted=False,
+        image_data={
+            'product': 'steamos',
+            'release': 'holo',
+            'variant': 'steamdecktest-1_SHARE_URL',
+            'default_update_branch': 'stable',
+            'arch': 'amd64',
+            'version': '3.7.0',
+            'buildid': '20241016.1',
+        },
+    ),
+]
+
 
 class DownloadUpdateJSON(unittest.TestCase):
     def test_update_request(self):
@@ -458,6 +491,23 @@ class DownloadUpdateJSON(unittest.TestCase):
                 self.assertEqual(attempts, 2)
 
                 self.assertEqual(he.exception.code, data.error_code)
+
+    def test_download_update_data_hash(self):
+        for data in download_update_data_hash:
+            with self.subTest(msg=data.msg):
+                image = Image.from_dict(data.image_data)
+
+                with self.assertLogs(level='DEBUG') as lo, self.assertRaises(urllib.error.HTTPError) as he:
+                    client.download_update_from_rest_url(data.meta_url, image,
+                                                         data.requested_branch,
+                                                         data.requested_variant,
+                                                         data.second_last)
+
+                self.assertEqual(he.exception.code, data.error_code)
+
+                log_output = '\n'.join(lo.output)
+                self.assertNotIn(client.AU_HASH_NOTICE, log_output)
+                self.assertEqual('/REDACTED/' in log_output, data.redacted)
 
 
 if __name__ == '__main__':
