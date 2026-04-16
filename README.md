@@ -45,10 +45,10 @@ Install the client:
 
     apt install holo-atomupd-client
 
-Create a configuration file at `/etc/holo-atomupd/client.conf`:
+Create a configuration file at `/etc/steamos-atomupd/client.conf`:
 
-    mkdir -p /etc/holo-atomupd
-    vi /etc/holo-atomupd/client.conf
+    mkdir -p /etc/steamos-atomupd
+    vi /etc/steamos-atomupd/client.conf
     ----
     [Server]
     MetaUrl = http://localhost:5000

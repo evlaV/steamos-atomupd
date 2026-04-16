@@ -67,10 +67,10 @@ FAILED_ATTEMPTS_FILENAME = 'failed_attempts.log'
 FAILED_UPDATE_LOG_ENTRY = 'FAILED UPDATE'
 
 # Default args
-DEFAULT_CONFIG_FILE = '/etc/holo-atomupd/client.conf'
+DEFAULT_CONFIG_FILE = '/etc/steamos-atomupd/client.conf'
 
 # Default config
-DEFAULT_MANIFEST_FILE = '/etc/holo-atomupd/manifest.json'
+DEFAULT_MANIFEST_FILE = '/etc/steamos-atomupd/manifest.json'
 DEFAULT_RUNTIME_DIR = '/run/steamos-atomupd'
 
 rauc_conf_path = DEFAULT_RAUC_CONF
