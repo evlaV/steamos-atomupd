@@ -8,7 +8,7 @@ The image manifest
 
 An *image manifest* describes an image. It's a JSON file, and it's created
 during an image build, along other build artifacts. An image manifest is
-installed within the image in `/usr/lib/holo-atomupd/manifest.json`, and
+installed within the image in `/usr/lib/steamos-atomupd/manifest.json`, and
 it's also part of the build artifacts.
 
 #### Mandatory fields
