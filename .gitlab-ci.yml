@@ -51,7 +51,7 @@ test:jupiter:
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
           desync git json-glib meson python-coverage python-flask
-          python-semantic-version python-setuptools python-pyinotify rauc squashfs-tools
+          python-semantic-version python-setuptools rauc squashfs-tools
     after_script:
       - coverage report -m
       - coverage xml -o _build/tests/meson-logs/coverage.xml
@@ -72,7 +72,7 @@ test:jupiter:
     image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/archlinux:base-devel
     before_script:
         - pacman -Syu --needed --noconfirm --noprogressbar
-          python-flask python-semantic-version python-setuptools python-pyinotify python-pylint mypy
+          python-flask python-semantic-version python-setuptools python-pylint mypy
 
 lint:pylint:
     extends: .lint_template

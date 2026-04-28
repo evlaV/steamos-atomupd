@@ -23,12 +23,9 @@ import os
 import shutil
 import tempfile
 from dataclasses import dataclass, field
-import signal
 import subprocess
 import sys
-import time
 import unittest
-from difflib import ndiff
 from pathlib import Path
 from unittest.mock import patch
 
@@ -75,13 +72,11 @@ class ServerData:
     msg: str
     config: ServerConfig
     expectation: str
-    changed_expectation: str = ""
     mock_leftovers: Path | None = None
     mock_ndiff: Path | None = None
     replaced_leftovers: bool = False
     unchanged_leftovers: bool = False
     removed_image_warning: bool = False
-    run_as_daemon: bool = False
     exit_code: int = 0
     log_message: str = ""
 
@@ -138,29 +133,6 @@ server_data = [
         mock_ndiff=EXPECTATION_PARENT / 'static_rel_and_snap_mock_ndiff',
         replaced_leftovers=True,
         unchanged_leftovers=True,
-    ),
-    ServerData(
-        msg='Static server with release images running as daemon',
-        config=ServerConfig(
-            pool_dir='releases',
-            branches=('stable', 'beta', 'rc'),
-            branches_to_consider={
-                'rc': ['stable'],
-                'beta': ['stable', 'rc'],
-            },
-            remote_info_config={
-                'amd64': RemoteInfoConfig(
-                    variants=('steamdeck',),
-                    branches=('stable', 'beta', 'rc'),
-                ),
-            },
-        ),
-        expectation='staticexpected',
-        changed_expectation='staticdaemonexpected2',
-        mock_leftovers=EXPECTATION_PARENT / 'staticexpected_mock_leftover',
-        unchanged_leftovers=True,
-        removed_image_warning=True,
-        run_as_daemon=True,
     ),
     ServerData(
         msg='Static server with snapshot images',
@@ -226,20 +198,6 @@ server_data = [
             },
         ),
         expectation='',
-        exit_code=1,
-    ),
-    ServerData(
-        msg='Server with a variant that does not match any of the images in the pool, as daemon',
-        config=ServerConfig(
-            pool_dir='releases-and-snaps5',
-            branches=('stable', 'beta', 'rc', 'missing'),
-            branches_to_consider={
-                'rc': ['stable'],
-                'beta': ['stable', 'rc'],
-            },
-        ),
-        expectation='',
-        run_as_daemon=True,
         exit_code=1,
     ),
     ServerData(
@@ -430,25 +388,6 @@ server_data = [
             },
         ),
         expectation='branch1_expected',
-    ),
-    ServerData(
-        msg='Images with the new branch parameter',
-        config=ServerConfig(
-            pool_dir='branch1',
-            branches=('stable', 'beta', 'rc'),
-            branches_to_consider={
-                'rc': ['stable'],
-                'beta': ['stable', 'rc'],
-            },
-            remote_info_config={
-                'amd64': RemoteInfoConfig(
-                    variants=('steamdeck',),
-                    branches=('stable', 'beta', 'rc'),
-                ),
-            },
-        ),
-        expectation='branch1_expected',
-        run_as_daemon=True,
     ),
     ServerData(
         msg='Mix of old and new images',
@@ -883,8 +822,6 @@ class StaticServerTestCase(unittest.TestCase):
             ]), file=sys.stderr)
             sys.exit(1)
 
-        steamos_atomupd_dir = Path.cwd()
-
         for data in server_data:
             # If necessary for debugging, you can point meta_dir to a specific directory to avoid
             # cleaning it up when the execution ends
@@ -930,78 +867,30 @@ class StaticServerTestCase(unittest.TestCase):
                 if data.mock_leftovers:
                     shutil.copytree(data.mock_leftovers, meta_dir, dirs_exist_ok=True)
 
-                updated_path = os.path.join(meta_dir, "steamos-updated.txt")
-                daemon: subprocess.Popen | None = None
+                args = ['--debug', '--config', tmp_config.name]
 
-                if data.run_as_daemon:
-                    # We don't grab the output when running as a daemon, so we can't do assumptions
-                    # regarding the ndiff
-                    self.assertEqual(data.mock_ndiff, None)
-
-                    my_env = os.environ
-                    my_env["IN_SOURCE_TREE"] = "True"
-                    daemon = subprocess.Popen([sys.executable, steamos_atomupd_dir / 'bin/holo-atomupd-staticserver', '--run-daemon', '--debug', '--config', tmp_config.name],
-                                              env=my_env, cwd=meta_dir)
-
-                    # Give the static server time to set up it's watch, etc.
-                    time.sleep(2)
-
+                with self.assertLogs(level=logging.DEBUG) as lo, cm_chdir(meta_dir):
                     if data.exit_code != 0:
-                        # Wait for the daemon to terminate with an error
-                        self.assertEqual(daemon.wait(timeout=5), data.exit_code)
-                        continue
-
-                    trigger_path = os.path.join(images.name, data.config.pool_dir, "steamos", "updated.txt")
-                    log.info(f"TEST: Started static server as daemon, triggering file at {trigger_path}")
-
-                    lastmtime = 0
-                    if os.path.isfile(updated_path):
-                        lastmtime = os.path.getmtime(updated_path)
-                    newmtime = lastmtime
-
-                    # Then compare result with expected result since running the daemon should parse the data
-                    p = run_diff(meta_dir, data.expectation)
-                    self.assertEqual(p.stdout, '', p.stdout)
-                    self.assertEqual(p.returncode, 0)
-
-                    # Trigger a new scan by touching the right file
-                    open(trigger_path, 'a').close()
-
-                    log.info("TEST: Touched trigger file, waiting for daemon to parse new data")
-
-                    if os.path.isfile(updated_path):
-                        newmtime = os.path.getmtime(updated_path)
-
-                    # Now wait for it to indicate it has finished these by watching for updated.txt change
-                    while newmtime == lastmtime:
-                        time.sleep(1)
-                        if os.path.isfile(updated_path):
-                            newmtime = os.path.getmtime(updated_path)
-                else:
-                    args = ['--debug', '--config', tmp_config.name]
-
-                    with self.assertLogs(level=logging.DEBUG) as lo, cm_chdir(meta_dir):
-                        if data.exit_code != 0:
-                            with self.assertRaises(SystemExit) as se:
-                                staticserver.main(args)
-                            self.assertEqual(se.exception.code, data.exit_code)
-                            continue
-                        else:
+                        with self.assertRaises(SystemExit) as se:
                             staticserver.main(args)
+                        self.assertEqual(se.exception.code, data.exit_code)
+                        continue
+                    else:
+                        staticserver.main(args)
 
-                    print('\n'.join(lo.output))
+                print('\n'.join(lo.output))
 
-                    replaced_files = any(line for line in lo.output if 'Replacing' in line)
-                    self.assertEqual(replaced_files, data.replaced_leftovers, replaced_files)
+                replaced_files = any(line for line in lo.output if 'Replacing' in line)
+                self.assertEqual(replaced_files, data.replaced_leftovers, replaced_files)
 
-                    unchanged_files = any(line.endswith('has not changed, skipping...') for line in lo.output)
-                    self.assertEqual(unchanged_files, data.unchanged_leftovers, unchanged_files)
+                unchanged_files = any(line.endswith('has not changed, skipping...') for line in lo.output)
+                self.assertEqual(unchanged_files, data.unchanged_leftovers, unchanged_files)
 
-                    deleted_images = any(line.endswith('with the "skip" option set') for line in lo.output)
-                    self.assertEqual(deleted_images, data.removed_image_warning, deleted_images)
+                deleted_images = any(line.endswith('with the "skip" option set') for line in lo.output)
+                self.assertEqual(deleted_images, data.removed_image_warning, deleted_images)
 
-                    if data.log_message:
-                        self.assertIn(data.log_message, lo.output)
+                if data.log_message:
+                    self.assertIn(data.log_message, lo.output)
 
                 if data.mock_ndiff:
                     # Assert that the diff between the new files and the leftovers is correctly
@@ -1017,50 +906,6 @@ class StaticServerTestCase(unittest.TestCase):
                 p = run_diff(meta_dir, data.expectation)
                 self.assertEqual(p.stdout, '', p.stdout)
                 self.assertEqual(p.returncode, 0)
-
-                if data.changed_expectation:
-                    # Now add some updates
-                    build_image_hierarchy(Path(images.name), only_additional_images=True)
-
-                    # Now compare the result with previous expectation. Since the daemon
-                    # should not have yet updated any metadata
-                    p = run_diff(meta_dir, data.expectation)
-                    self.assertEqual(p.stdout, '', p.stdout)
-                    self.assertEqual(p.returncode, 0)
-
-                    lastmtime = os.path.getmtime(updated_path)
-                    newmtime = lastmtime
-
-                    # Trigger a new scan by touching trigger file again
-                    Path(trigger_path).touch()
-
-                    # Wait for server to signal it has finished again by watching for updated.txt change again
-                    while newmtime == lastmtime:
-                        time.sleep(1)
-                        newmtime = os.path.getmtime(updated_path)
-
-                    # Then compare the result with the expected one
-                    p = run_diff(meta_dir, data.changed_expectation)
-                    self.assertEqual(p.stdout, '', p.stdout)
-                    self.assertEqual(p.returncode, 0)
-
-                if daemon:
-                    # Now try to run a second instance and make sure the lockfile prevents it doing anything
-                    my_env = os.environ
-                    my_env["IN_SOURCE_TREE"] = "True"
-                    second_daemon = subprocess.Popen([sys.executable,
-                                                      steamos_atomupd_dir / 'bin/holo-atomupd-staticserver',
-                                                      '--run-daemon', '--debug', '--config', tmp_config.name],
-                                                     env=my_env, cwd=meta_dir)
-
-                    output = second_daemon.communicate()[0]
-                    return_code = second_daemon.returncode
-
-                    # Now make sure it quit as expected
-                    self.assertEqual(return_code, 1)
-
-                    log.info("TEST: daemon is running, so killing it")
-                    os.kill(daemon.pid, signal.SIGINT)
 
         images.cleanup()
 

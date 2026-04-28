@@ -43,7 +43,7 @@ ARG IMAGE_VERSION=""
 
 RUN apt-get update \
     && apt-get install -y \
-       meson python3-flask python3-semantic-version python3-pyinotify git golang \
+       meson python3-flask python3-semantic-version git golang \
     && apt-get install -y \
        devscripts \
     && apt-get install -y \

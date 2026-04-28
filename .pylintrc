@@ -44,7 +44,3 @@ good-names=e,
 max-line-length=120
 # Maximum number of positional arguments for function / method (default=5)
 max-positional-arguments = 20
-
-
-[TYPECHECK]
-generated-members=pyinotify

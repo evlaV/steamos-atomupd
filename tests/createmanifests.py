@@ -514,21 +514,9 @@ images_hierarchies = [
     ),
 ]
 
-additional_images = [
-    Hierarchy(
-        directory_name='releases',
-        manifests=[
-            Manifest(Variant.STEAMDECK, '3.5', '20230705.1', requires_checkpoint=2, introduces_checkpoint=3),
-        ]
-    ),
-]
 
-
-def build_image_hierarchy(path: Path, only_additional_images=False) -> None:
-
-    hierarchies = additional_images if only_additional_images else images_hierarchies
-
-    for hierarchy in hierarchies:
+def build_image_hierarchy(path: Path) -> None:
+    for hierarchy in images_hierarchies:
         images_directory = path / hierarchy.directory_name
 
         for manifest in hierarchy.manifests:

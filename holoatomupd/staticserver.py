@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2022 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -23,19 +23,14 @@ import argparse
 import configparser
 import contextlib
 from collections import defaultdict, deque
-from datetime import datetime
 import fcntl
 import json
 import logging
 import os
-import shutil
-import signal
 import sys
 from difflib import ndiff
 from pathlib import Path
 from typing import DefaultDict, Deque
-
-import pyinotify # type: ignore
 
 from holoatomupd.image import Image
 from holoatomupd.log_utils import DedupFilter
@@ -45,10 +40,7 @@ from holoatomupd.update import UpdateCandidate, UpdateType, UpdatePath
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
 log.addFilter(DedupFilter())
-wm = pyinotify.WatchManager()
 
-# Default config
-TRIGGER_FILE = "updated.txt"
 # Please keep this in sync with atomupd-daemon
 REMOTE_INFO_FILE = "remote-info.conf"
 # Please keep this in sync with atomupd-daemon
@@ -80,43 +72,8 @@ def lockpathfile(filepath):
             pass
 
 
-class UpdateParser(pyinotify.ProcessEvent):
+class UpdateParser:
     """Image pool with static update JSON files"""
-
-    def process_IN_ATTRIB(self, event):
-        """Process a file attribute change event"""
-        self.process_file_event(event)
-
-    def process_IN_CREATE(self, event):
-        """Process a file creation event"""
-        self.process_file_event(event)
-
-    def process_file_event(self, event):
-        """Helper method to call from both create and attrib events"""
-        if os.path.basename(event.pathname) == TRIGGER_FILE:
-            log.info("Trigger created: %s", event.pathname)
-            # Run another parse
-            self.image_pool = ImagePool(self.config)
-            exit_code = self.parse_all()
-
-            if exit_code != 0:
-                log.warning("Unable to parse image data, got exit code: %d", exit_code)
-
-            # Copy the trigger file from foo/updated.txt to /meta/<foo>-updated.txt to trigger
-            # the next step
-            dirname = os.path.dirname(event.pathname)
-            type_name = os.path.basename(dirname)
-
-            # We want to copy to cwd/<type_name>-updated.txt
-            targetpath = os.path.join(os.getcwd(), '-'.join([type_name, 'updated.txt']))
-            log.info("Copying updated.txt to %s", targetpath)
-            shutil.copy2(event.pathname, targetpath)
-
-            # Also write timestamp into top level updated.txt file
-            iso_date = datetime.now().astimezone().replace(microsecond=0).isoformat() + "\n"
-            updated_path = os.path.join(os.getcwd(), 'updated.txt')
-            with open(updated_path, "w", encoding='utf-8') as updated_file:
-                updated_file.write(iso_date)
 
     def __init__(self, args=None):
         super().__init__()
@@ -126,8 +83,6 @@ class UpdateParser(pyinotify.ProcessEvent):
         parser = argparse.ArgumentParser(description="Holo Update Server")
         parser.add_argument('-c', '--config', metavar='FILE', required=True,
                             help="configuration file")
-        parser.add_argument('-r', '--run-daemon', action='store_true', dest='daemon',
-                            help="Run as a daemon. Don't quit when done parsing.")
 
         log_group = parser.add_mutually_exclusive_group()
         log_group.add_argument('-d', '--debug', action='store_const', dest='loglevel',
@@ -148,8 +103,6 @@ class UpdateParser(pyinotify.ProcessEvent):
 
         with open(args.config, 'r', encoding='utf-8') as f:
             config.read_file(f)
-
-        self.daemon = args.daemon
 
         # Create image pool
         # Will sys.exit if invalid
@@ -284,22 +237,6 @@ class UpdateParser(pyinotify.ProcessEvent):
                             'This should be either manually removed (is that what you want?) or the deleted '
                             'image\'s JSON manifest should be reinstated with the "skip" option set', file)
 
-    def paths_to_watch(self) -> list[str]:
-        """Get paths to watch based on the pool_dir subdirectories"""
-        ret_list = []
-
-        # Get all subfolders of config.pool_dir
-        pool_dir = self.image_pool.images_dir
-        log.info("Watching subdirectories of %s", pool_dir)
-
-        for file in os.listdir(pool_dir):
-            d = os.path.join(pool_dir, file)
-            if os.path.isdir(d):
-                log.info("Watching %s", d)
-                ret_list.append(d)
-
-        return ret_list
-
     def parse_all(self) -> int:
         """Create file structure as needed based on known images"""
 
@@ -409,15 +346,8 @@ class UpdateParser(pyinotify.ProcessEvent):
         return 0
 
 
-def signal_handler(_sig, _frame):
-    """Handle SIG_INT signal"""
-    log.warning("Caught signal, quitting.")
-    sys.exit(0)
-
-
 def main(args=None):
     """"Creates the image pool with static update JSON files"""
-    signal.signal(signal.SIGINT, signal_handler)
 
     # Run once to parse any new images
     try:
@@ -433,21 +363,11 @@ def main(args=None):
         if not lockstatus:
             log.warning("==== Another instance of staticserver is writing into this meta path, aborting.")
             sys.exit(1)
-        else:
-            log.info("==== Created lock file at: %s", lock_path)
-            exit_code = server.parse_all()
 
-            if exit_code != 0:
-                sys.exit(exit_code)
+        log.info("==== Created lock file at: %s", lock_path)
+        exit_code = server.parse_all()
 
-            if server.daemon:
-                notifier = pyinotify.Notifier(wm, server)
-                mask = pyinotify.IN_CREATE | pyinotify.IN_ATTRIB
-                # Watch each of the subfolders of the PoolDir but none deeper
-                paths = server.paths_to_watch()
-                for path in paths:
-                    wm.add_watch(path, mask, rec=False)
+        if exit_code != 0:
+            sys.exit(exit_code)
 
-                notifier.loop()
-
-            return exit_code
+        return exit_code
