@@ -1,11 +1,11 @@
 [
-    {"version": "snapshot", "buildid": "20230801.1", "branch": "stable", "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20230801.1-snapshot-amd64-steamdeck.raucb"},
-    {"version": "3.7.8", "buildid": "20251023.1", "branch": "stable", "update_path": "steamos/holo/3.7.8/amd64/steamos-holo-20251023.1-3.7.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20260101.1000", "branch": "main", "update_path": "steamos/holo/3.8/amd64/steamos-holo-20260101.1000-3.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20260102.10000", "branch": "staging", "update_path": "steamos/holo/3.8/amd64/steamos-holo-20260102.10000-3.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20260102.10001", "branch": "staging", "update_path": "steamos/holo/3.8/amd64/steamos-holo-20260102.10001-3.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20260103.1000", "branch": "main", "update_path": "steamos/holo/3.8/amd64/steamos-holo-20260103.1000-3.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20260202.10002", "branch": "staging", "update_path": "steamos/holo/3.8/amd64/steamos-holo-20260202.10002-3.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20260205.1000", "branch": "main", "update_path": "steamos/holo/3.8/amd64/steamos-holo-20260205.1000-3.8-amd64-steamdeck.raucb"},
-    {"version": "3.8.1", "buildid": "20260130.1", "branch": "stable", "update_path": "steamos/holo/3.8.1/amd64/steamos-holo-20260130.1-3.8.1-amd64-steamdeck.raucb"}
+    {"version": "snapshot", "buildid": "20230801.1", "branch": "stable", "update_path": "steamdeck/20230801.1/steamdeck-20230801.1-snapshot.raucb"},
+    {"version": "3.7.8", "buildid": "20251023.1", "branch": "stable", "update_path": "steamdeck/20251023.1/steamdeck-20251023.1-3.7.8.raucb"},
+    {"version": "3.8.0", "buildid": "20260101.1000", "branch": "main", "update_path": "steamdeck/20260101.1000/steamdeck-20260101.1000-3.8.raucb"},
+    {"version": "3.8.0", "buildid": "20260102.10000", "branch": "staging", "update_path": "steamdeck/20260102.10000/steamdeck-20260102.10000-3.8.raucb"},
+    {"version": "3.8.0", "buildid": "20260102.10001", "branch": "staging", "update_path": "steamdeck/20260102.10001/steamdeck-20260102.10001-3.8.raucb"},
+    {"version": "3.8.0", "buildid": "20260103.1000", "branch": "main", "update_path": "steamdeck/20260103.1000/steamdeck-20260103.1000-3.8.raucb"},
+    {"version": "3.8.0", "buildid": "20260202.10002", "branch": "staging", "update_path": "steamdeck/20260202.10002/steamdeck-20260202.10002-3.8.raucb"},
+    {"version": "3.8.0", "buildid": "20260205.1000", "branch": "main", "update_path": "steamdeck/20260205.1000/steamdeck-20260205.1000-3.8.raucb"},
+    {"version": "3.8.1", "buildid": "20260130.1", "branch": "stable", "update_path": "steamdeck/20260130.1/steamdeck-20260130.1-3.8.1.raucb"}
 ]

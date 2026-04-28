@@ -11,7 +11,7 @@
                     "variant": "steamdeck-main",
                     "version": "3.6.0"
                 },
-                "update_path": "steamos/holo/3.6/amd64/steamos-holo-20230804.1000-3.6-amd64-steamdeck-main.raucb"
+                "update_path": "steamdeck-main/20230804.1000/steamdeck-main-20230804.1000-3.6.raucb"
             }
         ],
         "release": "holo"

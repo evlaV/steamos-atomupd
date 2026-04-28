@@ -15,7 +15,7 @@
                     "variant": "steamdeck",
                     "version": "3.7.1"
                 },
-                "update_path": "steamos/holo/3.7.1/amd64/steamos-holo-20240115.100-3.7.1-amd64-steamdeck.raucb"
+                "update_path": "steamdeck/20240115.100/steamdeck-20240115.100-3.7.1.raucb"
             }
         ],
         "release": "holo",

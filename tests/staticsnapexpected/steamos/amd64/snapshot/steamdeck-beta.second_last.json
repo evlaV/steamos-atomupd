@@ -11,7 +11,7 @@
                     "variant": "steamdeck-beta",
                     "version": "snapshot"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20181102.100-snapshot-amd64-steamdeck-beta.raucb"
+                "update_path": "steamdeck-beta/20181102.100/steamdeck-beta-20181102.100-snapshot.raucb"
             }
         ],
         "release": "holo"

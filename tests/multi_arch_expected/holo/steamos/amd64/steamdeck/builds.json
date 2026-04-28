@@ -1,5 +1,5 @@
 [
-    {"version": "3.7.1", "buildid": "20250701.1", "branch": "stable", "update_path": "steamos/holo/3.7.1/amd64/steamos-holo-20250701.1-3.7.1-amd64-steamdeck.raucb"},
-    {"version": "3.7.2", "buildid": "20250702.1", "branch": "stable", "update_path": "steamos/holo/3.7.2/amd64/steamos-holo-20250702.1-3.7.2-amd64-steamdeck.raucb"},
-    {"version": "3.8.0", "buildid": "20250705.100", "branch": "beta", "update_path": "steamos/holo/3.8.0/amd64/steamos-holo-20250705.100-3.8.0-amd64-steamdeck.raucb"}
+    {"version": "3.7.1", "buildid": "20250701.1", "branch": "stable", "update_path": "steamdeck/20250701.1/steamdeck-20250701.1-3.7.1.raucb"},
+    {"version": "3.7.2", "buildid": "20250702.1", "branch": "stable", "update_path": "steamdeck/20250702.1/steamdeck-20250702.1-3.7.2.raucb"},
+    {"version": "3.8.0", "buildid": "20250705.100", "branch": "beta", "update_path": "steamdeck/20250705.100/steamdeck-20250705.100-3.8.0.raucb"}
 ]

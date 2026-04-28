@@ -13,7 +13,7 @@
                     "variant": "steamdeck-beta",
                     "version": "3.6.0"
                 },
-                "update_path": "steamos/holo/3.6/amd64/steamos-holo-20231113.101-3.6-amd64-steamdeck-beta.raucb"
+                "update_path": "steamdeck-beta/20231113.101/steamdeck-beta-20231113.101-3.6.raucb"
             }
         ],
         "release": "holo"

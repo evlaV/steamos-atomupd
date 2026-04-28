@@ -11,7 +11,7 @@
                     "variant": "steamdeck",
                     "version": "snapshot"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20181108.1-snapshot-amd64-steamdeck.raucb"
+                "update_path": "steamdeck/20181108.1/steamdeck-20181108.1-snapshot.raucb"
             }
         ],
         "release": "holo"

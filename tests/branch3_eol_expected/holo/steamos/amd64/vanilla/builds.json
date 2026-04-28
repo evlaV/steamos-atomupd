@@ -1,4 +1,4 @@
 [
-    {"version": "3.6.7", "buildid": "20240109.50", "branch": "stable", "update_path": "steamos/holo/3.6.7/amd64/steamos-holo-20240109.50-3.6.7-amd64-vanilla.raucb"},
-    {"version": "3.7.5", "buildid": "20240401.50", "branch": "stable", "update_path": "steamos/holo/3.7.5/amd64/steamos-holo-20240401.50-3.7.5-amd64-vanilla.raucb"}
+    {"version": "3.6.7", "buildid": "20240109.50", "branch": "stable", "update_path": "vanilla/20240109.50/vanilla-20240109.50-3.6.7.raucb"},
+    {"version": "3.7.5", "buildid": "20240401.50", "branch": "stable", "update_path": "vanilla/20240401.50/vanilla-20240401.50-3.7.5.raucb"}
 ]

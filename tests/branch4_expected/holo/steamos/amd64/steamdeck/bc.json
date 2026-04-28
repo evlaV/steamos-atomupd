@@ -13,7 +13,7 @@
                     "variant": "steamdeck",
                     "version": "3.6.8"
                 },
-                "update_path": "steamos/holo/3.6.8/amd64/steamos-holo-20240805.100-3.6.8-amd64-steamdeck.raucb"
+                "update_path": "steamdeck/20240805.100/steamdeck-20240805.100-3.6.8.raucb"
             }
         ],
         "release": "holo"

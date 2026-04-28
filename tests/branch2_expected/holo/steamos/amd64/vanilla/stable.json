@@ -13,7 +13,7 @@
                     "variant": "vanilla",
                     "version": "3.6.7"
                 },
-                "update_path": "steamos/holo/3.6.7/amd64/steamos-holo-20240109.50-3.6.7-amd64-vanilla.raucb"
+                "update_path": "vanilla/20240109.50/vanilla-20240109.50-3.6.7.raucb"
             }
         ],
         "release": "holo"

@@ -1,5 +1,5 @@
 [
-    {"version": "3.7.8", "buildid": "20261023.50", "branch": "stable", "update_path": "steamos/holo/3.7.8/amd64/steamos-holo-20261023.50-3.7.8-amd64-vanilla.raucb"},
-    {"version": "3.8.1", "buildid": "20260130.50", "branch": "stable", "update_path": "steamos/holo/3.8.1/amd64/steamos-holo-20260130.50-3.8.1-amd64-vanilla.raucb", "introduces_checkpoint": 1},
-    {"version": "3.8.2", "buildid": "20260225.50", "branch": "stable", "update_path": "steamos/holo/3.8.2/amd64/steamos-holo-20260225.50-3.8.2-amd64-vanilla.raucb", "introduces_checkpoint": 2, "requires_checkpoint": 1}
+    {"version": "3.7.8", "buildid": "20261023.50", "branch": "stable", "update_path": "vanilla/20261023.50/vanilla-20261023.50-3.7.8.raucb"},
+    {"version": "3.8.1", "buildid": "20260130.50", "branch": "stable", "update_path": "vanilla/20260130.50/vanilla-20260130.50-3.8.1.raucb", "introduces_checkpoint": 1},
+    {"version": "3.8.2", "buildid": "20260225.50", "branch": "stable", "update_path": "vanilla/20260225.50/vanilla-20260225.50-3.8.2.raucb", "introduces_checkpoint": 2, "requires_checkpoint": 1}
 ]

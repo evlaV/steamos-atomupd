@@ -11,7 +11,7 @@
                     "variant": "steamdeck-bc",
                     "version": "3.6.0"
                 },
-                "update_path": "steamos/holo/3.6/amd64/steamos-holo-20230805.100-3.6-amd64-steamdeck-bc.raucb"
+                "update_path": "steamdeck-bc/20230805.100/steamdeck-bc-20230805.100-3.6.raucb"
             }
         ],
         "release": "holo"

@@ -520,10 +520,10 @@ def build_image_hierarchy(path: Path) -> None:
         images_directory = path / hierarchy.directory_name
 
         for manifest in hierarchy.manifests:
-            img_dir = images_directory / manifest.product / manifest.release / manifest.version / manifest.arch
+            img_dir = images_directory / manifest.variant / manifest.buildid
             if manifest.img_dir:
                 img_dir = images_directory / manifest.img_dir
-            img_name = f'{manifest.product}-{manifest.release}-{manifest.buildid}-{manifest.version}-{manifest.arch}-{manifest.variant}'
+            img_name = f'{manifest.variant}-{manifest.buildid}-{manifest.version}'
             img_manifest = img_dir / f'{img_name}.manifest.json'
             img_raucb = img_dir / f'{img_name}.raucb'
             chunks_details = img_dir / f'{img_name}.chunks_details.json'

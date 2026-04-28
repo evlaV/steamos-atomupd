@@ -11,7 +11,7 @@
                     "variant": "steamdeck-rc",
                     "version": "snapshot"
                 },
-                "update_path": "steamos/holo/snapshot/amd64/steamos-holo-20230503.1-snapshot-amd64-steamdeck-rc.raucb"
+                "update_path": "steamdeck-rc/20230503.1/steamdeck-rc-20230503.1-snapshot.raucb"
             }
         ],
         "release": "holo"
