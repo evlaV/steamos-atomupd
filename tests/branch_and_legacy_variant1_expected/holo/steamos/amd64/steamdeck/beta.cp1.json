@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck/20240120.101/steamdeck-20240120.101-3.7.6.castr",
                 "image": {
                     "arch": "amd64",
                     "branch": "beta",

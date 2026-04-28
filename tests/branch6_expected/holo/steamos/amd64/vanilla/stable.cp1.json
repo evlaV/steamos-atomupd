@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "vanilla/20260225.50/vanilla-20260225.50-3.8.2.castr",
                 "image": {
                     "arch": "amd64",
                     "branch": "stable",

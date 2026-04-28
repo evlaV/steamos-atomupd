@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck-staging/20230507.10000/steamdeck-staging-20230507.10000-3.6.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20230507.10000",

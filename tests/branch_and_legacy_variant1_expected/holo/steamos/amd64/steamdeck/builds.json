@@ -1,9 +1,9 @@
 [
-    {"version": "3.6.1", "buildid": "20231103.1", "branch": "stable", "update_path": "steamdeck/20231103.1/steamdeck-20231103.1-3.6.1.raucb"},
-    {"version": "3.6.1", "buildid": "20231104.1", "branch": "stable", "update_path": "steamdeck/20231104.1/steamdeck-20231104.1-3.6.1.raucb"},
-    {"version": "3.6.1", "buildid": "20231105.100", "branch": "beta", "update_path": "steamdeck-beta/20231105.100/steamdeck-beta-20231105.100-3.6.1.raucb"},
-    {"version": "3.6.8", "buildid": "20240110.100", "branch": "beta", "update_path": "steamdeck/20240110.100/steamdeck-20240110.100-3.6.8.raucb"},
-    {"version": "3.7.1", "buildid": "20240115.100", "branch": "beta", "update_path": "steamdeck/20240115.100/steamdeck-20240115.100-3.7.1.raucb", "introduces_checkpoint": 1},
-    {"version": "3.7.5", "buildid": "20240120.100", "branch": "beta", "update_path": "steamdeck/20240120.100/steamdeck-20240120.100-3.7.5.raucb", "requires_checkpoint": 1},
-    {"version": "3.7.6", "buildid": "20240120.101", "branch": "beta", "update_path": "steamdeck/20240120.101/steamdeck-20240120.101-3.7.6.raucb", "requires_checkpoint": 1}
+    {"version": "3.6.1", "buildid": "20231103.1", "branch": "stable", "update_path": "steamdeck/20231103.1/steamdeck-20231103.1-3.6.1.raucb", "chunks_store_path": "steamdeck/20231103.1/steamdeck-20231103.1-3.6.1.castr"},
+    {"version": "3.6.1", "buildid": "20231104.1", "branch": "stable", "update_path": "steamdeck/20231104.1/steamdeck-20231104.1-3.6.1.raucb", "chunks_store_path": "steamdeck/20231104.1/steamdeck-20231104.1-3.6.1.castr"},
+    {"version": "3.6.1", "buildid": "20231105.100", "branch": "beta", "update_path": "steamdeck-beta/20231105.100/steamdeck-beta-20231105.100-3.6.1.raucb", "chunks_store_path": "steamdeck-beta/20231105.100/steamdeck-beta-20231105.100-3.6.1.castr"},
+    {"version": "3.6.8", "buildid": "20240110.100", "branch": "beta", "update_path": "steamdeck/20240110.100/steamdeck-20240110.100-3.6.8.raucb", "chunks_store_path": "steamdeck/20240110.100/steamdeck-20240110.100-3.6.8.castr"},
+    {"version": "3.7.1", "buildid": "20240115.100", "branch": "beta", "update_path": "steamdeck/20240115.100/steamdeck-20240115.100-3.7.1.raucb", "chunks_store_path": "steamdeck/20240115.100/steamdeck-20240115.100-3.7.1.castr", "introduces_checkpoint": 1},
+    {"version": "3.7.5", "buildid": "20240120.100", "branch": "beta", "update_path": "steamdeck/20240120.100/steamdeck-20240120.100-3.7.5.raucb", "chunks_store_path": "steamdeck/20240120.100/steamdeck-20240120.100-3.7.5.castr", "requires_checkpoint": 1},
+    {"version": "3.7.6", "buildid": "20240120.101", "branch": "beta", "update_path": "steamdeck/20240120.101/steamdeck-20240120.101-3.7.6.raucb", "chunks_store_path": "steamdeck/20240120.101/steamdeck-20240120.101-3.7.6.castr", "requires_checkpoint": 1}
 ]

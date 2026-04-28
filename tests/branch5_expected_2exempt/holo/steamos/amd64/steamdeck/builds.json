@@ -1,11 +1,11 @@
 [
-    {"version": "3.7.0", "buildid": "20250909.1000", "branch": "main", "update_path": "steamdeck/20250909.1000/steamdeck-20250909.1000-3.7.raucb"},
-    {"version": "3.7.6", "buildid": "20251001.1", "branch": "stable", "update_path": "steamdeck/20251001.1/steamdeck-20251001.1-3.7.6.raucb"},
-    {"version": "3.7.7", "buildid": "20251022.1", "branch": "stable", "update_path": "steamdeck/20251022.1/steamdeck-20251022.1-3.7.7.raucb"},
-    {"version": "3.7.8", "buildid": "20251023.1", "branch": "stable", "update_path": "steamdeck/20251023.1/steamdeck-20251023.1-3.7.8.raucb"},
-    {"version": "3.8.0", "buildid": "20260101.1000", "branch": "main", "update_path": "steamdeck/20260101.1000/steamdeck-20260101.1000-3.8.raucb"},
-    {"version": "3.8.0", "buildid": "20260103.1000", "branch": "main", "update_path": "steamdeck/20260103.1000/steamdeck-20260103.1000-3.8.raucb"},
-    {"version": "3.8.0", "buildid": "20260205.1000", "branch": "main", "update_path": "steamdeck/20260205.1000/steamdeck-20260205.1000-3.8.raucb"},
-    {"version": "3.8.0", "buildid": "20260209.1000", "branch": "main", "update_path": "steamdeck/20260209.1000/steamdeck-20260209.1000-3.8.raucb"},
-    {"version": "3.8.1", "buildid": "20260206.1", "branch": "stable", "update_path": "steamdeck/20260206.1/steamdeck-20260206.1-3.8.1.raucb"}
+    {"version": "3.7.0", "buildid": "20250909.1000", "branch": "main", "update_path": "steamdeck/20250909.1000/steamdeck-20250909.1000-3.7.raucb", "chunks_store_path": "steamdeck/20250909.1000/steamdeck-20250909.1000-3.7.castr"},
+    {"version": "3.7.6", "buildid": "20251001.1", "branch": "stable", "update_path": "steamdeck/20251001.1/steamdeck-20251001.1-3.7.6.raucb", "chunks_store_path": "steamdeck/20251001.1/steamdeck-20251001.1-3.7.6.castr"},
+    {"version": "3.7.7", "buildid": "20251022.1", "branch": "stable", "update_path": "steamdeck/20251022.1/steamdeck-20251022.1-3.7.7.raucb", "chunks_store_path": "steamdeck/20251022.1/steamdeck-20251022.1-3.7.7.castr"},
+    {"version": "3.7.8", "buildid": "20251023.1", "branch": "stable", "update_path": "steamdeck/20251023.1/steamdeck-20251023.1-3.7.8.raucb", "chunks_store_path": "steamdeck/20251023.1/steamdeck-20251023.1-3.7.8.castr"},
+    {"version": "3.8.0", "buildid": "20260101.1000", "branch": "main", "update_path": "steamdeck/20260101.1000/steamdeck-20260101.1000-3.8.raucb", "chunks_store_path": "steamdeck/20260101.1000/steamdeck-20260101.1000-3.8.castr"},
+    {"version": "3.8.0", "buildid": "20260103.1000", "branch": "main", "update_path": "steamdeck/20260103.1000/steamdeck-20260103.1000-3.8.raucb", "chunks_store_path": "steamdeck/20260103.1000/steamdeck-20260103.1000-3.8.castr"},
+    {"version": "3.8.0", "buildid": "20260205.1000", "branch": "main", "update_path": "steamdeck/20260205.1000/steamdeck-20260205.1000-3.8.raucb", "chunks_store_path": "steamdeck/20260205.1000/steamdeck-20260205.1000-3.8.castr"},
+    {"version": "3.8.0", "buildid": "20260209.1000", "branch": "main", "update_path": "steamdeck/20260209.1000/steamdeck-20260209.1000-3.8.raucb", "chunks_store_path": "steamdeck/20260209.1000/steamdeck-20260209.1000-3.8.castr"},
+    {"version": "3.8.1", "buildid": "20260206.1", "branch": "stable", "update_path": "steamdeck/20260206.1/steamdeck-20260206.1-3.8.1.raucb", "chunks_store_path": "steamdeck/20260206.1/steamdeck-20260206.1-3.8.1.castr"}
 ]

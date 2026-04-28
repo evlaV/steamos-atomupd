@@ -60,12 +60,13 @@ class UpdateType(Enum):
 class UpdateCandidate:
     """An update candidate
 
-    An update candidate is simply an image with an update path.
+    An update candidate is simply an image with an update and chunks store paths.
     If this is a lightweight checkpoint, we also store the eventual exempt images list.
     """
 
     image: Image
     update_path: str
+    chunks_path: str
     exempts: list[tuple[Version, BuildId]] = field(default_factory=list)
 
     @classmethod
@@ -79,18 +80,22 @@ class UpdateCandidate:
         image = Image.from_dict(data['image'])
         update_path = data['update_path']
 
+        # If we are querying an old server instance, we may not get the 'chunks_store_path' entry
+        chunks_path = data.get('chunks_store_path', '')
+
         # This is not a required field. If this candidate is not a lightweight checkpoint,
         # there will be no "exempts from" images
         exempts_data = data.get('exempt_from', [])
         exempts = parse_lwc_exempts(exempts_data)
 
-        return cls(image, update_path, exempts)
+        return cls(image, update_path, chunks_path, exempts)
 
     def to_dict(self, update_type=UpdateType.standard) -> dict[str, Any]:
         """Export an UpdateCandidate to a dictionary"""
         return {
             'image': self.image.to_dict(),
             'update_path': self.update_path,
+            'chunks_store_path': self.chunks_path,
             **(
                 # Write the exempt section only if we actually have an exempt list for
                 # lightweight checkpoints (lwc), and only if this is a fallback update.
@@ -103,7 +108,7 @@ class UpdateCandidate:
         }
 
     def __repr__(self) -> str:
-        return "{}, {}".format(self.image, self.update_path)
+        return "{}, {}, {}".format(self.image, self.update_path, self.chunks_path)
 
 
 class UpdatePath:

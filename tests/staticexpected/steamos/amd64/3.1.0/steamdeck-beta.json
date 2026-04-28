@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck-beta/20220402.103/steamdeck-beta-20220402.103-3.1.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220402.103",
@@ -16,6 +17,7 @@
                 "update_path": "steamdeck-beta/20220402.103/steamdeck-beta-20220402.103-3.1.raucb"
             },
             {
+                "chunks_store_path": "steamdeck-beta/20220423.100/steamdeck-beta-20220423.100-3.3.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220423.100",
@@ -30,6 +32,7 @@
                 "update_path": "steamdeck-beta/20220423.100/steamdeck-beta-20220423.100-3.3.raucb"
             },
             {
+                "chunks_store_path": "steamdeck-beta/20220501.100/steamdeck-beta-20220501.100-3.4.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220501.100",

@@ -45,7 +45,7 @@ IMAGE_MANIFEST_EXT = '.manifest.json'
 # Atomic image things
 
 RAUC_BUNDLE_EXT = '.raucb'
-CASYNC_STORE_EXT = '.castr'
+CHUNKS_STORE_EXT = '.castr'
 CHUNKS_DETAILS_EXT = '.chunks_details.json'
 
 # Type alias to make it clearer what a str is supposed to hold
@@ -74,20 +74,35 @@ class _RawLwCheckpoint:
 
 
 def _get_rauc_update_path(images_dir: str, manifest_path: str) -> str:
-
     rauc_bundle = manifest_path[:-len(IMAGE_MANIFEST_EXT)] + RAUC_BUNDLE_EXT
     if not os.path.isfile(rauc_bundle):
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), rauc_bundle)
-
-    casync_store = manifest_path[:-len(IMAGE_MANIFEST_EXT)] + CASYNC_STORE_EXT
-    if not os.path.isdir(casync_store):
-        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), casync_store)
 
     rauc_bundle_relpath = os.path.relpath(rauc_bundle, images_dir)
 
     return rauc_bundle_relpath
 
-# Image pool
+
+def _get_chunks_store_path(images_dir: str, manifest_path: str) -> str:
+    # Start by checking if there is a castr directory next to the image manifest.
+    # If there isn't, we search for castr directories in the parents.
+
+    search_path = Path(manifest_path)
+
+    while search_path != search_path.parent:
+        # Search until we reach the root
+        search_path = search_path.parent
+        unified_store = [d for d in search_path.glob(f"*{CHUNKS_STORE_EXT}") if d.is_dir()]
+        if not unified_store:
+            continue
+
+        if len(unified_store) == 1:
+            store_path_resolved = unified_store[0].resolve()
+            return str(store_path_resolved.relative_to(images_dir))
+
+        raise ValueError(f"There are multiple chunks store in {search_path}")
+
+    raise ValueError(f"Failed to find the chunks store for {manifest_path}")
 
 
 def _get_update_candidates(candidates: list[UpdateCandidate], image: Image,
@@ -465,7 +480,7 @@ class ImagePool:
                     # This is an image that should not be an update candidate
                     # Record it and then continue
                     log.debug("Not considering %s as a valid update candidate", f)
-                    candidate = UpdateCandidate(image, "")
+                    candidate = UpdateCandidate(image, update_path="", chunks_path="")
                     self.image_updates_found.append(candidate)
                     continue
 
@@ -474,8 +489,10 @@ class ImagePool:
                     if image.shadow_checkpoint:
                         # Those are not real images, so we don't expect valid update paths
                         update_path = ''
+                        chunks_path = ''
                     else:
                         update_path = _get_rauc_update_path(images_dir, manifest_path)
+                        chunks_path = _get_chunks_store_path(images_dir, manifest_path)
                 except Exception as e:
                     raise RuntimeError("Failed to get update path for manifest %s" % f) from e
 
@@ -487,7 +504,7 @@ class ImagePool:
                     continue
 
                 # Add image as an update candidate
-                candidate = UpdateCandidate(image, update_path)
+                candidate = UpdateCandidate(image, update_path, chunks_path)
                 self.image_updates_found.append(candidate)
                 candidates.append(candidate)
                 log.debug("Update candidate added from manifest: %s", f)
@@ -496,7 +513,7 @@ class ImagePool:
                 # This allows us to know where to get this specific image
                 image_version_buildid = (image.get_version_str(), str(image.buildid))
                 for raw_lwc in raw_lw_checkpoints.get(image_version_buildid, []):
-                    target_candidate = UpdateCandidate(image, update_path, raw_lwc.exempts)
+                    target_candidate = UpdateCandidate(image, update_path, chunks_path, raw_lwc.exempts)
                     lwc_variant_branch = (raw_lwc.variant, raw_lwc.branch)
                     self.lw_checkpoints[lwc_variant_branch].append(target_candidate)
                     log.info("Processed info about the lightweight checkpoint target: %s", target_candidate)

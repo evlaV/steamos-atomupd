@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck-beta/20230412.100/steamdeck-beta-20230412.100-3.6.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20230412.100",
@@ -16,6 +17,7 @@
                 "update_path": "steamdeck-beta/20230412.100/steamdeck-beta-20230412.100-3.6.raucb"
             },
             {
+                "chunks_store_path": "steamdeck-beta/20230413.100/steamdeck-beta-20230413.100-3.6.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20230413.100",

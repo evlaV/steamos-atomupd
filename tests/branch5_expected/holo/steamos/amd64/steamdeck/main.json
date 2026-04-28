@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck/20260103.1000/steamdeck-20260103.1000-3.8.castr",
                 "exempt_from": [
                     "3.7.7:20251022.1"
                 ],
@@ -19,6 +20,7 @@
                 "update_path": "steamdeck/20260103.1000/steamdeck-20260103.1000-3.8.raucb"
             },
             {
+                "chunks_store_path": "steamdeck/20260209.1000/steamdeck-20260209.1000-3.8.castr",
                 "image": {
                     "arch": "amd64",
                     "branch": "main",

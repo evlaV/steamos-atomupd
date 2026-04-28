@@ -37,7 +37,7 @@ def mk_image(imgdata):
 
 def mk_update_candidate(imgdata):
     return UpdateCandidate(Image.from_dict(imgdata),
-                           'random-string-supposed-to-be-an-update-path')
+                           'random-string-supposed-to-be-an-update-path', 'chunks_path')
 
 class GetUpdateCandidatesTestCase(unittest.TestCase):
 

@@ -46,13 +46,16 @@ upddata = {
             {
                 'image': newimgdata,
                 'update_path': 'some-path',
+                'chunks_store_path': 'another-path',
             }, {
                 'image': oldimgdata,
                 'update_path': 'some-path',
+                'chunks_store_path': 'another-path',
             }
         ]
     }
 }
+
 
 class UpdateTestCase(unittest.TestCase):
 
@@ -73,6 +76,7 @@ class UpdateTestCase(unittest.TestCase):
         candidates = update.candidates
         self.assertTrue(sorted(candidates, key=lambda c: c.image) == candidates)
         self.assertTrue(candidates[0].image < candidates[1].image)
+
 
 if __name__ == '__main__':
     unittest.main()

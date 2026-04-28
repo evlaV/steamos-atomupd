@@ -135,6 +135,10 @@ When an update is available, the JSON *object* has the following keys:
             initialize the update. For example
             `jupiter/20211022.4/jupiter-20211022.4-snapshot.raucb`
 
+        **chunks_store_path**
+        :   Relative path pointing to the chunks store directory. For example
+            `jupiter/chunks.castr`
+
         **exempt_from**
         :   An optional array of strings with the form "${VERSION}:${BUILDID}"
             to inform the clients that they can skip this update candidate

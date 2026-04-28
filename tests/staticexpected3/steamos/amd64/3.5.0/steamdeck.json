@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck/20230404.1/steamdeck-20230404.1-3.5.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20230404.1",
@@ -16,6 +17,7 @@
                 "update_path": "steamdeck/20230404.1/steamdeck-20230404.1-3.5.raucb"
             },
             {
+                "chunks_store_path": "steamdeck/20230411.1/steamdeck-20230411.1-3.5.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20230411.1",

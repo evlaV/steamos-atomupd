@@ -1,4 +1,4 @@
 [
-    {"version": "3.6.7", "buildid": "20240109.50", "branch": "stable", "update_path": "vanilla/20240109.50/vanilla-20240109.50-3.6.7.raucb"},
-    {"version": "3.7.5", "buildid": "20240401.50", "branch": "stable", "update_path": "vanilla/20240401.50/vanilla-20240401.50-3.7.5.raucb"}
+    {"version": "3.6.7", "buildid": "20240109.50", "branch": "stable", "update_path": "vanilla/20240109.50/vanilla-20240109.50-3.6.7.raucb", "chunks_store_path": "vanilla/20240109.50/vanilla-20240109.50-3.6.7.castr"},
+    {"version": "3.7.5", "buildid": "20240401.50", "branch": "stable", "update_path": "vanilla/20240401.50/vanilla-20240401.50-3.7.5.raucb", "chunks_store_path": "vanilla/20240401.50/vanilla-20240401.50-3.7.5.castr"}
 ]

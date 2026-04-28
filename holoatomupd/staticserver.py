@@ -284,6 +284,7 @@ class UpdateParser:
                     "buildid": str(image.buildid),
                     "branch": image.branch,
                     "update_path": image_update.update_path,
+                    "chunks_store_path": image_update.chunks_path,
                 }
                 if image.is_checkpoint():
                     build_info["introduces_checkpoint"] = image.introduces_checkpoint

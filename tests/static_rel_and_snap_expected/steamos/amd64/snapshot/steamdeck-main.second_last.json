@@ -2,6 +2,7 @@
     "minor": {
         "candidates": [
             {
+                "chunks_store_path": "steamdeck-main/20220302.1005/steamdeck-main-20220302.1005-3.1.castr",
                 "image": {
                     "arch": "amd64",
                     "buildid": "20220302.1005",
