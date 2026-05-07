@@ -510,5 +510,30 @@ class DownloadUpdateJSON(unittest.TestCase):
                 self.assertEqual('/REDACTED/' in log_output, data.redacted)
 
 
+class ChunksStoreURL(unittest.TestCase):
+    @patch('subprocess.run')
+    def test_set_rauc_conf_sets_chunks_store_env(self, run):
+        run.return_value = None
+        chunks_url = 'http://example.com/images/chunks.castr'
+        client.set_rauc_conf(chunks_url)
+
+        set_env_calls = [
+            c for c in run.call_args_list
+            if f'HOLO_CUSTOM_STORE_PATH={chunks_url}' in str(c)
+        ]
+        self.assertEqual(len(set_env_calls), 1)
+
+    @patch('subprocess.run')
+    def test_set_rauc_conf_unsets_chunks_store_env_when_empty(self, run):
+        run.return_value = None
+        client.set_rauc_conf('')
+
+        unset_calls = [
+            c for c in run.call_args_list
+            if 'unset-environment' in str(c) and 'HOLO_CUSTOM_STORE_PATH' in str(c)
+        ]
+        self.assertEqual(len(unset_calls), 1)
+
+
 if __name__ == '__main__':
     unittest.main()
