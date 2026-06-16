@@ -24,8 +24,10 @@ from pathlib import Path
 import semantic_version
 
 from holoatomupd.image import BuildId
+from holoatomupd.log_utils import DedupFilter
 
 log = logging.getLogger(__name__)
+log.addFilter(DedupFilter())
 
 DEFAULT_RAUC_CONF = Path('/etc/rauc/system.conf')
 FALLBACK_RAUC_CONF = Path('/etc/rauc/fallback-system.conf')

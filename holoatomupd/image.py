@@ -30,7 +30,10 @@ from typing import Any
 
 import semantic_version
 
+from holoatomupd.log_utils import DedupFilter
+
 log = logging.getLogger(__name__)
+log.addFilter(DedupFilter())
 
 
 def _load_os_release(os_release_path=''):

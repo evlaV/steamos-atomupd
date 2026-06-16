@@ -38,11 +38,13 @@ from typing import DefaultDict, Deque
 import pyinotify # type: ignore
 
 from holoatomupd.image import Image
+from holoatomupd.log_utils import DedupFilter
 from holoatomupd.imagepool import ImagePool
 from holoatomupd.update import UpdateCandidate, UpdateType, UpdatePath
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
+log.addFilter(DedupFilter())
 wm = pyinotify.WatchManager()
 
 # Default config

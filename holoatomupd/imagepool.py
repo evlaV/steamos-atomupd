@@ -34,11 +34,13 @@ from pathlib import Path
 import semantic_version
 
 from holoatomupd.image import Image, BuildId
+from holoatomupd.log_utils import DedupFilter
 from holoatomupd.update import UpdateCandidate, UpdatePath, UpdateType
 from holoatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size, \
     parse_lwc_exempts
 
 log = logging.getLogger(__name__)
+log.addFilter(DedupFilter())
 
 IMAGE_MANIFEST_EXT = '.manifest.json'
 
