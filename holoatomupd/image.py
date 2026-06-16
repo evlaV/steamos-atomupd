@@ -216,7 +216,9 @@ class Image:
                                "Use `introduces_checkpoint` and `requires_checkpoint` instead.")
 
         if len(data_copy) > 0:
-            log.warning('The image manifest has some unknown key-values: %s', data_copy)
+            # We don't print which image manifest this is about to avoid flooding the output with
+            # repeated messages over and over for the same unknown keys
+            log.warning('The image manifest has some unknown keys: %s', sorted(data_copy.keys()))
 
         # Return an instance
         return cls.from_values(product, release, variant, branch, default_update_branch, arch, version_str, buildid_str,
