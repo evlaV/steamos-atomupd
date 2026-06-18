@@ -850,7 +850,7 @@ def cm_chdir(path: Path | str) -> None:
 
 
 def run_diff(meta_dir: str, expectation: str) -> subprocess.CompletedProcess:
-    return subprocess.run(['diff', '-rq', meta_dir,
+    return subprocess.run(['diff', '-ru', meta_dir,
                            '--exclude', '.lockfile.lock',
                            '--exclude', '*updated.txt',
                           str(EXPECTATION_PARENT / expectation)],
@@ -961,7 +961,7 @@ class StaticServerTestCase(unittest.TestCase):
 
                     # Then compare result with expected result since running the daemon should parse the data
                     p = run_diff(meta_dir, data.expectation)
-                    self.assertEqual(p.stdout, '')
+                    self.assertEqual(p.stdout, '', p.stdout)
                     self.assertEqual(p.returncode, 0)
 
                     # Trigger a new scan by touching the right file
@@ -1015,17 +1015,17 @@ class StaticServerTestCase(unittest.TestCase):
 
                 # Then compare result with expected result
                 p = run_diff(meta_dir, data.expectation)
-                self.assertEqual(p.stdout, '')
+                self.assertEqual(p.stdout, '', p.stdout)
                 self.assertEqual(p.returncode, 0)
 
                 if data.changed_expectation:
                     # Now add some updates
                     build_image_hierarchy(Path(images.name), only_additional_images=True)
 
-                    # Now compare result with previous expectation. since daemon
+                    # Now compare the result with previous expectation. Since the daemon
                     # should not have yet updated any metadata
                     p = run_diff(meta_dir, data.expectation)
-                    self.assertEqual(p.stdout, '')
+                    self.assertEqual(p.stdout, '', p.stdout)
                     self.assertEqual(p.returncode, 0)
 
                     lastmtime = os.path.getmtime(updated_path)
@@ -1039,9 +1039,9 @@ class StaticServerTestCase(unittest.TestCase):
                         time.sleep(1)
                         newmtime = os.path.getmtime(updated_path)
 
-                    # Then compare result with expected result
+                    # Then compare the result with the expected one
                     p = run_diff(meta_dir, data.changed_expectation)
-                    self.assertEqual(p.stdout, '')
+                    self.assertEqual(p.stdout, '', p.stdout)
                     self.assertEqual(p.returncode, 0)
 
                 if daemon:
