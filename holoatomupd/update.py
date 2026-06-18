@@ -24,9 +24,7 @@ from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any
 
-import semantic_version
-
-from holoatomupd.image import Image, BuildId
+from holoatomupd.image import Image, BuildId, Version
 from holoatomupd.utils import parse_lwc_exempts
 
 
@@ -68,7 +66,7 @@ class UpdateCandidate:
 
     image: Image
     update_path: str
-    exempts: list[tuple[semantic_version.Version, BuildId]] = field(default_factory=list)
+    exempts: list[tuple[Version, BuildId]] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> UpdateCandidate:

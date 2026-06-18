@@ -21,9 +21,7 @@ import logging
 import subprocess
 from pathlib import Path
 
-import semantic_version
-
-from holoatomupd.image import BuildId
+from holoatomupd.image import BuildId, Version
 from holoatomupd.log_utils import DedupFilter
 
 log = logging.getLogger(__name__)
@@ -140,20 +138,20 @@ def extract_index_from_raucb(raucb_location: Path | str, extract_prefix: Path,
     return image_index
 
 
-def parse_lwc_exempts(raw_exempts: list[str]) -> list[tuple[semantic_version.Version, BuildId]]:
+def parse_lwc_exempts(raw_exempts: list[str]) -> list[tuple[Version, BuildId]]:
     """Parse the string array of Lightweight Checkpoints exempts, as provided in the config
 
     The strings are expected to be in the format "version:buildid"
 
     Returns a list of tuples (version, buildid)
     """
-    exempts: list[tuple[semantic_version.Version, BuildId]] = []
+    exempts: list[tuple[Version, BuildId]] = []
 
     for exempt_str in raw_exempts:
         version, buildid_str = exempt_str.split(':')
         buildid = BuildId.from_string(buildid_str)
         # https://github.com/rbarrois/python-semanticversion/issues/29
-        semver = semantic_version.Version.coerce(version)
+        semver = Version.coerce(version)
         exempts.append((semver, buildid))
 
     return exempts

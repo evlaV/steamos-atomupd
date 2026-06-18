@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2019 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -16,9 +16,9 @@
 # License along with this package.  If not, see
 # <http://www.gnu.org/licenses/>.
 
-import semantic_version
 import unittest
 
+from holoatomupd.image import Version
 from holoatomupd.update import UpdatePath
 
 oldimgdata = {
@@ -64,8 +64,8 @@ class UpdateTestCase(unittest.TestCase):
         candidates = d['minor']['candidates']
         v1str = candidates[0]['image']['version']
         v2str = candidates[1]['image']['version']
-        v1 = semantic_version.Version.coerce(v1str)
-        v2 = semantic_version.Version.coerce(v2str)
+        v1 = Version.coerce(v1str)
+        v2 = Version.coerce(v2str)
         self.assertTrue(v1 > v2)
 
         # An update object MUST contain a SORTED array of update candidates.

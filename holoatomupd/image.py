@@ -36,6 +36,83 @@ log = logging.getLogger(__name__)
 log.addFilter(DedupFilter())
 
 
+class Version(semantic_version.Version):
+    """semantic_version.Version with support for a 4th numeric component.
+
+    SemVer treats anything beyond the patch number as "build metadata".
+    Holo image versions could have a 4th digit, and that should be considered
+    during the ordering. E.g. "3.8.10" < "3.8.10.1" < "3.8.11".
+    """
+
+    @property
+    def _fourth(self) -> int:
+        if self.build and self.build[0].isdigit():
+            return int(self.build[0])
+        return 0
+
+    @property
+    def _extra_build(self) -> tuple:
+        """Build tokens that are not the 4th-digit value.
+
+        If the first build token is a digit, we use it in `_fourth` as part
+        of the version. Everything after that is the "real" build metadata.
+        """
+        if self.build and self.build[0].isdigit():
+            return tuple(self.build[1:])
+        return tuple(self.build or ())
+
+    def _build_precedence_key(self, with_build=False):
+        key = list(super()._build_precedence_key(with_build=with_build))
+        # key is [major, minor, patch, prerelease_key, build_key].
+        # We insert the 4th digit right after patch to have the expected comparison order.
+        key.insert(3, self._fourth)
+        return tuple(key)
+
+    def __eq__(self, other):
+        if not isinstance(other, semantic_version.Version):
+            return NotImplemented
+        return (
+            self.major == other.major
+            and self.minor == other.minor
+            and self.patch == other.patch
+            and self._fourth == getattr(other, '_fourth', 0)
+            and (self.prerelease or ()) == (other.prerelease or ())
+            and self._extra_build == getattr(other, '_extra_build', tuple(other.build or ()))
+        )
+
+    def __hash__(self):
+        return hash((self.major, self.minor, self.patch, self._fourth, self.prerelease, self._extra_build))
+
+    def __str__(self):
+        version = f'{self.major:d}'
+        if self.minor is not None:
+            version += f'.{self.minor:d}'
+        if self.patch is not None:
+            version += f'.{self.patch:d}'
+
+        # If the first build token is numeric, render it as a 4th version
+        # digit (before the prerelease) and exclude it from the build suffix.
+        build = self.build
+        if build and build[0].isdigit():
+            version += f'.{build[0]}'
+            build = build[1:]
+
+        # self.partial is deprecated, and we never used it. No need to check it.
+        if self.prerelease:
+            version += f"-{'.'.join(self.prerelease)}"
+        if build:
+            version += f"+{'.'.join(build)}"
+        return version
+
+    @classmethod
+    def coerce(cls, version_string, partial=False):
+        # semantic_version.Version.coerce hardcodes the base class in its
+        # return statement, so it would bypass our subclass. Re-wrap the
+        # result to use our subclass.
+        base = semantic_version.Version.coerce(version_string, partial=partial)
+        return cls(str(base), partial=partial)
+
+
 def _load_os_release(os_release_path=''):
     """Load /etc/os-release in a dictionary
 
@@ -105,7 +182,7 @@ class Image:
     branch: str
     default_update_branch: str
     arch: str
-    version: semantic_version.Version | None
+    version: Version | None
     buildid: BuildId
     introduces_checkpoint: int
     requires_checkpoint: int
@@ -132,7 +209,7 @@ class Image:
             version = None
         else:
             # https://github.com/rbarrois/python-semanticversion/issues/29
-            version = semantic_version.Version.coerce(version_str)
+            version = Version.coerce(version_str)
 
         # Parse buildid, raise ValueError if need be
         buildid = BuildId.from_string(buildid_str)
@@ -431,7 +508,7 @@ class Image:
 
         return self.skip
 
-    def meets_exempts(self, exempts: list[tuple[semantic_version.Version, BuildId]]) -> bool:
+    def meets_exempts(self, exempts: list[tuple[Version, BuildId]]) -> bool:
         """Returns True if this image satisfies the exempts prerequisites of a lightweight checkpoint.
 
         Each exempt is a (version, buildid) pair. This image meets the requisites if
