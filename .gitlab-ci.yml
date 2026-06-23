@@ -1,4 +1,4 @@
-# Copyright 2021-2024 Collabora Ltd
+# Copyright 2021-2026 Collabora Ltd
 # SPDX-License-Identifier: MIT
 
 workflow:
@@ -91,7 +91,7 @@ lint:mypy:
 # doesn't have git, therefore no `git describe`
 prepare:
     stage: docker-prepare
-    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/debian:bookworm-slim
+    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/debian:trixie-slim
     script:
         - ci/prepare.sh > VERSION
     artifacts:

@@ -34,28 +34,21 @@
 #    # There should be no difference
 #    diff -ru tests/staticexpected/steamos tmp/steamos
 
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 ARG BUILD_ID=""
 ARG IMAGE_ID="steamos-atomupd"
 ARG IMAGE_NAME="steamos-atomupd"
 ARG IMAGE_VERSION=""
 
-# Desync requires Go 1.22+. We need to download it from the backports repo.
-RUN echo "deb http://deb.debian.org/debian bookworm-backports main" > /etc/apt/sources.list.d/backports.list
-
 RUN apt-get update \
     && apt-get install -y \
-       meson python3-flask python3-semantic-version python3-pyinotify git \
-    && apt-get -t bookworm-backports install -y \
-       golang \
+       meson python3-flask python3-semantic-version python3-pyinotify git golang \
     && apt-get install -y \
        devscripts \
     && apt-get install -y \
        rauc squashfs-tools \
     && rm -rf /var/lib/apt/lists/*
-
-RUN rm /etc/apt/sources.list.d/backports.list
 
 # Import working directory to /src/, build to /build/, install to /
 # ... and clean after ourselves.
