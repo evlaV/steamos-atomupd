@@ -468,7 +468,7 @@ class ImagePool:
 
                     image = Image.from_dict(data)
                 except Exception as e:
-                    raise RuntimeError('Failed to create image from manifest %s' % f) from e
+                    raise RuntimeError(f"Failed to create image from manifest {f}: {e}") from e
 
                 if image in images_found:
                     raise RuntimeError("There are two images in the pool with the same version %s and buildid %s. "
@@ -494,7 +494,7 @@ class ImagePool:
                         update_path = _get_rauc_update_path(images_dir, manifest_path)
                         chunks_path = _get_chunks_store_path(images_dir, manifest_path)
                 except Exception as e:
-                    raise RuntimeError("Failed to get update path for manifest %s" % f) from e
+                    raise RuntimeError(f"Failed to get update path for manifest {f}: {e}") from e
 
                 # Get the list where this image belongs
                 try:
