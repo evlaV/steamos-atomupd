@@ -294,6 +294,8 @@ class UpdateParser:
                 # Prepend items to create a list from oldest to newest
                 builds_jsons_to_process[builds_json].appendleft(build_info)
 
+            log.info('Generating info for image %s - %s - %s', image.variant, image.buildid, image.get_version_str())
+
             for requested_branch in supported_branches:
                 json_path = Path(image.get_update_path(requested_branch))
                 json_path_fallback = Path(image.get_update_path(requested_branch, fallback=True))
@@ -309,9 +311,6 @@ class UpdateParser:
                     # Shadow checkpoints are not real images.
                     # It is not possible for users to be running them.
                     continue
-
-                log.info('Generating info for image "%s" when requesting the branch "%s"', image.buildid,
-                         requested_branch)
 
                 self._write_update_json(image_update, requested_branch, json_path, update_jsons,
                                         UpdateType.standard, estimate_download_size)
