@@ -512,6 +512,24 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, '3.8', '20260202.10002', branch=Branch.STAGING),
         ]
     ),
+
+    Hierarchy(
+        directory_name='unsupported-images',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.8.6', '20260603.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.8.7', '20260607.1', branch=Branch.STABLE),
+
+            # Images for a branch that the server doesn't support
+            Manifest(Variant.STEAMDECK, '3.7.1', '20260422.100', branch=Branch.BETA),
+            Manifest(Variant.STEAMDECK, '3.7.5', '20260422.101', branch=Branch.BETA, skip=True),
+            # Variant that the server doesn't support
+            Manifest(Variant.VANILLA, '3.6.1', '20240105.50', branch=Branch.STABLE),
+            Manifest(Variant.VANILLA, '3.6.7', '20240109.50', branch=Branch.STABLE, skip=True, deleted=True),
+            # Arch that the server doesn't support
+            Manifest(Variant.STEAMDECK, '3.9.1', '20260608.70', branch=Branch.STABLE, arch='aarch64'),
+            Manifest(Variant.STEAMDECK, '3.9.2', '20260608.71', branch=Branch.STABLE, arch='aarch64', skip=True),
+        ]
+    ),
 ]
 
 

@@ -773,6 +773,16 @@ server_data = [
         expectation='',
         exit_code=1,
     ),
+    ServerData(
+        msg="Pool that has some images that our server instance don't support",
+        config=ServerConfig(
+            pool_dir='unsupported-images',
+            branches=('stable',),
+            variants=('steamdeck',),
+            strict_pool_validation=False,
+        ),
+        expectation='unsupported_images_expected',
+    ),
 ]
 
 
