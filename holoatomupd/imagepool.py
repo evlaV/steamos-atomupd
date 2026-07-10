@@ -472,6 +472,14 @@ class ImagePool:
                                 "deleted: %s", f, e)
                     continue
 
+                # Get the list where this image belongs. This ensures it is an image that our server
+                # supports, based on the config
+                try:
+                    candidates = self._get_candidate_list(image)
+                except Exception as e:
+                    log.debug("Discarded unsupported image %s: %s", f, e)
+                    continue
+
                 if image in images_found:
                     raise RuntimeError("There are two images in the pool with the same version %s and buildid %s. "
                                        "This is not allowed!" % (image.get_version_str(), image.buildid))
@@ -499,13 +507,6 @@ class ImagePool:
                     # This image is malformed, we log a warning about it and try to continue
                     log.warning("Failed to get update path for manifest '%s', this malformed image should be "
                                 "either fixed or deleted: %s", f, e)
-                    continue
-
-                # Get the list where this image belongs
-                try:
-                    candidates = self._get_candidate_list(image)
-                except Exception as e:
-                    log.debug("Discarded unsupported image %s: %s", f, e)
                     continue
 
                 # Add image as an update candidate
