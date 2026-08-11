@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2024 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
 import unittest
 from dataclasses import dataclass
 
-from steamosatomupd.image import Image
+from steamosatomupd.image import Image, Version
 
 imgdata = {
     'product': 'steamos',
@@ -124,6 +124,59 @@ class VersionTestCase(unittest.TestCase):
         self.assertTrue(Image.from_dict(d1) != Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d1) <  Image.from_dict(d2))
         self.assertTrue(Image.from_dict(d2) >  Image.from_dict(d1))
+
+
+class FourDigitVersionTestCase(unittest.TestCase):
+    def test_str_conversion(self):
+        # The fourth digit should not end up in the build metadata after the '+'
+        self.assertEqual(str(Version.coerce('3.8')), '3.8.0')
+        self.assertEqual(str(Version.coerce('3.8.8')), '3.8.8')
+        self.assertEqual(str(Version.coerce('3.8.8.1')), '3.8.8.1')
+        self.assertEqual(str(Version.coerce('3.8.8.42')), '3.8.8.42')
+        # Build metadata should be preserved
+        self.assertEqual(str(Version.coerce('3.8.8+extra1234')), '3.8.8+extra1234')
+        self.assertEqual(str(Version.coerce('3.8.8.1+extra1234')), '3.8.8.1+extra1234')
+
+    def test_ordering(self):
+        old = Version.coerce('3.8.8')
+        hotfix_1 = Version.coerce('3.8.8.1')
+        hotfix_2 = Version.coerce('3.8.8.2')
+        new = Version.coerce('3.8.9')
+
+        self.assertLess(old, hotfix_1)
+        self.assertLess(hotfix_1, hotfix_2)
+        self.assertLess(hotfix_2, new)
+
+        self.assertGreater(new, hotfix_2)
+        self.assertGreater(hotfix_1, old)
+
+        unsorted = [new, hotfix_2, old, hotfix_1]
+        self.assertEqual(
+            [str(v) for v in sorted(unsorted)],
+            ['3.8.8', '3.8.8.1', '3.8.8.2', '3.8.9'],
+        )
+
+        # Ensure correct order with major and minor versions
+        self.assertLess(Version.coerce('3.8.8.11'), Version.coerce('3.9.0'))
+        self.assertLess(Version.coerce('3.8.8.11'), Version.coerce('4.0.0'))
+        self.assertLess(Version.coerce('3.8.20.1'), Version.coerce('3.9.0'))
+
+    def test_equality_and_hash(self):
+        self.assertEqual(Version.coerce('3.8.8.1'), Version.coerce('3.8.8.1'))
+        self.assertEqual(hash(Version.coerce('3.8.8.1')), hash(Version.coerce('3.8.8.1')))
+
+        self.assertEqual(Version.coerce('3.8.8'), Version.coerce('3.8.8.0'))
+        self.assertEqual(hash(Version.coerce('3.8.8')), hash(Version.coerce('3.8.8.0')))
+
+        self.assertNotEqual(Version.coerce('3.8.8.1'), Version.coerce('3.8.8.2'))
+        self.assertNotEqual(Version.coerce('3.8.8'), Version.coerce('3.8.8.1'))
+
+        self.assertNotEqual(Version.coerce('3.8.8+build1'), Version.coerce('3.8.8+build2'))
+
+    def test_coerce_subclass(self):
+        # Ensure we don't change the class when calling coerce()
+        v = Version.coerce('3.8.8.1')
+        self.assertIsInstance(v, Version)
 
 
 class MiscTestCase(unittest.TestCase):

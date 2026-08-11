@@ -31,9 +31,7 @@ from copy import deepcopy, copy
 from dataclasses import dataclass
 from pathlib import Path
 
-import semantic_version
-
-from steamosatomupd.image import Image, BuildId
+from steamosatomupd.image import Image, BuildId, Version
 from steamosatomupd.update import UpdateCandidate, UpdatePath, UpdateType
 from steamosatomupd.utils import get_update_size, extract_index_from_raucb, get_precise_update_size, \
     parse_lwc_exempts
@@ -66,7 +64,7 @@ class _RawLwCheckpoint:
     - version: image version of this checkpoint
     - buildid: image buildid of this checkpoint
     """
-    exempts: list[tuple[semantic_version.Version, BuildId]]
+    exempts: list[tuple[Version, BuildId]]
     branch: str
     variant: str
     version: str
@@ -272,7 +270,7 @@ class ImagePool:
             for target in targets:
                 branch, version, buildid = target.split(':')
                 # This normalizes the version representation. E.g. '3.8' will become '3.8.0'
-                version_str = str(semantic_version.Version.coerce(version))
+                version_str = str(Version.coerce(version))
                 target_info = (version_str, buildid)
 
                 raw_lw_checkpoints[target_info].append(
