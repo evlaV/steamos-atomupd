@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2023 Collabora Ltd
+# Copyright © 2023-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -427,6 +427,7 @@ images_hierarchies = [
         directory_name='branch4',
         manifests=[
             Manifest(Variant.STEAMDECK, '3.6.6', '20240801.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.6.6.1', '20240806.1', branch=Branch.STABLE),
 
             Manifest(Variant.STEAMDECK, '3.6.7', '20240802.1', branch=Branch.RC),
 

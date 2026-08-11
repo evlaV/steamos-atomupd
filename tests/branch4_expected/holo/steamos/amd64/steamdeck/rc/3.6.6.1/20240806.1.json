@@ -4,16 +4,16 @@
             {
                 "image": {
                     "arch": "amd64",
-                    "branch": "stable",
-                    "buildid": "20240801.1",
-                    "default_update_branch": "stable",
+                    "branch": "rc",
+                    "buildid": "20240802.1",
+                    "default_update_branch": "rc",
                     "estimated_size": 0,
                     "product": "steamos",
                     "release": "holo",
                     "variant": "steamdeck",
-                    "version": "3.6.6"
+                    "version": "3.6.7"
                 },
-                "update_path": "steamos/holo/3.6.6/amd64/steamos-holo-20240801.1-3.6.6-amd64-steamdeck.raucb"
+                "update_path": "steamos/holo/3.6.7/amd64/steamos-holo-20240802.1-3.6.7-amd64-steamdeck.raucb"
             }
         ],
         "release": "holo"
