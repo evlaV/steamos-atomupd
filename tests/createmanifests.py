@@ -25,6 +25,8 @@ from typing import Any
 
 class Variant(StrEnum):
     STEAMDECK = 'steamdeck'
+    STEAMDECK_OOBE = 'steamdeck-oobe'
+    STEAMDECK_OOBE2 = 'steamdeck-oobe2'
     STEAMDECK_RC = 'steamdeck-rc'
     STEAMDECK_BETA = 'steamdeck-beta'
     STEAMDECK_BC = 'steamdeck-bc'
@@ -38,6 +40,7 @@ class Variant(StrEnum):
 
 class Branch(StrEnum):
     STABLE = 'stable'
+    OOBE = 'oobe'
     RC = 'rc'
     BETA = 'beta'
     BC = 'bc'
@@ -521,7 +524,14 @@ images_hierarchies = [
         directory_name='unsupported-images',
         manifests=[
             Manifest(Variant.STEAMDECK, '3.8.6', '20260603.1', branch=Branch.STABLE),
-            Manifest(Variant.STEAMDECK, '3.8.7', '20260607.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.8.7', '20260607.1', branch=Branch.STABLE,
+                     raucb='steamdeck-beta-20250411.100-3.5'),
+
+            # Legacy EOL variant supported by the server
+            Manifest(Variant.STEAMDECK_OOBE, '3.7.0', '20260420.1', skip=True, raucb='steamdeck-rc-20220303.1-3.0'),
+            # Similar images that the server should ignore
+            Manifest(Variant.STEAMDECK_OOBE2, '3.7.0', '20260420.2'),
+            Manifest(Variant.STEAMDECK, '3.7.0', '20260420.3', branch=Branch.OOBE),
 
             # Images for a branch that the server doesn't support
             Manifest(Variant.STEAMDECK, '3.7.1', '20260422.100', branch=Branch.BETA),

@@ -779,6 +779,7 @@ server_data = [
             pool_dir='unsupported-images',
             branches=('stable',),
             variants=('steamdeck',),
+            variants_eol=('steamdeck-oobe:steamdeck',),
             strict_pool_validation=False,
         ),
         expectation='unsupported_images_expected',

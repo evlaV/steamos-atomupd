@@ -607,11 +607,19 @@ class ImagePool:
 
         branch = override_branch if override_branch else image.branch
 
+        supported_variant_branch = image.variant in self.supported_variants and branch in self.supported_branches
+        if not supported_variant_branch and image.legacy_variant:
+            # If we have a legacy variant listed as supported in the server config (usually under VariantsEOL),
+            # we may need this special case to ensure we are not discarding images that we are expected to support.
+            # For example, if we have `steamdeck-oobe:steamdeck` in VariantsEOL, even if we don't expect `oobe`
+            # to be a supported branch, we still need to consider the legacy variant `steamdeck-oobe` for our
+            # image pool.
+            supported_variant_branch = image.legacy_variant in self.supported_variants
+
         if (image.product != self.supported_product
                 or image.arch not in self.supported_archs
                 or image.release != self.supported_release
-                or image.variant not in self.supported_variants
-                or branch not in self.supported_branches):
+                or not supported_variant_branch):
             raise ValueError(f'Image ({image.product}, {image.arch}, {image.release}, {image.variant}, {branch}) '
                              'is not supported')
 
@@ -692,16 +700,31 @@ class ImagePool:
         needs to be relative to the pool images directory. If set to None, the download size
         will not be estimated.
 
-        Return an Update object, or None if no updates available.
+        Return an Update object or None if there are no updates available.
         """
 
-        replacement_eol_variant = self.variants_eol.get(image.variant, '')
+        if image.legacy_variant and requested_branch == image.branch:
+            # This is to cover the case where we have a legacy variant like `steamdeck-oobe` and
+            # we need to get updates for the `oobe` branch.
+            initial_variant = image.legacy_variant
+        else:
+            initial_variant = image.variant
+
+        replacement_eol_variant = self.variants_eol.get(initial_variant, '')
 
         if replacement_eol_variant:
             log.info("The requested variant '%s' is EOL, going to '%s' instead",
-                     image.variant, replacement_eol_variant)
+                     initial_variant, replacement_eol_variant)
             image = copy(image)
             image.variant = replacement_eol_variant
+
+            if image.legacy_variant:
+                # If the EOL variant is legacy, we want to change the legacy branch as well
+                # to point to the expected stable replacement. E.g. if we have `steamdeck-oobe:steamdeck`,
+                # we want to end up with images from the `steamdeck` variant and `stable` branch.
+                # We don't want to preserve the legacy `oobe` branch.
+                requested_branch = 'stable'
+
             if update_type != UpdateType.second_last:
                 # Except for the penultimate update, which can be considered a special case,
                 # we want to force users out of that image because their original variant
