@@ -490,7 +490,12 @@ class ImagePool:
                     # This is an image that should not be an update candidate
                     # Record it and then continue
                     log.debug("Not considering %s as a valid update candidate", f)
-                    candidate = UpdateCandidate(image, update_path="", chunks_path="")
+                    try:
+                        update_path = _get_rauc_update_path(images_dir, manifest_path)
+                    except FileNotFoundError:
+                        # This is an image marked as skip. It's not a problem if it doesn't have a raucb.
+                        update_path = ""
+                    candidate = UpdateCandidate(image, update_path=update_path, chunks_path="")
                     self.image_updates_found.append(candidate)
                     continue
 
