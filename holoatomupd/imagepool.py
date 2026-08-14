@@ -769,7 +769,7 @@ class ImagePool:
             if update_path:
                 return update_path
 
-            log.warning("Failed to force an update from '%s' (%s) to '%s'",
+            log.info("Failed to force an update from '%s' (%s) to '%s'",
                         image.branch, image.buildid, requested_branch)
 
         return None

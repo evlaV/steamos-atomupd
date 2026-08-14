@@ -121,7 +121,7 @@ def extract_index_from_raucb(raucb_location: Path | str, extract_prefix: Path,
             return None
 
         if extract.returncode != 0:
-            log.warning("Failed to extract bundle: %i: %s", extract.returncode, extract.stdout)
+            log.info("Failed to extract bundle (%s): %i: %s", raucb_location, extract.returncode, extract.stdout)
             # If we are unable to extract a bundle there is no point in retrying in the future.
             # So we create an empty directory for it to signal that we already attempted it.
             extract_path.mkdir(parents=True, exist_ok=True)
