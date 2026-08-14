@@ -21,6 +21,17 @@ from __future__ import annotations
 import logging
 
 
+class WarningCollectorHandler(logging.Handler):
+    """Logging handler that saves warning messages being emitted."""
+
+    def __init__(self):
+        super().__init__(level=logging.WARNING)
+        self.messages: list[str] = []
+
+    def emit(self, record: logging.LogRecord) -> None:
+        self.messages.append(self.format(record))
+
+
 class DedupFilter(logging.Filter):
     """Logging filter that drops messages already emitted."""
 
