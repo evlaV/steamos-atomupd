@@ -290,13 +290,13 @@ server_data = [
         replaced_leftovers=True,
     ),
     ServerData(
+        # The server should log this as warning and continue
         msg='Image with a broken manifest',
         config=ServerConfig(
             pool_dir='unexpected-manifest',
             branches=('stable',),
         ),
-        expectation='',
-        exit_code=1,
+        expectation='unexpected_manifest_expected',
     ),
     ServerData(
         msg='Shadow image that is unexpectedly also marked as skip',

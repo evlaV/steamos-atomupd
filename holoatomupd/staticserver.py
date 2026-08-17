@@ -33,13 +33,16 @@ from pathlib import Path
 from typing import DefaultDict, Deque
 
 from holoatomupd.image import Image
-from holoatomupd.log_utils import DedupFilter
+from holoatomupd.log_utils import DedupFilter, WarningCollectorHandler
 from holoatomupd.imagepool import ImagePool
 from holoatomupd.update import UpdateCandidate, UpdateType, UpdatePath
 
 logging.basicConfig(format='%(levelname)s:%(filename)s:%(lineno)s: %(message)s')
 log = logging.getLogger(__name__)
 log.addFilter(DedupFilter())
+
+warning_collector = WarningCollectorHandler()
+logging.getLogger(__package__).addHandler(warning_collector)
 
 # Please keep this in sync with atomupd-daemon
 REMOTE_INFO_FILE = "remote-info.conf"
@@ -346,6 +349,13 @@ class UpdateParser:
         return 0
 
 
+def print_warns_summary() -> None:
+    """Print again all the collected warnings"""
+
+    if warning_collector.messages:
+        print("\n==== Warnings summary:", *warning_collector.messages, sep="\n", file=sys.stderr)
+
+
 def main(args=None):
     """"Creates the image pool with static update JSON files"""
 
@@ -354,6 +364,7 @@ def main(args=None):
         server = UpdateParser(args)
     except RuntimeError as re:
         log.error(re)
+        print_warns_summary()
         sys.exit(1)
 
     # Lock so we don't ever end up with multiple staticserver.py parsing
@@ -362,10 +373,13 @@ def main(args=None):
     with lockpathfile(lock_path) as lockstatus:
         if not lockstatus:
             log.warning("==== Another instance of staticserver is writing into this meta path, aborting.")
+            print_warns_summary()
             sys.exit(1)
 
         log.info("==== Created lock file at: %s", lock_path)
         exit_code = server.parse_all()
+
+        print_warns_summary()
 
         if exit_code != 0:
             sys.exit(exit_code)
