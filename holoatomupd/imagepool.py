@@ -468,7 +468,9 @@ class ImagePool:
 
                     image = Image.from_dict(data)
                 except Exception as e:
-                    raise RuntimeError(f"Failed to create image from manifest {f}: {e}") from e
+                    log.warning("Failed to create image from manifest '%s', it should be either fixed or "
+                                "deleted: %s", f, e)
+                    continue
 
                 if image in images_found:
                     raise RuntimeError("There are two images in the pool with the same version %s and buildid %s. "
@@ -494,7 +496,10 @@ class ImagePool:
                         update_path = _get_rauc_update_path(images_dir, manifest_path)
                         chunks_path = _get_chunks_store_path(images_dir, manifest_path)
                 except Exception as e:
-                    raise RuntimeError(f"Failed to get update path for manifest {f}: {e}") from e
+                    # This image is malformed, we log a warning about it and try to continue
+                    log.warning("Failed to get update path for manifest '%s', this malformed image should be "
+                                "either fixed or deleted: %s", f, e)
+                    continue
 
                 # Get the list where this image belongs
                 try:
