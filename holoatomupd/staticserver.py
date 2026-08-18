@@ -299,7 +299,19 @@ class UpdateParser:
 
             log.info('Generating info for image %s - %s - %s', image.variant, image.buildid, image.get_version_str())
 
-            for requested_branch in supported_branches:
+            if image.legacy_variant:
+                # If we have an image in our supported pool that has the legacy variant, we also
+                # need to ensure to generate meta JSON files for its default branch.
+                # For example, if we have `steamdeck-oobe` listed under the VariantsEOL, we still
+                # want to generate the meta JSON file for `steamdeck-oobe`, even if `oobe` is not
+                # explicitly added to the supported branches.
+                _, legacy_branch = image.convert_from_legacy_variant(image.legacy_variant)
+            else:
+                legacy_branch = None
+
+            extra_branches = [legacy_branch] if legacy_branch and legacy_branch not in supported_branches else []
+
+            for requested_branch in supported_branches + extra_branches:
                 json_path = Path(image.get_update_path(requested_branch))
                 json_path_fallback = Path(image.get_update_path(requested_branch, fallback=True))
                 json_path_second_last = Path(image.get_update_path(requested_branch, second_last=True))

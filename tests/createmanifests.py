@@ -25,6 +25,8 @@ from typing import Any
 
 class Variant(StrEnum):
     STEAMDECK = 'steamdeck'
+    STEAMDECK_OOBE = 'steamdeck-oobe'
+    STEAMDECK_OOBE2 = 'steamdeck-oobe2'
     STEAMDECK_RC = 'steamdeck-rc'
     STEAMDECK_BETA = 'steamdeck-beta'
     STEAMDECK_BC = 'steamdeck-bc'
@@ -38,6 +40,7 @@ class Variant(StrEnum):
 
 class Branch(StrEnum):
     STABLE = 'stable'
+    OOBE = 'oobe'
     RC = 'rc'
     BETA = 'beta'
     BC = 'bc'
@@ -66,6 +69,8 @@ class Manifest:
     empty: bool = False
     # Optional path to write the manifest into
     img_dir: str = None
+    # Optional basename of an existing RAUC test fixture
+    raucb: str = None
 
 
 @dataclass
@@ -432,8 +437,10 @@ images_hierarchies = [
 
             Manifest(Variant.STEAMDECK, '3.6.7', '20240802.1', branch=Branch.RC),
 
-            Manifest(Variant.STEAMDECK, '3.6.8', '20240804.100', branch=Branch.BETA, skip=True),
-            Manifest(Variant.STEAMDECK, '3.6.8', '20240805.100', branch=Branch.BETA),
+            Manifest(Variant.STEAMDECK, '3.6.8', '20240804.100', branch=Branch.BETA, skip=True,
+                     raucb='steamdeck-20220303.2-3.0'),
+            Manifest(Variant.STEAMDECK, '3.6.8', '20240805.100', branch=Branch.BETA,
+                     raucb='steamdeck-beta-20250411.100-3.5'),
 
             Manifest(Variant.STEAMDECK, '3.5.0', '20240707.111', branch=Branch.BC),
         ]
@@ -512,6 +519,31 @@ images_hierarchies = [
             Manifest(Variant.STEAMDECK, '3.8', '20260202.10002', branch=Branch.STAGING),
         ]
     ),
+
+    Hierarchy(
+        directory_name='unsupported-images',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.8.6', '20260603.1', branch=Branch.STABLE),
+            Manifest(Variant.STEAMDECK, '3.8.7', '20260607.1', branch=Branch.STABLE,
+                     raucb='steamdeck-beta-20250411.100-3.5'),
+
+            # Legacy EOL variant supported by the server
+            Manifest(Variant.STEAMDECK_OOBE, '3.7.0', '20260420.1', skip=True, raucb='steamdeck-rc-20220303.1-3.0'),
+            # Similar images that the server should ignore
+            Manifest(Variant.STEAMDECK_OOBE2, '3.7.0', '20260420.2'),
+            Manifest(Variant.STEAMDECK, '3.7.0', '20260420.3', branch=Branch.OOBE),
+
+            # Images for a branch that the server doesn't support
+            Manifest(Variant.STEAMDECK, '3.7.1', '20260422.100', branch=Branch.BETA),
+            Manifest(Variant.STEAMDECK, '3.7.5', '20260422.101', branch=Branch.BETA, skip=True),
+            # Variant that the server doesn't support
+            Manifest(Variant.VANILLA, '3.6.1', '20240105.50', branch=Branch.STABLE),
+            Manifest(Variant.VANILLA, '3.6.7', '20240109.50', branch=Branch.STABLE, skip=True, deleted=True),
+            # Arch that the server doesn't support
+            Manifest(Variant.STEAMDECK, '3.9.1', '20260608.70', branch=Branch.STABLE, arch='aarch64'),
+            Manifest(Variant.STEAMDECK, '3.9.2', '20260608.71', branch=Branch.STABLE, arch='aarch64', skip=True),
+        ]
+    ),
 ]
 
 
@@ -527,8 +559,9 @@ def build_image_hierarchy(path: Path) -> None:
             img_manifest = img_dir / f'{img_name}.manifest.json'
             img_raucb = img_dir / f'{img_name}.raucb'
             chunks_details = img_dir / f'{img_name}.chunks_details.json'
-            mock_chunks_details = Path(__file__).parent.absolute() / 'rauc' / f'{img_name}.chunks_details.json'
-            mock_raucb = Path(__file__).parent.absolute() / 'rauc' / f'{img_name}.raucb'
+            fixture_name = manifest.raucb if manifest.raucb else img_name
+            mock_chunks_details = Path(__file__).parent.absolute() / 'rauc' / f'{fixture_name}.chunks_details.json'
+            mock_raucb = Path(__file__).parent.absolute() / 'rauc' / f'{fixture_name}.raucb'
 
             img_dir.mkdir(parents=True, exist_ok=True)
 
