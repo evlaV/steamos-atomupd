@@ -348,8 +348,11 @@ def ensure_index_exists(only_symlink: bool = False) -> None:
                    universal_newlines=True)
 
 
-def do_update(attempts_log: Path, url: str, quiet: bool) -> None:
+def do_update(attempts_log: Path, url: str, chunks_url: str, quiet: bool) -> None:
     """Update the system"""
+
+    # Ensure the RAUC service is using the expected configuration
+    set_rauc_conf(chunks_url)
 
     global progress_process
     if is_desync_in_use():
@@ -629,8 +632,8 @@ def desync_has_regenerate_argument() -> bool:
     return install_args.regenerate_invalid_seeds
 
 
-def set_rauc_conf():
-    """Set the RAUC configuration path and HTTP proxy and restart the service"""
+def set_rauc_conf(chunks_store_url: str):
+    """Set the RAUC configuration path, config options, HTTP proxy and restart the service"""
 
     # Set, or unset, the 'STEAMOS_CUSTOM_RAUC_CONF' environment variable
     # and the new 'HOLO_CUSTOM_RAUC_CONF' variable to
@@ -647,6 +650,14 @@ def set_rauc_conf():
         subprocess.run(['systemctl', 'set-environment',
                         f'HOLO_CUSTOM_RAUC_CONF={rauc_conf_path}'],
                        check=True)
+
+    # Point RAUC to use the expected chunks store URL
+    if chunks_store_url:
+        subprocess.run(['systemctl', 'set-environment', f'HOLO_CUSTOM_STORE_PATH={chunks_store_url}'], check=True)
+    else:
+        # If the chunks store URL is not provided, we unset the environment variable to revert to RAUC's default
+        # behavior of looking for the chunks store next to the raucb file.
+        subprocess.run(['systemctl', 'unset-environment', 'HOLO_CUSTOM_STORE_PATH'], check=True)
 
     # Import the current HTTP/HTTPS proxy settings, if any
     subprocess.run(['systemctl', 'import-environment', 'http_proxy', 'https_proxy'], check=True)
@@ -684,6 +695,7 @@ class UpdateClient:
                                  "downloading it from server")
         parser.add_argument('--update-from-url',
                             help="update to a specific RAUC bundle image")
+        parser.add_argument('--chunks-store-url', help="URL of the chunks store", default="")
         parser.add_argument('--update-version',
                             help="update to a specific buildid version. It will "
                                  "fail if either the update file doesn't contain "
@@ -754,11 +766,6 @@ class UpdateClient:
         global rauc_conf_path
         attempts_log = runtime_dir / FAILED_ATTEMPTS_FILENAME
         rauc_conf_path = get_rauc_config_path(attempts_log, args.fallback_after_failed_attempts)
-        if not args.query_only:
-            # Apply this configuration to the RAUC service. If we are just querying for updates,
-            # we don't need to restart the RAUC service because we don't have to launch a RAUC
-            # install operation.
-            set_rauc_conf()
 
         if is_desync_in_use():
             seed_index = get_active_slot_index()
@@ -768,8 +775,12 @@ class UpdateClient:
 
         if args.update_from_url:
             log.debug("Installing an update from the given URL")
+
+            if not args.chunks_store_url:
+                log.debug("No chunks store URL provided, falling back to RAUC's default one")
+
             try:
-                do_update(attempts_log, args.update_from_url, args.quiet)
+                do_update(attempts_log, args.update_from_url, args.chunks_store_url, args.quiet)
             except Exception as e:
                 log.error("Failed to install update from URL: %s", e)
                 return -1
@@ -898,7 +909,18 @@ class UpdateClient:
 
         try:
             update_url = urllib.parse.urljoin(images_url, candidate.update_path)
-            do_update(attempts_log, update_url, args.quiet)
+
+            if args.chunks_store_url:
+                # If a user explicitly provided a chunks store URL, we use it to override what the server proposed
+                chunks_url = args.chunks_store_url
+            elif candidate.chunks_path:
+                chunks_url = urllib.parse.urljoin(images_url, candidate.chunks_path)
+            else:
+                # The server may not provide a chunks path if it is an old instance. In that case we keep RAUC's default
+                # of looking for the chunks store next to the raucb, which was the old setup on our servers.
+                chunks_url = ''
+
+            do_update(attempts_log, update_url, chunks_url, args.quiet)
         except Exception as e:
             log.error("Failed to install update file: %s", e)
             return -1
