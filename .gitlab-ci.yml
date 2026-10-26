@@ -69,10 +69,10 @@ test:jupiter:
 .lint_template:
     stage: lint
     needs: [ ]
-    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/archlinux:base-devel
+    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/debian:trixie-slim
     before_script:
-        - pacman -Syu --needed --noconfirm --noprogressbar
-          python-flask python-semantic-version python-setuptools python-pylint mypy
+        - apt update
+        - apt install -y python3-flask python3-semantic-version python3-setuptools pylint mypy
 
 lint:pylint:
     extends: .lint_template
