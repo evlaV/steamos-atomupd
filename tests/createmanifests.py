@@ -64,6 +64,8 @@ class Manifest:
     shadow_checkpoint: bool | None = None
     # If None, "skip" entry will not be included in the manifest
     skip: bool | None = None
+    # If None, "oobe" entry will not be included in the manifest
+    oobe: bool | None = None
     deleted: bool = False
     # Create a manifest file that is empty
     empty: bool = False
@@ -299,6 +301,16 @@ images_hierarchies = [
     ),
 
     Hierarchy(
+        directory_name='shadow-oobe',
+        manifests=[
+            Manifest(Variant.STEAMDECK, '3.6.1', '20231104.1'),
+            # Image that is both a shadow checkpoint and marked as oobe
+            Manifest(Variant.STEAMDECK, '3.6.1', '20231104.4', requires_checkpoint=0, introduces_checkpoint=1,
+                     shadow_checkpoint=True, oobe=True),
+        ]
+    ),
+
+    Hierarchy(
         directory_name='shadow-introduce',
         manifests=[
             Manifest(Variant.STEAMDECK, '3.6.1', '20231104.1'),
@@ -439,6 +451,10 @@ images_hierarchies = [
 
             Manifest(Variant.STEAMDECK, '3.6.8', '20240804.100', branch=Branch.BETA, skip=True,
                      raucb='steamdeck-20220303.2-3.0'),
+            # OOBE image newer than any other image. It must never be proposed as an update
+            Manifest(Variant.STEAMDECK, '3.7.0', '20240810.1', branch=Branch.STABLE, oobe=True),
+            # OOBE images are listed in builds.json, even if they are also marked as skip
+            Manifest(Variant.STEAMDECK, '3.6.6', '20240803.1', branch=Branch.STABLE, oobe=True, skip=True),
             Manifest(Variant.STEAMDECK, '3.6.8', '20240805.100', branch=Branch.BETA,
                      raucb='steamdeck-beta-20250411.100-3.5'),
 
@@ -587,6 +603,9 @@ def build_image_hierarchy(path: Path) -> None:
 
             if manifest.skip is not None:
                 json_data['skip'] = manifest.skip
+
+            if manifest.oobe is not None:
+                json_data['oobe'] = manifest.oobe
 
             img_manifest.write_text(json.dumps(json_data, indent=4))
 

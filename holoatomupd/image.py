@@ -189,6 +189,8 @@ class Image:
     shadow_checkpoint: bool
     estimated_size: int
     skip: bool
+    # OOBE images. Similarly to the "skip" ones, they are never proposed as updates
+    oobe: bool
     # Older images that were using variants 'steamdeck*' without the concept of
     # branches
     legacy_variant: str
@@ -196,7 +198,8 @@ class Image:
     @classmethod
     def from_values(cls, product: str, release: str, variant: str, branch: str, default_update_branch: str, arch: str,
                     version_str: str, buildid_str: str, introduces_checkpoint: int,
-                    requires_checkpoint: int, shadow_checkpoint: bool, estimated_size: int, skip: bool) -> Image:
+                    requires_checkpoint: int, shadow_checkpoint: bool, estimated_size: int, skip: bool,
+                    oobe: bool) -> Image:
         """Create an Image from mandatory values
 
         This method performs mandatory conversions and sanity checks before
@@ -236,7 +239,8 @@ class Image:
 
         # Return an instance
         return cls(product, release, variant, branch, default_update_branch, arch, version, buildid,
-                   introduces_checkpoint, requires_checkpoint, shadow_checkpoint, estimated_size, skip, legacy_variant)
+                   introduces_checkpoint, requires_checkpoint, shadow_checkpoint, estimated_size, skip, oobe,
+                   legacy_variant)
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> Image:
@@ -270,6 +274,7 @@ class Image:
         shadow_checkpoint = data_copy.pop('shadow_checkpoint', False)
         estimated_size = data_copy.pop('estimated_size', 0)
         skip = data_copy.pop('skip', False)
+        oobe = data_copy.pop('oobe', False)
 
         # Contrary to the common expectations, the dynamic server with Flask treats all request
         # arguments as strings. This means that we must convert the integers and booleans ourselves.
@@ -283,6 +288,8 @@ class Image:
             estimated_size = int(estimated_size)
         if isinstance(skip, str):
             skip = skip.lower() == "true"
+        if isinstance(oobe, str):
+            oobe = oobe.lower() == "true"
 
         # Older images are expected to still have the `checkpoint: False` field, just ignore it
         legacy_checkpoint = data_copy.pop('checkpoint', False)
@@ -300,13 +307,13 @@ class Image:
         # Return an instance
         return cls.from_values(product, release, variant, branch, default_update_branch, arch, version_str, buildid_str,
                                introduces_checkpoint, requires_checkpoint, shadow_checkpoint,
-                               estimated_size, skip)
+                               estimated_size, skip, oobe)
 
     @classmethod
     def from_os(cls, product='', release='', variant='', branch='', default_update_branch='', arch='',
                 version_str='', buildid_str='', introduces_checkpoint=0,
                 requires_checkpoint=0, shadow_checkpoint=False, estimated_size: int = 0, skip=False,
-                os_release_path='') -> Image:
+                oobe=False, os_release_path='') -> Image:
         """Create an Image with parameters, use running OS for defaults.
 
         All arguments are optional, and default values are taken by inspecting the
@@ -355,7 +362,7 @@ class Image:
         # Return an instance, might raise exceptions
         return cls.from_values(product, release, variant, branch, default_update_branch, arch, version_str,
                                buildid_str, introduces_checkpoint, requires_checkpoint,
-                               shadow_checkpoint, estimated_size, skip)
+                               shadow_checkpoint, estimated_size, skip, oobe)
 
     def to_dict(self) -> dict[str, Any]:
         """Export an Image to a dictionary"""
@@ -367,6 +374,7 @@ class Image:
         # This is an internal flag used to decide if we should propose this image as an
         # update or not. There is no need to export it in the update dictionary/JSON
         data.pop('skip')
+        data.pop('oobe')
 
         # Another internal flag used to decide if this is a canonical checkpoint or not.
         data.pop('shadow_checkpoint')
@@ -506,7 +514,7 @@ class Image:
     def should_be_skipped(self) -> bool:
         """Whether the image should be skipped and not be considered as a valid update"""
 
-        return self.skip
+        return self.skip or self.oobe
 
     def meets_exempts(self, exempts: list[tuple[Version, BuildId]]) -> bool:
         """Returns True if this image satisfies the exempts prerequisites of a lightweight checkpoint.
