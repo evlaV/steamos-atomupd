@@ -308,6 +308,15 @@ server_data = [
         exit_code=1,
     ),
     ServerData(
+        msg='Shadow image that is unexpectedly also marked as oobe',
+        config=ServerConfig(
+            pool_dir='shadow-oobe',
+            branches=('stable',),
+        ),
+        expectation='',
+        exit_code=1,
+    ),
+    ServerData(
         msg='Shadow image that is not introducing a checkpoint',
         config=ServerConfig(
             pool_dir='shadow-introduce',

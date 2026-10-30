@@ -44,6 +44,6 @@ _holo-atomupd-mkmanifest()
             ;;
     esac
 
-    COMPREPLY=($(compgen -W "-h --help --product --release --variant --arch --version --buildid --checkpoint" -- "$cur"))
+    COMPREPLY=($(compgen -W "-h --help --product --release --variant --arch --version --buildid --checkpoint --oobe" -- "$cur"))
 } &&
 complete -F _holo-atomupd-mkmanifest holo-atomupd-mkmanifest

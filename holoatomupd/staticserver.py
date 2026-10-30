@@ -277,9 +277,9 @@ class UpdateParser:
             if self.image_pool.generate_remote_info_config(image.arch):
                 self._write_remote_info_config(remote_info_written, image)
 
-            if not image.should_be_skipped() and not image.shadow_checkpoint:
+            if (image.oobe or not image.skip) and not image.shadow_checkpoint:
                 # If this image is marked as "skip", or it is a shadow checkpoint, we don't write it in the
-                # builds JSON list
+                # builds JSON list. OOBE images are listed even if they are marked as "skip".
 
                 builds_json = Path(f"{image.release}/{image.product}/{image.arch}/{image.variant}/{BUILDS_LIST}")
                 build_info: dict[str, str | int] = {
@@ -293,6 +293,8 @@ class UpdateParser:
                     build_info["introduces_checkpoint"] = image.introduces_checkpoint
                 if image.requires_checkpoint > 0:
                     build_info["requires_checkpoint"] = image.requires_checkpoint
+                if image.oobe:
+                    build_info["oobe"] = True
 
                 # Prepend items to create a list from oldest to newest
                 builds_jsons_to_process[builds_json].appendleft(build_info)

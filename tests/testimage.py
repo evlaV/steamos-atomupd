@@ -191,6 +191,7 @@ class MiscTestCase(unittest.TestCase):
         d['shadow_checkpoint'] = 'false'
         d['estimated_size'] = '0'
         d['skip'] = 'True'
+        d['oobe'] = 'True'
 
         image = Image.from_dict(d)
         self.assertEqual(image.introduces_checkpoint, 0)
@@ -198,6 +199,7 @@ class MiscTestCase(unittest.TestCase):
         self.assertFalse(image.shadow_checkpoint)
         self.assertEqual(image.estimated_size, 0)
         self.assertTrue(image.skip)
+        self.assertTrue(image.oobe)
 
     def test_manifest_args(self):
         d = dict(imgdata)
@@ -208,6 +210,7 @@ class MiscTestCase(unittest.TestCase):
         d['shadow_checkpoint'] = True
         d['estimated_size'] = 12312345
         d['skip'] = False
+        d['oobe'] = False
 
         image = Image.from_dict(d)
         self.assertEqual(image.introduces_checkpoint, 2)
@@ -215,6 +218,7 @@ class MiscTestCase(unittest.TestCase):
         self.assertTrue(image.shadow_checkpoint)
         self.assertEqual(image.estimated_size, 12312345)
         self.assertFalse(image.skip)
+        self.assertFalse(image.oobe)
 
 
 @dataclass
@@ -231,6 +235,7 @@ class ImageData:
     requires_checkpoint: int = 0
     shadow_checkpoint: bool = False
     skip: bool = False
+    oobe: bool = False
 
 
 @dataclass
@@ -487,7 +492,8 @@ class ImageMethods(unittest.TestCase):
                                           version_str=i_d.version, buildid_str=i_d.buildid,
                                           introduces_checkpoint=i_d.introduces_checkpoint,
                                           requires_checkpoint=i_d.requires_checkpoint,
-                                          shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip)
+                                          shadow_checkpoint=i_d.shadow_checkpoint, estimated_size=0, skip=i_d.skip,
+                                          oobe=i_d.oobe)
 
                 self.assertEqual(i_d.version, image.get_version_str())
                 self.assertEqual(data.update_path, image.get_update_path(data.request_branch, data.request_variant))

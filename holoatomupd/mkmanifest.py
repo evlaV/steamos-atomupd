@@ -41,6 +41,8 @@ def main(args=None):
     parser.add_argument('--buildid', default='')
     parser.add_argument('--introduces-checkpoint', type=int, default=0)
     parser.add_argument('--requires-checkpoint', type=int, default=0)
+    parser.add_argument('--oobe', action='store_true',
+                        help='Mark the image as OOBE, it will never be proposed as an update')
     parser.add_argument('--server-manifest', action='store_true',
                         help='Create a manifest for the image server pool')
     parser.add_argument('--os-release-path', default='',
@@ -63,6 +65,9 @@ def main(args=None):
     # In the manifest describing an image, the estimated size value is not used. There
     # is no need to write it.
     data.pop('estimated_size')
+
+    if args.oobe:
+        data['oobe'] = True
 
     if not args.server_manifest:
         # Do not hardcode the branch field inside an image manifest. Even after building an image, it is possible

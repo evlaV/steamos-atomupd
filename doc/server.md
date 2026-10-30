@@ -308,3 +308,30 @@ both the associated RAUC bundle file and the Casync/Desync chunks.
 NOTE: Please keep in mind that unless you really know what you are doing, you
 should NOT delete the image manifest, or alter its other properties.
 This could leave the static server in an unexpected state.
+
+
+How to mark an out-of-the-box (OOBE) image
+------------------------------------------
+
+OOBE images are the ones that are pre-installed on new devices. To identify
+them, set the **oobe** option, in their manifest, to `true`. E.g.:
+```
+{
+  "product": "steamos",
+  "release": "holo",
+  "variant": "steamdeck-main",
+  "arch": "amd64",
+  "version": "snapshot",
+  "buildid": "20221202.1000",
+  "checkpoint": false,
+  "estimated_size": 0,
+  "oobe": true
+}
+```
+
+OOBE images are still listed in the `builds.json` file, with the additional
+`"oobe": true` entry. The **skip** option is redundant for OOBE images, but it
+can be kept.
+
+The `holo-atomupd-mkmanifest --oobe` option can be used to automatically add
+it while creating the manifest.
