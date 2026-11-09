@@ -20,7 +20,7 @@ import io
 import tempfile
 import textwrap
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from unittest.mock import patch, mock_open
 
@@ -63,6 +63,7 @@ class ManifestData:
     introduces_checkpoint_override: int = 0
     requires_checkpoint_override: int = 0
     server_manifest: bool = False
+    skip: bool = False
 
 
 manifest_data = [
@@ -241,6 +242,26 @@ manifest_data = [
           "buildid": "20240404.1000"
         }"""),
     ),
+
+    ManifestData(
+        os_release=OsReleaseData(
+            variant_id='steamdeck',
+            version_id='3.10.1',
+            build_id='20261109.1',
+        ),
+        server_manifest=True,
+        skip=True,
+        expected_manifest=textwrap.dedent("""\
+        {
+          "product": "steamos",
+          "release": "holo",
+          "variant": "steamdeck",
+          "arch": "amd64",
+          "version": "3.10.1",
+          "buildid": "20261109.1",
+          "skip": true
+        }"""),
+    ),
 ]
 
 
@@ -287,6 +308,8 @@ class MkManifestsTestCase(unittest.TestCase):
                 args.extend(['--requires-checkpoint', str(data.requires_checkpoint_override)])
             if data.server_manifest:
                 args.extend(['--server-manifest'])
+            if data.skip:
+                args.extend(['--skip'])
 
             with self.subTest(), patch('builtins.open', mock_open(read_data=os_release)):
                 f = io.StringIO()
@@ -307,6 +330,10 @@ class MkManifestsTestCase(unittest.TestCase):
                     mkmanifest.main(args)
                 manifest = f.getvalue()
                 self.assertEqual(data.expected_manifest.strip('\n'), manifest.strip('\n'))
+
+    def test_skip_requires_server_manifest(self):
+        with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            mkmanifest.main(['--skip'])
 
 
 if __name__ == '__main__':

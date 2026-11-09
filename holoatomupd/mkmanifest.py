@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LGPL-2.1+
 #
-# Copyright © 2018-2024 Collabora Ltd
+# Copyright © 2018-2026 Collabora Ltd
 #
 # This package is free software; you can redistribute it and/or
 # modify it under the terms of the GNU Lesser General Public
@@ -43,10 +43,15 @@ def main(args=None):
     parser.add_argument('--requires-checkpoint', type=int, default=0)
     parser.add_argument('--server-manifest', action='store_true',
                         help='Create a manifest for the image server pool')
+    parser.add_argument('--skip', action='store_true',
+                        help='Mark the image to be skipped (requires --server-manifest)')
     parser.add_argument('--os-release-path', default='',
                         help='Force a different os-release path instead of /etc/os-release')
 
     args = parser.parse_args(args)
+
+    if args.skip and not args.server_manifest:
+        parser.error('--skip can only be used together with --server-manifest')
 
     try:
         image = Image.from_os(product=args.product, release=args.release, variant=args.variant, branch=args.branch,
@@ -63,6 +68,10 @@ def main(args=None):
     # In the manifest describing an image, the estimated size value is not used. There
     # is no need to write it.
     data.pop('estimated_size')
+
+    # `Image.to_dict()` always strips `skip`, so add it back if requested
+    if args.skip:
+        data['skip'] = True
 
     if not args.server_manifest:
         # Do not hardcode the branch field inside an image manifest. Even after building an image, it is possible
