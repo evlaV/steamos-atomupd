@@ -492,10 +492,18 @@ class ImagePool:
                     log.debug("Not considering %s as a valid update candidate", f)
                     try:
                         update_path = _get_rauc_update_path(images_dir, manifest_path)
-                    except FileNotFoundError:
-                        # This is an image marked as skip. It's not a problem if it doesn't have a raucb.
+                    except FileNotFoundError as e:
+                        # Skipped images may not have a raucb, but OOBE images are expected to have one
+                        if image.oobe:
+                            log.warning("Failed to get the RAUC bundle for the OOBE image '%s': %s", f, e)
                         update_path = ""
-                    candidate = UpdateCandidate(image, update_path=update_path, chunks_path="")
+                    chunks_path = ""
+                    if image.oobe:
+                        try:
+                            chunks_path = _get_chunks_store_path(images_dir, manifest_path)
+                        except ValueError as e:
+                            log.warning("Failed to get the chunks store for the OOBE image '%s': %s", f, e)
+                    candidate = UpdateCandidate(image, update_path=update_path, chunks_path=chunks_path)
                     self.image_updates_found.append(candidate)
                     continue
 
@@ -545,7 +553,7 @@ class ImagePool:
                 if image.introduces_checkpoint < 1:
                     raise RuntimeError(f"The image {image.buildid} is marked as a shadow checkpoint "
                                        f"but doesn't introduce any.")
-                if image.skip:
+                if image.should_be_skipped():
                     raise RuntimeError(f"{image.buildid} can't be a shadow checkpoint and a skip at "
                                        f"the same time. If you want to delete a shadow checkpoint, "
                                        f"you can simply remove its manifest.")
@@ -556,7 +564,7 @@ class ImagePool:
                         raise RuntimeError(f"There are two shadow images for the same variant {image.variant}, "
                                            f"branch {image.branch} and checkpoint {image.introduces_checkpoint}!")
                     seen_shadow[f'{image.variant}_{image.branch}'].append(image.introduces_checkpoint)
-                elif not image.skip:
+                elif not image.should_be_skipped():
                     if image.introduces_checkpoint in seen_intro[f'{image.variant}_{image.branch}']:
                         raise RuntimeError(f"There are two images for the same variant {image.variant}, "
                                            f"and branch {image.branch}, that introduce the same "
