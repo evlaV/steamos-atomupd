@@ -48,6 +48,8 @@ logging.getLogger(__package__).addHandler(warning_collector)
 REMOTE_INFO_FILE = "remote-info.conf"
 # Please keep this in sync with atomupd-daemon
 BUILDS_LIST = "builds.json"
+# Please keep this in sync with atomupd-daemon
+BUILDS_OOBE_LIST = "builds_oobe.json"
 
 
 @contextlib.contextmanager
@@ -277,11 +279,13 @@ class UpdateParser:
             if self.image_pool.generate_remote_info_config(image.arch):
                 self._write_remote_info_config(remote_info_written, image)
 
-            if not image.should_be_skipped() and not image.shadow_checkpoint:
+            if (image.oobe or not image.skip) and not image.shadow_checkpoint:
                 # If this image is marked as "skip", or it is a shadow checkpoint, we don't write it in the
-                # builds JSON list
+                # builds JSON list. OOBE images are listed in a separate builds JSON, even if they are marked
+                # as "skip", so that clients that don't know about OOBE images never propose them.
 
-                builds_json = Path(f"{image.release}/{image.product}/{image.arch}/{image.variant}/{BUILDS_LIST}")
+                builds_list = BUILDS_OOBE_LIST if image.oobe else BUILDS_LIST
+                builds_json = Path(f"{image.release}/{image.product}/{image.arch}/{image.variant}/{builds_list}")
                 build_info: dict[str, str | int] = {
                     "version": image.get_version_str(),
                     "buildid": str(image.buildid),

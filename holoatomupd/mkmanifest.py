@@ -41,6 +41,8 @@ def main(args=None):
     parser.add_argument('--buildid', default='')
     parser.add_argument('--introduces-checkpoint', type=int, default=0)
     parser.add_argument('--requires-checkpoint', type=int, default=0)
+    parser.add_argument('--oobe', action='store_true',
+                        help='Mark the image as OOBE, it will never be proposed as an update')
     parser.add_argument('--server-manifest', action='store_true',
                         help='Create a manifest for the image server pool')
     parser.add_argument('--skip', action='store_true',
@@ -58,7 +60,7 @@ def main(args=None):
                               default_update_branch=args.default_update_branch, arch=args.arch,
                               version_str=args.version, buildid_str=args.buildid,
                               introduces_checkpoint=args.introduces_checkpoint,
-                              requires_checkpoint=args.requires_checkpoint,
+                              requires_checkpoint=args.requires_checkpoint, oobe=args.oobe,
                               os_release_path=args.os_release_path)
     except Exception as e:
         raise RuntimeError("Failed to create manifest") from e

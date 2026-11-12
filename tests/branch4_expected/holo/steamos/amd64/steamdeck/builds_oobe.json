@@ -1,0 +1,4 @@
+[
+    {"version": "3.6.6", "buildid": "20240803.1", "branch": "stable", "update_path": "steamdeck/20240803.1/steamdeck-20240803.1-3.6.6.raucb", "chunks_store_path": "steamdeck/20240803.1/steamdeck-20240803.1-3.6.6.castr"},
+    {"version": "3.7.0", "buildid": "20240810.1", "branch": "stable", "update_path": "steamdeck/20240810.1/steamdeck-20240810.1-3.7.0.raucb", "chunks_store_path": "steamdeck/20240810.1/steamdeck-20240810.1-3.7.0.castr"}
+]

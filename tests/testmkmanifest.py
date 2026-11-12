@@ -64,6 +64,7 @@ class ManifestData:
     requires_checkpoint_override: int = 0
     server_manifest: bool = False
     skip: bool = False
+    oobe: bool = False
 
 
 manifest_data = [
@@ -189,6 +190,7 @@ manifest_data = [
         branch_override='beta',
         default_update_branch='stable',
         server_manifest=True,
+        oobe=True,
         expected_manifest=textwrap.dedent("""\
             {
               "product": "steamos",
@@ -198,7 +200,8 @@ manifest_data = [
               "default_update_branch": "stable",
               "arch": "amd64",
               "version": "3.7.3",
-              "buildid": "20240120.1"
+              "buildid": "20240120.1",
+              "oobe": true
             }"""),
     ),
 
@@ -310,6 +313,8 @@ class MkManifestsTestCase(unittest.TestCase):
                 args.extend(['--server-manifest'])
             if data.skip:
                 args.extend(['--skip'])
+            if data.oobe:
+                args.extend(['--oobe'])
 
             with self.subTest(), patch('builtins.open', mock_open(read_data=os_release)):
                 f = io.StringIO()
